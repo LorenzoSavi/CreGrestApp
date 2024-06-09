@@ -39,9 +39,7 @@ export default {
     return {
       username: '',
       password: '',
-      error: '',
-      isRoot: false,
-      isLoggedIn: false
+      error: ''
     };
   },
   methods: {
@@ -52,19 +50,20 @@ export default {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const credentials = await response.json();
+        
 
         const user = credentials.find(
           user => user.username === this.username && user.password === this.password
         );
+        
 
         if (user) {
           localStorage.setItem('loggedInUser', JSON.stringify(user));
-          this.isLoggedIn = true;
-          this.isRoot = user.username === 'root';
-          if (!this.isRoot) {
-            this.$router.push('/add-point');
-          } else if (this.isRoot) {
+          const specialUsers = ['FraVita', 'root', 'savi'];
+          if (specialUsers.includes(user.username)) {
             this.$router.push('/total-point');
+          } else {
+            this.$router.push('/add-point');
           }
         } else {
           this.error = 'Invalid credentials';
@@ -72,19 +71,20 @@ export default {
       } catch (error) {
         this.error = `An error occurred: ${error.message}`;
       }
-    },
-    navigateTo(page) {
-      this.$router.push(`/${page}`);
     }
   },
   created() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
     if (loggedInUser) {
-      this.isLoggedIn = true;
-      this.isRoot = loggedInUser.username === 'root';
+      const specialUsers = ['FraVita', 'root', 'savi'];
+      if (specialUsers.includes(loggedInUser.username)) {
+        this.$router.push('/total-point');
+      } else {
+        this.$router.push('/add-point');
+      }
     }
   }
-};
+}
 </script>
 
 <style scoped>
@@ -93,7 +93,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: -19vh; /* This will move the section up */
+  margin-top: -19vh; 
 }
 .box {
   padding: 2rem;

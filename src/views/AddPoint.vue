@@ -64,9 +64,25 @@ export default {
         { id: 'blu', name: 'Blu', color: '#0000FF' }
       ],
       games: [
-        { id: 'calcio', name: 'Calcio' },
-        { id: 'basket', name: 'Basket' },
-        { id: 'volley', name: 'Volley' }
+        { id: 'bandierina', name: 'Bandierina' },
+        { id: 'lupo-ghiaccio', name: 'Lupo ghiaccio' },
+        { id: 'uovo-in-bilico', name: 'Uovo in bilico' },
+        { id: 'cerchi-nelle-aste', name: 'Cerchi nelle aste' },
+        { id: 'lupo-coda', name: 'Lupo coda' },
+        { id: 'terra-acqua', name: 'Terra/acqua' },
+        { id: 'rispetta-le-tappe', name: 'Rispetta le tappe' },
+        { id: 'treno-impazzito', name: 'Treno impazzito' },
+        { id: 'tiro-alla-fune', name: 'Tiro alla fune' },
+        { id: 'bandierina-mix', name: 'Bandierina mix' },
+        { id: 'castelli', name: 'Castelli' },
+        { id: 'pallamano', name: 'Pallamano' },
+        { id: 'un-difficile-viaggio', name: 'Un difficile viaggio' },
+        { id: 'palla-prigioniera', name: 'Palla prigioniera' },
+        { id: 'tchoukball', name: 'Tchoukball' },
+        { id: 'passa-la-linea', name: 'Passa la linea' },
+        { id: '10-tappe', name: '10 tappe' },
+        { id: 'basket', name: 'Basket' }
+
       ],
       pointsOptions: [0, 20, 40, 80],
       error: ''

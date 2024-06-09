@@ -29,10 +29,11 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-  if (to.matched.some(record => record.meta.requiresAuth) && (!loggedInUser || loggedInUser.username !== 'root')) {
-      next('/');
+  const specialUsers = ['FraVita', 'root', 'savi'];
+  if (to.matched.some(record => record.meta.requiresAuth) && (!loggedInUser || !specialUsers.includes(loggedInUser.username))) {
+    next('/');
   } else {
-      next();
+    next();
   }
 });
 
