@@ -212,6 +212,15 @@ export default {
         console.error('Error fetching points history:', error);
         this.historyError = 'Error fetching points history.';
       }
+    },
+    shouldTextBeBlack(team) {
+      const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      if (team.name === 'Bianchi') {
+        return !prefersDarkScheme;
+      }
+
+      return prefersDarkScheme;
     }
   }
 };
@@ -252,6 +261,12 @@ export default {
   }
   .table th, .table td {
     white-space: nowrap;
+  }
+}
+
+@media (prefers-color-scheme: white) {
+  .bianchi-row {
+    color: #000000; 
   }
 }
 </style>

@@ -29,7 +29,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-  const specialUsers = ['FraVita', 'root', 'savi'];
+  const specialUsers = ['FraVita', 'savi'];
   if (to.matched.some(record => record.meta.requiresAuth) && (!loggedInUser || !specialUsers.includes(loggedInUser.username))) {
     next('/');
   } else {
