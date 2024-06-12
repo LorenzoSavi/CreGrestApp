@@ -272,9 +272,7 @@ export default {
   }
 }
 
-@media (prefers-color-scheme: white) {
-  .bianchi-row {
-    color: #000000; 
-  }
+.bianchi-text-light {
+  color: #000000;
 }
 </style>
