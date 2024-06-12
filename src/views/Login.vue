@@ -59,7 +59,7 @@ export default {
 
         if (user) {
           localStorage.setItem('loggedInUser', JSON.stringify(user));
-          const specialUsers = ['FraVita', 'savi'];
+          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'r.ferrari'];
           if (specialUsers.includes(user.username)) {
             this.$router.push('/total-point');
           } else {
@@ -76,7 +76,7 @@ export default {
   created() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
     if (loggedInUser) {
-      const specialUsers = ['FraVita', 'savi'];
+      const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'r.ferrari'];
       if (specialUsers.includes(loggedInUser.username)) {
         this.$router.push('/total-point');
       } else {
