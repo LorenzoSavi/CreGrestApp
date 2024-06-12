@@ -272,7 +272,13 @@ export default {
   }
 }
 
-.bianchi-text-light {
-  color: #000000;
+.bianchi-text {
+  color: #FFFFFF; /* Colore bianco di default */
+}
+
+@media (prefers-color-scheme: light) {
+  .bianchi-text-light {
+    color: #000000; /* Colore nero per modalità chiara */
+  }
 }
 </style>
