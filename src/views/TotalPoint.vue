@@ -10,8 +10,10 @@
           </tr>
         </thead>
         <tbody :key="teams">
-          <tr v-for="team in teams" :key="team.id" :class="team.id + '-row'">
-            <td :class="['has-text-weight-bold', team.id + '-text']">{{ team.name }}</td>
+          <tr v-for="(team, index) in sortedTeams" :key="team.id" :class="team.id + '-row'">
+            <td :class="['has-text-weight-bold', team.id + '-text']">
+              <span v-if="index === 0">🏆</span> {{ team.name }}
+            </td>
             <td>{{ team.points }}</td>
           </tr>
         </tbody>
@@ -88,10 +90,12 @@
 </template>
 
 <script>
+
 import { db } from '../firebase';
 import { doc, getDoc, arrayUnion, updateDoc } from 'firebase/firestore';
 
 export default {
+  
   name: 'TeamPoints',
   data() {
     return {
@@ -115,6 +119,11 @@ export default {
       pointsHistory: [],
       historyError: ''
     };
+  },
+  computed: {
+    sortedTeams() {
+      return this.teams.slice().sort((a, b) => b.points - a.points);
+    }
   },
   async created() {
     await this.fetchTeamPoints();
@@ -214,17 +223,16 @@ export default {
       }
     },
     shouldTextBeBlack(team) {
-      const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-      if (team.name === 'Bianchi') {
-        return !prefersDarkScheme;
-      }
-
-      return prefersDarkScheme;
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (team.id === 'bianchi') {
+      return !prefersDarkScheme;
     }
+    return false;
+  }
   }
 };
 </script>
+
 
 <style scoped>
 .section {
