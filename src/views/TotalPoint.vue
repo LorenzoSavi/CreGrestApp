@@ -29,7 +29,7 @@
           <div class="control">
             <div class="select">
               <select v-model="selectedTeam">
-                <option v-for="team in teams" :key="team.id" :value="team.id" :class="['has-text-weight-bold', team.id + '-text']">{{ team.name }}</option>
+                <option v-for="team in teams" :key="team.id" :value="team.id" :class="['has-text-weight-bold', team.id + '-text',{ 'bianchi-text-light': shouldTextBeBlack(team) }]">{{ team.name }}</option>
               </select>
             </div>
           </div>
