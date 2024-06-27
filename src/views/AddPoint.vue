@@ -71,7 +71,7 @@ export default {
         { id: 'lupo-coda', name: 'Lupo coda' },
         { id: 'terra-acqua', name: 'Terra/acqua' },
         { id: 'rispetta-le-tappe', name: 'Rispetta le tappe' },
-        { id: 'treno-impazzito', name: 'Treno impazzito' },
+        { id: 'calcio', name: 'Calcio' },
         { id: 'tiro-alla-fune', name: 'Tiro alla fune' },
         { id: 'bandierina-mix', name: 'Bandierina mix' },
         { id: 'castelli', name: 'Castelli' },
