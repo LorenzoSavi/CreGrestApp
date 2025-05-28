@@ -43,7 +43,7 @@ nav a.router-link-exact-active {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   #app {
-    background-color: #1a1a1a;
+    background-color: #2c3e50;
     color: #ffffff;
   }
   
