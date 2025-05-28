@@ -11,7 +11,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: #1a1a1a;
   padding: 0;
   margin: 0;
   min-height: 100vh;
@@ -24,7 +24,7 @@ nav {
 
 nav a {
   font-weight: bold;
-  color: #2c3e50;
+  color: #1a1a1a;
 }
 
 nav a.router-link-exact-active {
@@ -43,7 +43,7 @@ nav a.router-link-exact-active {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   #app {
-    background-color: #2c3e50;
+    background-color: #1a1a1a;
     color: #ffffff;
   }
   
