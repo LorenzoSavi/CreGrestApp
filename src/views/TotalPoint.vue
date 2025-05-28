@@ -11,7 +11,7 @@
         <span class="icon is-small">
           <i class="fas fa-sign-out-alt"></i>
         </span>
-        <span class="is-hidden-mobile">Logout</span>
+        <span class="is-hidden-mobile"></span>
       </button>
     </div>
   </div>
@@ -177,12 +177,12 @@ export default {
   data() {
     return {
       teams: [
-        { id: 'arancioni', name: 'Arancioni', points: 0, color: '#FFA500' },
-        { id: 'bianchi', name: 'Bianchi', points: 0, color: '#FFFFFF' },
         { id: 'rossi', name: 'Rossi', points: 0, color: '#FF0000' },
-        { id: 'gialli', name: 'Gialli', points: 0, color: '#FFFF00' },
         { id: 'verdi', name: 'Verdi', points: 0, color: '#008000' },
-        { id: 'blu', name: 'Blu', points: 0, color: '#0000FF' }
+        { id: 'arancioni', name: 'Arancioni', points: 0, color: '#FFA500' },
+        { id: 'blu', name: 'Blu', points: 0, color: '#40E0D0' },
+        { id: 'fucsia', name: 'Fucsia', points: 0, color: '#FF00FF' },
+        { id: 'gialli', name: 'Gialli', points: 0, color: '#FFFF00' }
       ],
       games: [
         { id: 'puntiSpeciali', name: 'Punti Speciali' },
@@ -248,14 +248,22 @@ export default {
 
         if (docSnap.exists()) {
           const currentPoints = docSnap.data()[this.selectedTeam] || 0;
-          const newPoints = currentPoints + parseInt(this.pointsToAdd);
+          
+          // Se è una penitenza, rendi i punti negativi automaticamente
+          let pointsToApply = parseInt(this.pointsToAdd);
+          if (this.selectedGame === 'penitenza' && pointsToApply > 0) {
+            pointsToApply = -pointsToApply;
+          }
+          
+          const newPoints = currentPoints + pointsToApply;
 
           await updateDoc(docRef, {
             [this.selectedTeam]: newPoints
           });
 
-          await this.addHistory();
-          this.successMessage = `✅ ${this.pointsToAdd} punti aggiunti al team ${this.selectedTeam}!`;
+          await this.addHistory(pointsToApply);
+          const operazione = pointsToApply > 0 ? 'aggiunti' : 'sottratti';
+          this.successMessage = `✅ ${Math.abs(pointsToApply)} punti ${operazione} al team ${this.selectedTeam}!`;
           this.selectedTeam = '';
           this.selectedGame = '';
           this.pointsToAdd = 0;
@@ -274,7 +282,7 @@ export default {
         this.isLoading = false;
       }
     },
-    async addHistory() {
+    async addHistory(pointsToApply = null) {
       try {
         const docRef = doc(db, 'points', 'history');
         const docSnap = await getDoc(docRef);
@@ -289,12 +297,14 @@ export default {
             return user;
           };
 
+          const pointsForHistory = pointsToApply !== null ? pointsToApply : parseInt(this.pointsToAdd);
+
           await updateDoc(docRef, {
             history: arrayUnion({
               username: getCurrentUser() ? getCurrentUser().username : 'unknown',
               team: this.selectedTeam,
               game: this.selectedGame,
-              points: parseInt(this.pointsToAdd),
+              points: pointsForHistory,
               timestamp: new Date()
             })
           });
@@ -464,53 +474,53 @@ export default {
 }
 
 /* Colori squadre - FORZA I COLORI NELLA TABELLA */
-.table .arancioni-text, .table .arancioni-text strong {
-  color: #FFA500 !important;
-  font-weight: 900 !important;
-}
-.table .bianchi-text, .table .bianchi-text strong {
-  color: #ffffff !important;
-  font-weight: 900 !important;
-}
 .table .rossi-text, .table .rossi-text strong {
   color: #FF0000 !important;
-  font-weight: 900 !important;
-}
-.table .gialli-text, .table .gialli-text strong {
-  color: #DAA520 !important;
   font-weight: 900 !important;
 }
 .table .verdi-text, .table .verdi-text strong {
   color: #228B22 !important;
   font-weight: 900 !important;
 }
+.table .arancioni-text, .table .arancioni-text strong {
+  color: #FFA500 !important;
+  font-weight: 900 !important;
+}
 .table .blu-text, .table .blu-text strong {
-  color: #0066CC !important;
+  color: #40E0D0 !important;
+  font-weight: 900 !important;
+}
+.table .fucsia-text, .table .fucsia-text strong {
+  color: #FF00FF !important;
+  font-weight: 900 !important;
+}
+.table .gialli-text, .table .gialli-text strong {
+  color: #DAA520 !important;
   font-weight: 900 !important;
 }
 
-.arancioni-row, .arancioni-text {
-  color: #FFA500 !important;
-  font-weight: bold !important;
-}
-.bianchi-row, .bianchi-text {
-  color: #666666 !important;
-  font-weight: bold !important;
-}
 .rossi-row, .rossi-text {
   color: #FF0000 !important;
-  font-weight: bold !important;
-}
-.gialli-row, .gialli-text {
-  color: #DAA520 !important;
   font-weight: bold !important;
 }
 .verdi-row, .verdi-text {
   color: #228B22 !important;
   font-weight: bold !important;
 }
+.arancioni-row, .arancioni-text {
+  color: #FFA500 !important;
+  font-weight: bold !important;
+}
 .blu-row, .blu-text {
-  color: #0066CC !important;
+  color: #40E0D0 !important;
+  font-weight: bold !important;
+}
+.fucsia-row, .fucsia-text {
+  color: #FF00FF !important;
+  font-weight: bold !important;
+}
+.gialli-row, .gialli-text {
+  color: #DAA520 !important;
   font-weight: bold !important;
 }
 

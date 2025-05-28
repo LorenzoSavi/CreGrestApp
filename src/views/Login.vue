@@ -115,7 +115,7 @@ export default {
             localStorage.removeItem('loggedInUser');
           }
           
-          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'DavideAnge', 'meris', 'corti_sugo', 'Lucaespo', 'fedeg'];
+          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
           if (specialUsers.includes(user.username)) {
             this.$router.push('/total-point');
           } else {
@@ -137,7 +137,7 @@ export default {
       }
       
       if (loggedInUser) {
-        const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'DavideAnge', 'meris', 'corti_sugo', 'Lucaespo', 'fedeg'];
+        const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
         if (specialUsers.includes(loggedInUser.username)) {
           this.$router.push('/total-point');
         } else {
@@ -305,6 +305,11 @@ export default {
   border-radius: 8px;
 }
 
+.section {
+  padding: 1rem;
+  min-height: calc(100vh - 2rem);
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .hero {
@@ -350,6 +355,15 @@ export default {
 
 /* Mobile responsive */
 @media (max-width: 768px) {
+  .section {
+    padding: 0.5rem;
+    min-height: calc(100vh - 1rem);
+  }
+  
+  .field {
+    margin-bottom: 1rem;
+  }
+  
   .login-box {
     width: 90%;
     padding: 1.5rem 1rem;
@@ -357,6 +371,17 @@ export default {
   
   .title.is-3 {
     font-size: 1.5rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 0.25rem;
+    min-height: calc(100vh - 0.5rem);
+  }
+  
+  .field {
+    margin-bottom: 0.75rem;
   }
 }
 </style>

@@ -108,12 +108,12 @@ export default {
       modalClosing: false,
       overlayColor: '',
       teams: [
-        { id: 'arancioni', name: 'Arancioni', color: '#FFA500' },
-        { id: 'bianchi', name: 'Bianchi', color: '#FFFFFF' },
-        { id: 'rossi', name: 'Rossi', color: '#FF0000' },
-        { id: 'gialli', name: 'Gialli', color: '#FFFF00' },
-        { id: 'verdi', name: 'Verdi', color: '#008000' },
-        { id: 'blu', name: 'Blu', color: '#0000FF' }
+        { id: 'rossi', name: 'Rossi', points: 0, color: '#FF0000' },
+        { id: 'verdi', name: 'Verdi', points: 0, color: '#008000' },
+        { id: 'arancioni', name: 'Arancioni', points: 0, color: '#FFA500' },
+        { id: 'blu', name: 'Blu', points: 0, color: '#40E0D0' },
+        { id: 'fucsia', name: 'Fucsia', points: 0, color: '#FF00FF' },
+        { id: 'gialli', name: 'Gialli', points: 0, color: '#FFFF00' }
       ],
       games: [
         { id: 'bandierina', name: 'Bandierina' },
@@ -237,7 +237,7 @@ export default {
 
 .add-button-section {
   position: fixed;
-  bottom: 20px;
+  bottom: 10px;
   left: 20px;
   right: 20px;
   z-index: 100;
@@ -246,7 +246,8 @@ export default {
 }
 
 .section {
-  padding: 1.5rem;
+  padding: 1rem;
+  padding-bottom: 100px;
 }
 
 .level {
@@ -308,30 +309,29 @@ export default {
   margin-bottom: 1.5rem;
 }
 
-/* Colori squadre con maggiore visibilità */
-.arancioni-text.team-option {
-  color: #FFA500 !important;
-  font-weight: bold;
-}
-.bianchi-text.team-option {
-  color: #666666 !important;
-  font-weight: bold;
-  background-color: #f5f5f5;
-}
-.rossi-text.team-option {
+/* Colori squadre */
+.rossi-text {
   color: #FF0000 !important;
   font-weight: bold;
 }
-.gialli-text.team-option {
-  color: #DAA520 !important;
-  font-weight: bold;
-}
-.verdi-text.team-option {
+.verdi-text {
   color: #228B22 !important;
   font-weight: bold;
 }
-.blu-text.team-option {
-  color: #0066CC !important;
+.arancioni-text {
+  color: #FFA500 !important;
+  font-weight: bold;
+}
+.blu-text {
+  color: #40E0D0 !important;
+  font-weight: bold;
+}
+.fucsia-text {
+  color: #FF00FF !important;
+  font-weight: bold;
+}
+.gialli-text {
+  color: #DAA520 !important;
   font-weight: bold;
 }
 
@@ -380,7 +380,7 @@ export default {
   .level {
     flex-direction: row !important;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
   
   .page-title {
@@ -388,11 +388,12 @@ export default {
   }
   
   .section {
-    padding: 0.75rem;
+    padding: 0.5rem;
+    padding-bottom: 80px;
   }
   
   .field {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
   }
   
   .label {
@@ -401,7 +402,7 @@ export default {
   }
   
   .select select {
-    padding: 0.875rem;
+    padding: 0.75rem;
     font-size: 1rem;
     line-height: 1.4;
   }
@@ -420,7 +421,7 @@ export default {
   }
   
   .add-button-section {
-    bottom: 10px;
+    bottom: 5px;
     left: 10px;
     right: 10px;
   }
@@ -429,6 +430,19 @@ export default {
 @media (max-width: 480px) {
   .page-title {
     font-size: 1.5rem !important;
+  }
+  
+  .section {
+    padding: 0.25rem;
+    padding-bottom: 70px;
+  }
+  
+  .level {
+    margin-bottom: 0.25rem;
+  }
+  
+  .field {
+    margin-bottom: 0.75rem;
   }
 }
 
