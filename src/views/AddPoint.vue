@@ -17,7 +17,7 @@
   <section class="section py-3">
     <div class="container">
       <form @submit.prevent="addPoints">
-        <div class="field">
+        <div class="field" :class="{ 'dropdown-open': showTeamDropdown }">
           <label class="label">Seleziona Squadra:</label>
           <div class="control">
             <div class="custom-dropdown" :class="{ 'is-active': showTeamDropdown }">
@@ -32,7 +32,7 @@
                   </span>
                 </div>
               </div>
-              <div class="dropdown-menu" v-show="showTeamDropdown">
+              <div class="dropdown-menu" v-if="showTeamDropdown">
                 <div class="dropdown-content">
                   <div 
                     v-for="team in teams" 
@@ -49,7 +49,7 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field" :class="{ 'dropdown-open': showCycleDropdown }">
           <label class="label">Seleziona Ciclo:</label>
           <div class="control">
             <div class="custom-dropdown" :class="{ 'is-active': showCycleDropdown }">
@@ -64,7 +64,7 @@
                   </span>
                 </div>
               </div>
-              <div class="dropdown-menu" v-show="showCycleDropdown">
+              <div class="dropdown-menu" v-if="showCycleDropdown">
                 <div class="dropdown-content">
                   <div 
                     class="dropdown-item" 
@@ -93,7 +93,7 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field" :class="{ 'dropdown-open': showGameDropdown, 'is-disabled': !selectedCycle }">
           <label class="label">Seleziona Gioco:</label>
           <div class="control">
             <div class="custom-dropdown" :class="{ 'is-active': showGameDropdown, 'is-disabled': !selectedCycle }">
@@ -110,7 +110,7 @@
                   </span>
                 </div>
               </div>
-              <div class="dropdown-menu" v-show="showGameDropdown && selectedCycle">
+              <div class="dropdown-menu" v-if="showGameDropdown && selectedCycle">
                 <div class="dropdown-content">
                   <div 
                     v-for="game in availableGames" 
@@ -127,7 +127,7 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field" :class="{ 'dropdown-open': showPointsDropdown }">
           <label class="label">Punti da Aggiungere:</label>
           <div class="control">
             <div class="custom-dropdown" :class="{ 'is-active': showPointsDropdown }">
@@ -142,7 +142,7 @@
                   </span>
                 </div>
               </div>
-              <div class="dropdown-menu" v-show="showPointsDropdown">
+              <div class="dropdown-menu" v-if="showPointsDropdown">
                 <div class="dropdown-content">
                   <div 
                     v-for="point in pointsOptions.filter(p => p > 0)" 
@@ -278,6 +278,36 @@ export default {
       this.selectedGame = '';
     }
   },
+  mounted() {
+    // Debug: stampa lo stato dei dropdown
+    console.log('Mounted - Dropdown states:', {
+      team: this.showTeamDropdown,
+      cycle: this.showCycleDropdown,
+      game: this.showGameDropdown,
+      points: this.showPointsDropdown
+    });
+    
+    // Forza chiusura di tutti i dropdown
+    this.$nextTick(() => {
+      this.showTeamDropdown = false;
+      this.showCycleDropdown = false;
+      this.showGameDropdown = false;
+      this.showPointsDropdown = false;
+      
+      console.log('After forced close:', {
+        team: this.showTeamDropdown,
+        cycle: this.showCycleDropdown,
+        game: this.showGameDropdown,
+        points: this.showPointsDropdown
+      });
+    });
+    
+    // Chiudi dropdown quando si clicca fuori
+    document.addEventListener('click', this.closeDropdowns);
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.closeDropdowns);
+  },
   methods: {
     async addPoints() {
       try {
@@ -366,44 +396,60 @@ export default {
     },
     
     // Metodi per gestire i dropdown personalizzati
-    toggleTeamDropdown() {
+    toggleTeamDropdown(event) {
+      event?.stopPropagation();
+      console.log('Toggle team dropdown - before:', this.showTeamDropdown);
       this.showTeamDropdown = !this.showTeamDropdown;
+      console.log('Toggle team dropdown - after:', this.showTeamDropdown);
       this.closeOtherDropdowns('team');
     },
     
-    toggleCycleDropdown() {
+    toggleCycleDropdown(event) {
+      event?.stopPropagation();
+      console.log('Toggle cycle dropdown - before:', this.showCycleDropdown);
       this.showCycleDropdown = !this.showCycleDropdown;
+      console.log('Toggle cycle dropdown - after:', this.showCycleDropdown);
       this.closeOtherDropdowns('cycle');
     },
     
-    toggleGameDropdown() {
+    toggleGameDropdown(event) {
+      event?.stopPropagation();
       if (!this.selectedCycle) return;
+      console.log('Toggle game dropdown - before:', this.showGameDropdown);
       this.showGameDropdown = !this.showGameDropdown;
+      console.log('Toggle game dropdown - after:', this.showGameDropdown);
       this.closeOtherDropdowns('game');
     },
     
-    togglePointsDropdown() {
+    togglePointsDropdown(event) {
+      event?.stopPropagation();
+      console.log('Toggle points dropdown - before:', this.showPointsDropdown);
       this.showPointsDropdown = !this.showPointsDropdown;
+      console.log('Toggle points dropdown - after:', this.showPointsDropdown);
       this.closeOtherDropdowns('points');
     },
     
-    selectTeam(teamId) {
+    selectTeam(teamId, event) {
+      event?.stopPropagation();
       this.selectedTeam = teamId;
       this.showTeamDropdown = false;
     },
     
-    selectCycle(cycleId) {
+    selectCycle(cycleId, event) {
+      event?.stopPropagation();
       this.selectedCycle = cycleId;
       this.selectedGame = ''; // Reset game when cycle changes
       this.showCycleDropdown = false;
     },
     
-    selectGame(gameId) {
+    selectGame(gameId, event) {
+      event?.stopPropagation();
       this.selectedGame = gameId;
       this.showGameDropdown = false;
     },
     
-    selectPoints(points) {
+    selectPoints(points, event) {
+      event?.stopPropagation();
       this.pointsToAdd = points;
       this.showPointsDropdown = false;
     },
@@ -425,13 +471,14 @@ export default {
     },
     
     closeDropdowns(event) {
+      // Chiudi tutti i dropdown se si clicca fuori
       if (!event.target.closest('.custom-dropdown')) {
         this.showTeamDropdown = false;
         this.showCycleDropdown = false;
         this.showGameDropdown = false;
         this.showPointsDropdown = false;
       }
-    },
+    }
   }
 }
 </script>
@@ -440,7 +487,6 @@ export default {
 .page-title {
   font-size: 2.5rem !important;
   font-weight: bold !important;
-  color: #363636 !important;
   margin: 0 !important;
 }
 
@@ -448,6 +494,11 @@ export default {
 .custom-dropdown {
   position: relative;
   width: 100%;
+  z-index: 50;
+}
+
+.custom-dropdown.is-active {
+  z-index: 100;
 }
 
 .custom-dropdown.is-disabled {
@@ -458,6 +509,9 @@ export default {
 .dropdown-trigger {
   cursor: pointer;
   width: 100%;
+  user-select: none;
+  position: relative;
+  z-index: 1;
 }
 
 .dropdown-display {
@@ -470,6 +524,8 @@ export default {
   background: white;
   transition: all 0.3s ease;
   min-height: 3rem;
+  position: relative;
+  color: #333;
 }
 
 .custom-dropdown.is-active .dropdown-display {
@@ -503,6 +559,7 @@ export default {
 .dropdown-icon {
   color: #999;
   transition: transform 0.3s ease;
+  font-size: 0.8rem;
 }
 
 .custom-dropdown.is-active .dropdown-icon {
@@ -510,46 +567,87 @@ export default {
 }
 
 .dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  margin-top: 4px;
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 99999 !important;
+  margin-top: 4px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Force hide when not active */
+.custom-dropdown:not(.is-active) .dropdown-menu {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 
 .dropdown-content {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e3e3e3;
-  max-height: 300px;
-  overflow-y: auto;
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e3e3e3 !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  animation: dropdownSlide 0.2s ease-out !important;
+  position: relative !important;
+  width: 100% !important;
+  z-index: 99999 !important;
+}
+
+@keyframes dropdownSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-item {
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid #f5f5f5;
+  padding: 0.75rem 1rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  border-bottom: 1px solid #f5f5f5 !important;
+  user-select: none !important;
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  background: white !important;
+  color: #333 !important;
+  z-index: 99999 !important;
 }
 
 .dropdown-item:last-child {
-  border-bottom: none;
+  border-bottom: none !important;
 }
 
 .dropdown-item:hover {
-  background-color: #f8f9fa;
+  background-color: #f8f9fa !important;
 }
 
 .dropdown-item.is-active {
-  background-color: #667eea;
-  color: white;
+  background-color: #667eea !important;
+  color: white !important;
+}
+
+.dropdown-item.is-active.rossi-text,
+.dropdown-item.is-active.verdi-text,
+.dropdown-item.is-active.arancioni-text,
+.dropdown-item.is-active.blu-text,
+.dropdown-item.is-active.fucsia-text,
+.dropdown-item.is-active.gialli-text {
+  color: white !important;
 }
 
 .points-item.is-active {
-  background-color: #667eea;
-  color: white;
+  background-color: #667eea !important;
+  color: white !important;
 }
 
 .add-button-section {
@@ -565,15 +663,12 @@ export default {
 .section {
   padding: 1rem;
   padding-bottom: 100px;
+  position: relative;
+  z-index: 1;
 }
 
 .level {
   margin-bottom: 1rem;
-}
-
-.title {
-  color: #363636;
-  margin-bottom: 0;
 }
 
 .button.is-primary {
@@ -597,49 +692,49 @@ export default {
 
 .label {
   font-weight: 600;
-  color: #4a4a4a;
   margin-bottom: 0.75rem;
 }
 
 .field {
   margin-bottom: 1.5rem;
+  position: relative;
+  z-index: auto;
+}
+
+.field.dropdown-open {
+  z-index: 100000;
 }
 
 /* Colori squadre */
 .rossi-text {
-  color: #FF0000 !important;
+  color: #DC3545 !important;
   font-weight: bold;
 }
 .verdi-text {
-  color: #228B22 !important;
+  color: #28A745 !important;
   font-weight: bold;
 }
 .arancioni-text {
-  color: #FFA500 !important;
+  color: #FD7E14 !important;
   font-weight: bold;
 }
 .blu-text {
-  color: #40E0D0 !important;
+  color: #007BFF !important;
   font-weight: bold;
 }
 .fucsia-text {
-  color: #FF00FF !important;
+  color: #E83E8C !important;
   font-weight: bold;
 }
 .gialli-text {
-  color: #DAA520 !important;
+  color: #FFC107 !important;
   font-weight: bold;
 }
 
-/* Dark mode support */
+/* Dark mode support - inherit from App.vue */
 @media (prefers-color-scheme: dark) {
-  .section {
-    background-color: #1a1a1a;
-    color: #ffffff;
-  }
-  
-  .title {
-    color: #ffffff;
+  .page-title {
+    color: #ffffff !important;
   }
   
   .label {
@@ -647,23 +742,24 @@ export default {
   }
   
   .dropdown-display {
-    background-color: #3a3a3a;
-    border-color: #555555;
-    color: #ffffff;
+    background-color: #3a3a3a !important;
+    border-color: #555555 !important;
+    color: #ffffff !important;
   }
   
   .dropdown-content {
-    background-color: #3a3a3a;
-    border-color: #555555;
+    background-color: #3a3a3a !important;
+    border-color: #555555 !important;
   }
   
   .dropdown-item {
-    color: #ffffff;
-    border-bottom-color: #555555;
+    color: #ffffff !important;
+    border-bottom-color: #555555 !important;
+    background-color: #3a3a3a !important;
   }
   
   .dropdown-item:hover {
-    background-color: #4a4a4a;
+    background-color: #4a4a4a !important;
   }
   
   .placeholder {
@@ -674,8 +770,24 @@ export default {
     color: #ffffff;
   }
   
-  .page-title {
-    color: #ffffff !important;
+  /* Team colors for dark mode - più visibili */
+  .rossi-text {
+    color: #FF6B6B !important;
+  }
+  .verdi-text {
+    color: #51CF66 !important;
+  }
+  .arancioni-text {
+    color: #FF922B !important;
+  }
+  .blu-text {
+    color: #74C0FC !important;
+  }
+  .fucsia-text {
+    color: #F06292 !important;
+  }
+  .gialli-text {
+    color: #FFD43B !important;
   }
 }
 
@@ -745,7 +857,7 @@ export default {
   }
   
   .dropdown-content {
-    max-height: 200px;
+    max-height: 200px !important;
   }
 }
 
