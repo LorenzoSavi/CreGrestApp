@@ -18,7 +18,24 @@
 
   <section class="section">
     <div class="container">
-      <table class="table is-fullwidth is-bordered is-striped is-hoverable">
+      <!-- Mobile: Card layout per squadre -->
+      <div class="is-hidden-tablet mobile-teams-grid">
+        <div v-for="(team, index) in sortedTeams" :key="team.id" class="team-card" :class="team.id + '-card'">
+          <div class="team-card-header">
+            <span class="team-position">
+              <span v-if="index === 0" class="medal gold">🥇</span>
+              <span v-else-if="index === 1" class="medal silver">🥈</span>
+              <span v-else-if="index === 2" class="medal bronze">🥉</span>
+              <span v-else class="position">#{{ index + 1 }}</span>
+            </span>
+            <span class="team-name" :class="team.id + '-text'">{{ team.name }}</span>
+          </div>
+          <div class="team-points">{{ team.points }}</div>
+        </div>
+      </div>
+
+      <!-- Desktop: Tabella tradizionale -->
+      <table class="table is-fullwidth is-bordered is-striped is-hoverable is-hidden-mobile">
         <thead>
           <tr>
             <th>Posizione</th>
@@ -55,7 +72,40 @@
         </header>
         <div class="card-content">
           <form @submit.prevent="addPoints">
-            <div class="columns">
+            <!-- Mobile: Layout verticale -->
+            <div class="mobile-form is-hidden-tablet">
+              <div class="field">
+                <label class="label">Select Team:</label>
+                <div class="control">
+                  <div class="select is-fullwidth is-large">
+                    <select v-model="selectedTeam">
+                      <option value="">Scegli un team...</option>
+                      <option v-for="team in teams" :key="team.id" :value="team.id" :class="['has-text-weight-bold', team.id + '-text']">{{ team.name }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">Select Game:</label>
+                <div class="control">
+                  <div class="select is-fullwidth is-large">
+                    <select v-model="selectedGame">
+                      <option value="">Scegli un gioco...</option>
+                      <option v-for="game in games" :key="game.id" :value="game.id">{{ game.name }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">Points:</label>
+                <div class="control">
+                  <input class="input is-large" type="number" v-model.number="pointsToAdd" min="0" step="1" pattern="[0-9]*" inputmode="numeric" placeholder="0">
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop: Layout orizzontale -->
+            <div class="columns is-hidden-mobile">
               <div class="column">
                 <div class="field">
                   <label class="label">Select Team:</label>
@@ -63,7 +113,7 @@
                     <div class="select is-fullwidth">
                       <select v-model="selectedTeam">
                         <option value="">Scegli un team...</option>
-                        <option v-for="team in teams" :key="team.id" :value="team.id" :class="['has-text-weight-bold', team.id + '-text',{ 'bianchi-text-light': shouldTextBeBlack(team) }]">{{ team.name }}</option>
+                        <option v-for="team in teams" :key="team.id" :value="team.id" :class="['has-text-weight-bold', team.id + '-text']">{{ team.name }}</option>
                       </select>
                     </div>
                   </div>
@@ -91,9 +141,10 @@
                 </div>
               </div>
             </div>
+
             <div class="field">
               <div class="control">
-                <button type="submit" class="button is-primary is-fullwidth" :class="{ 'is-loading': isLoading }">
+                <button type="submit" class="button is-primary is-fullwidth is-large" :class="{ 'is-loading': isLoading }">
                   <span class="icon">
                     <i class="fas fa-plus"></i>
                   </span>
@@ -125,7 +176,27 @@
           </p>
         </header>
         <div class="card-content">
-          <div class="table-container">
+          <!-- Mobile: Lista compatta -->
+          <div class="mobile-history is-hidden-tablet">
+            <div v-for="(entry, index) in sortedHistory.slice(0, 50)" :key="entry.timestamp" class="history-item" :class="{ 'recent-entry': index < 3 }">
+              <div class="history-header">
+                <span class="history-date">{{ formatDate(entry.timestamp) }}</span>
+                <span class="history-points" :class="{ 'is-positive': entry.points > 0, 'is-negative': entry.points < 0 }">
+                  {{ entry.points > 0 ? '+' : '' }}{{ entry.points }}
+                </span>
+              </div>
+              <div class="history-details">
+                <span class="history-team" :class="entry.team + '-text'">{{ entry.team }}</span>
+                <span class="history-separator">•</span>
+                <span class="history-game">{{ entry.game }}</span>
+                <span class="history-separator">•</span>
+                <span class="history-user">{{ entry.username }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desktop: Tabella completa -->
+          <div class="table-container is-hidden-mobile">
             <table class="table is-fullwidth is-bordered is-striped is-hoverable is-narrow">
               <thead>
                 <tr>
@@ -473,122 +544,239 @@ export default {
   background-color: #f5f5f5;
 }
 
-/* Colori squadre - FORZA I COLORI NELLA TABELLA */
-.table .rossi-text, .table .rossi-text strong {
-  color: #FF0000 !important;
-  font-weight: 900 !important;
-}
-.table .verdi-text, .table .verdi-text strong {
-  color: #228B22 !important;
-  font-weight: 900 !important;
-}
-.table .arancioni-text, .table .arancioni-text strong {
-  color: #FFA500 !important;
-  font-weight: 900 !important;
-}
-.table .blu-text, .table .blu-text strong {
-  color: #40E0D0 !important;
-  font-weight: 900 !important;
-}
-.table .fucsia-text, .table .fucsia-text strong {
-  color: #FF00FF !important;
-  font-weight: 900 !important;
-}
-.table .gialli-text, .table .gialli-text strong {
-  color: #DAA520 !important;
-  font-weight: 900 !important;
-}
-
-.rossi-row, .rossi-text {
-  color: #FF0000 !important;
+/* Colori squadre corretti */
+.rossi-text, .rossi-text strong, .table .rossi-text, .table .rossi-text strong {
+  color: #DC3545 !important;
   font-weight: bold !important;
 }
-.verdi-row, .verdi-text {
-  color: #228B22 !important;
+.verdi-text, .verdi-text strong, .table .verdi-text, .table .verdi-text strong {
+  color: #28A745 !important;
   font-weight: bold !important;
 }
-.arancioni-row, .arancioni-text {
-  color: #FFA500 !important;
+.arancioni-text, .arancioni-text strong, .table .arancioni-text, .table .arancioni-text strong {
+  color: #FD7E14 !important;
   font-weight: bold !important;
 }
-.blu-row, .blu-text {
-  color: #40E0D0 !important;
+.blu-text, .blu-text strong, .table .blu-text, .table .blu-text strong {
+  color: #007BFF !important;
   font-weight: bold !important;
 }
-.fucsia-row, .fucsia-text {
-  color: #FF00FF !important;
+.fucsia-text, .fucsia-text strong, .table .fucsia-text, .table .fucsia-text strong {
+  color: #E83E8C !important;
   font-weight: bold !important;
 }
-.gialli-row, .gialli-text {
-  color: #DAA520 !important;
+.gialli-text, .gialli-text strong, .table .gialli-text, .table .gialli-text strong {
+  color: #FFC107 !important;
   font-weight: bold !important;
 }
 
-/* Forza grassetto per i nomi team nella tabella */
-.table td strong {
-  font-weight: 900 !important;
-}
-
-.table td.has-text-weight-bold {
-  font-weight: 900 !important;
-}
-
-.card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border: none;
+/* Mobile team cards */
+.mobile-teams-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.card-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px 12px 0 0;
+.team-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card-header-title {
-  color: #495057;
-  font-weight: 600;
+.team-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-.medal {
-  font-size: 1.5rem;
-  display: inline-block;
+.team-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-.position {
+.team-position {
+  font-size: 1.2rem;
+  min-width: 2rem;
+}
+
+.team-name {
+  font-size: 1.3rem;
   font-weight: bold;
-  color: #6c757d;
 }
 
-.recent-entry {
-  background-color: #e3f2fd !important;
-  animation: highlight 2s ease-in-out;
+.team-points {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #363636;
 }
 
-.notification {
+/* Border colors per le card */
+.rossi-card { border-left-color: #DC3545; }
+.verdi-card { border-left-color: #28A745; }
+.arancioni-card { border-left-color: #FD7E14; }
+.blu-card { border-left-color: #007BFF; }
+.fucsia-card { border-left-color: #E83E8C; }
+.gialli-card { border-left-color: #FFC107; }
+
+/* Mobile form improvements */
+.mobile-form .field {
+  margin-bottom: 1.5rem;
+}
+
+.mobile-form .select.is-large select {
+  font-size: 1.1rem;
+  padding: 1rem;
+  height: auto;
+  min-height: 3.5rem;
+}
+
+.mobile-form .input.is-large {
+  font-size: 1.1rem;
+  padding: 1rem;
+  height: auto;
+  min-height: 3.5rem;
+}
+
+/* Mobile history */
+.mobile-history {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.history-item {
+  background: white;
   border-radius: 8px;
-  border: none;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
 }
 
-.columns {
-  margin-bottom: 0;
+.history-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-@keyframes highlight {
-  0% { background-color: #bbdefb; }
-  100% { background-color: #e3f2fd; }
+.history-item.recent-entry {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
 }
 
-.button.is-info {
-  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-  border: none;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
-.button.is-info:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+.history-date {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.history-points {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.history-points.is-positive {
+  color: #28a745;
+}
+
+.history-points.is-negative {
+  color: #dc3545;
+}
+
+.history-details {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.history-team {
+  font-weight: bold;
+}
+
+.history-separator {
+  color: #999;
+}
+
+.history-game {
+  font-style: italic;
+  color: #666;
+}
+
+.history-user {
+  color: #666;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+  .level {
+    flex-direction: row !important;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0 1rem;
+  }
+  
+  .page-title {
+    font-size: 1.8rem !important;
+  }
+  
+  .section {
+    padding: 1rem;
+  }
+  
+  .button.is-danger.is-small span:not(.icon) {
+    display: none;
+  }
+  
+  .card {
+    margin-bottom: 1.5rem;
+  }
+  
+  .card-content {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.5rem !important;
+  }
+  
+  .section {
+    padding: 0.75rem;
+  }
+  
+  .team-card {
+    padding: 1rem;
+  }
+  
+  .team-name {
+    font-size: 1.1rem;
+  }
+  
+  .team-points {
+    font-size: 1.5rem;
+  }
+  
+  .card-content {
+    padding: 1rem;
+  }
+  
+  .history-item {
+    padding: 0.75rem;
+  }
 }
 
 /* Dark mode support */
@@ -598,11 +786,7 @@ export default {
     color: #ffffff;
   }
   
-  .title {
-    color: #ffffff;
-  }
-  
-  .page-title {
+  .title, .page-title {
     color: #ffffff !important;
   }
   
@@ -610,24 +794,13 @@ export default {
     color: #ffffff;
   }
   
-  .select select {
+  .select select, .input {
     background-color: #3a3a3a;
     border-color: #555555;
     color: #ffffff;
   }
   
-  .select select:focus {
-    background-color: #404040;
-    border-color: #667eea;
-  }
-  
-  .input {
-    background-color: #3a3a3a;
-    border-color: #555555;
-    color: #ffffff;
-  }
-  
-  .input:focus {
+  .select select:focus, .input:focus {
     background-color: #404040;
     border-color: #667eea;
   }
@@ -649,27 +822,14 @@ export default {
     border-color: #555555;
   }
   
-  .table.is-striped tbody tr:nth-child(even) {
-    background-color: #353535;
-  }
-  
   .table.is-striped tbody tr:nth-child(even) td {
     background-color: #353535;
-  }
-  
-  .table.is-hoverable tbody tr:hover {
-    background-color: #404040;
   }
   
   .table.is-hoverable tbody tr:hover td {
     background-color: #404040;
   }
   
-  .bianchi-text {
-    color: #CCCCCC !important;
-    font-weight: 900 !important;
-  }
-
   .card {
     background-color: #2d2d2d;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
@@ -683,112 +843,53 @@ export default {
     color: #ffffff;
   }
   
-  .recent-entry {
-    background-color: #1e3a5f !important;
+  .team-card {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
-  .notification {
-    border: 1px solid #555555;
-  }
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .level {
-    flex-direction: row !important;
-    align-items: center;
-    margin-bottom: 0.75rem;
+  .team-points {
+    color: #ffffff;
   }
   
-  .page-title {
-    font-size: 1.8rem !important;
+  .history-item {
+    background-color: #2d2d2d;
+    border-color: #555555;
+    color: #ffffff;
   }
   
-  .section {
-    padding: 0.75rem;
+  .history-item.recent-entry {
+    background-color: #1e3a5f;
+    border-color: #2196f3;
   }
   
-  .field {
-    margin-bottom: 1.25rem;
+  .history-date, .history-game, .history-user {
+    color: #cccccc;
   }
   
-  .label {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
+  .history-separator {
+    color: #999;
   }
   
-  .select select {
-    padding: 0.625rem 0.75rem;
-    font-size: 1rem;
-    line-height: 1.3;
-    width: 100%;
-    min-height: 2.5rem;
+  /* Colori squadre per dark mode - più visibili */
+  .rossi-text, .rossi-text strong, .table .rossi-text, .table .rossi-text strong {
+    color: #FF6B6B !important;
   }
-  
-  .input {
-    padding: 0.625rem 0.75rem;
-    font-size: 1rem;
+  .verdi-text, .verdi-text strong, .table .verdi-text, .table .verdi-text strong {
+    color: #51CF66 !important;
   }
-  
-  .button.is-danger.is-small, .button.is-info.is-small {
-    padding: 0.5rem 0.75rem;
+  .arancioni-text, .arancioni-text strong, .table .arancioni-text, .table .arancioni-text strong {
+    color: #FF922B !important;
   }
-  
-  .button.is-danger.is-small span:not(.icon), .button.is-info.is-small span:not(.icon) {
-    display: none;
+  .blu-text, .blu-text strong, .table .blu-text, .table .blu-text strong {
+    color: #74C0FC !important;
   }
-  
-  .table-container {
-    width: 100%;
-    overflow-x: auto;
+  .fucsia-text, .fucsia-text strong, .table .fucsia-text, .table .fucsia-text strong {
+    color: #F06292 !important;
   }
-  
-  .table th, .table td {
-    white-space: nowrap;
-    font-size: 0.9rem;
-    padding: 0.75rem 0.5rem;
+  .gialli-text, .gialli-text strong, .table .gialli-text, .table .gialli-text strong {
+    color: #FFD43B !important;
   }
-  
-  .columns {
-    display: block;
-  }
-  
-  .column {
-    width: 100% !important;
-    margin-bottom: 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .page-title {
-    font-size: 1.5rem !important;
-  }
-  
-  .table th, .table td {
-    font-size: 0.85rem;
-    padding: 0.5rem 0.25rem;
-  }
-  
-  .select select {
-    padding: 0.75rem;
-    font-size: 1rem;
-    min-height: 2.75rem;
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  .table .bianchi-text-light, .table .bianchi-text-light strong {
-    color: #000000 !important;
-    font-weight: 900 !important;
-  }
-
-  .bianchi-text-light {
-    color: #000000 !important;
-    font-weight: bold !important;
-  }
-  .table .bianchi-text, .table .bianchi-text strong {
-  color: #585858 !important;
-  font-weight: 900 !important;
-}
 }
 </style>
