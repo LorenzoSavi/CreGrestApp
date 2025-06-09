@@ -115,7 +115,7 @@ export default {
             localStorage.removeItem('loggedInUser');
           }
           
-          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
+          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone', 'DonGio',  'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
           if (specialUsers.includes(user.username)) {
             this.$router.push('/total-point');
           } else {
@@ -137,7 +137,7 @@ export default {
       }
       
       if (loggedInUser) {
-        const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
+          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone', 'DonGio',  'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
 
         if (specialUsers.includes(loggedInUser.username)) {
           this.$router.push('/total-point');

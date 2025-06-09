@@ -37,8 +37,16 @@
   <section class="section">
     <div class="container">
       <!-- Mobile: Card layout per squadre -->
-      <div class="is-hidden-tablet mobile-teams-grid">
-        <div v-for="(team, index) in sortedTeams" :key="team.id" class="team-card" :class="team.id + '-card'">
+      <div class="is-hidden-tablet mobile-teams-grid" :class="{ 'restricted-content': isRestrictedUser }">
+        <div v-if="isRestrictedUser" class="restriction-overlay">
+          <div class="restriction-message">
+            <i class="fas fa-lock restriction-icon"></i>
+            <h3 class="restriction-title">Classifica Riservata</h3>
+            <p class="restriction-text">La visualizzazione dei punteggi è limitata per il tuo ruolo</p>
+          </div>
+        </div>
+        
+        <div v-for="(team, index) in sortedTeams" :key="team.id" class="team-card" :class="[team.id + '-card', { 'blurred-card': isRestrictedUser }]">
           <div class="team-card-header">
             <span class="team-position">
               <span v-if="index === 0" class="medal gold">🥇</span>
@@ -53,29 +61,39 @@
       </div>
 
       <!-- Desktop: Tabella tradizionale -->
-      <table class="table is-fullwidth is-bordered is-striped is-hoverable is-hidden-mobile">
-        <thead>
-          <tr>
-            <th>Posizione</th>
-            <th>Team</th>
-            <th>Points</th>
-          </tr>
-        </thead>
-        <tbody :key="teams">
-          <tr v-for="(team, index) in sortedTeams" :key="team.id" :class="team.id + '-row'">
-            <td class="has-text-centered">
-              <span v-if="index === 0" class="medal gold">🥇</span>
-              <span v-else-if="index === 1" class="medal silver">🥈</span>
-              <span v-else-if="index === 2" class="medal bronze">🥉</span>
-              <span v-else class="position">#{{ index + 1 }}</span>
-            </td>
-            <td :class="['has-text-weight-bold', team.id + '-text']">
-              <strong>{{ team.name }}</strong>
-            </td>
-            <td class="has-text-weight-bold">{{ team.points }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-wrapper is-hidden-mobile" :class="{ 'restricted-content': isRestrictedUser }">
+        <div v-if="isRestrictedUser" class="restriction-overlay">
+          <div class="restriction-message">
+            <i class="fas fa-lock restriction-icon"></i>
+            <h3 class="restriction-title">Classifica Riservata</h3>
+            <p class="restriction-text">La visualizzazione dei punteggi è limitata per il tuo ruolo</p>
+          </div>
+        </div>
+        
+        <table class="table is-fullwidth is-bordered is-striped is-hoverable" :class="{ 'blurred-table': isRestrictedUser }">
+          <thead>
+            <tr>
+              <th>Posizione</th>
+              <th>Team</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody :key="teams">
+            <tr v-for="(team, index) in sortedTeams" :key="team.id" :class="team.id + '-row'">
+              <td class="has-text-centered">
+                <span v-if="index === 0" class="medal gold">🥇</span>
+                <span v-else-if="index === 1" class="medal silver">🥈</span>
+                <span v-else-if="index === 2" class="medal bronze">🥉</span>
+                <span v-else class="position">#{{ index + 1 }}</span>
+              </td>
+              <td :class="['has-text-weight-bold', team.id + '-text']">
+                <strong>{{ team.name }}</strong>
+              </td>
+              <td class="has-text-weight-bold">{{ team.points }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -278,6 +296,7 @@
                     {{ entry.points > 0 ? '+' : '' }}{{ entry.points }}
                   </span>
                   <button 
+                    v-if="canDeleteEntries"
                     @click="deleteHistoryEntry(entry, index)" 
                     class="delete-btn"
                     :class="{ 'is-loading': deletingIndex === index }"
@@ -285,6 +304,9 @@
                   >
                     <i class="fas fa-trash"></i>
                   </button>
+                  <span v-else class="delete-btn-disabled" title="Funzione non disponibile per il tuo ruolo">
+                    <i class="fas fa-lock"></i>
+                  </span>
                 </div>
               </div>
               <div class="history-details">
@@ -319,6 +341,7 @@
                   <td class="has-text-weight-bold">{{ entry.points > 0 ? '+' : '' }}{{ entry.points }}</td>
                   <td>
                     <button 
+                      v-if="canDeleteEntries"
                       @click="deleteHistoryEntry(entry, index)" 
                       class="button is-danger is-small delete-btn-table"
                       :class="{ 'is-loading': deletingIndex === index }"
@@ -328,6 +351,11 @@
                         <i class="fas fa-trash"></i>
                       </span>
                     </button>
+                    <span v-else class="button is-light is-small delete-btn-disabled-table" title="Funzione non disponibile per il tuo ruolo">
+                      <span class="icon is-small">
+                        <i class="fas fa-lock"></i>
+                      </span>
+                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -535,7 +563,9 @@ export default {
       deletingIndex: null,
       showDeleteModal: false,
       entryToDelete: null,
-      deletingEntry: false
+      deletingEntry: false,
+      // Lista utenti con accesso limitato
+      restrictedUsers: ['FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone']
     };
   },
   computed: {
@@ -548,6 +578,19 @@ export default {
         const timeB = b.timestamp.seconds || new Date(b.timestamp).getTime() / 1000;
         return timeB - timeA; // Dal più recente al più vecchio
       });
+    },
+    currentUser() {
+      let user = JSON.parse(localStorage.getItem('loggedInUser'));
+      if (!user) {
+        user = JSON.parse(sessionStorage.getItem('loggedInUser'));
+      }
+      return user;
+    },
+    isRestrictedUser() {
+      return this.currentUser && this.restrictedUsers.includes(this.currentUser.username);
+    },
+    canDeleteEntries() {
+      return !this.isRestrictedUser;
     }
   },
   async created() {
@@ -1036,6 +1079,136 @@ export default {
 .custom-dropdown .selected-team.fucsia-text { color: #E83E8C !important; }
 .custom-dropdown .selected-team.gialli-text { color: #FFC107 !important; }
 
+/* Restriction overlay styles - ADDED ONLY THESE */
+.table-wrapper {
+  position: relative;
+}
+
+.mobile-teams-grid {
+  position: relative;
+}
+
+.restricted-content {
+  position: relative;
+}
+
+.restriction-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000 !important;
+  border-radius: 12px;
+  pointer-events: all;
+  min-height: 300px;
+}
+
+.restriction-message {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  border: 3px solid #dc3545;
+  max-width: 400px;
+  animation: restrictionPulse 0.6s ease-out;
+  z-index: 1001;
+  position: relative;
+}
+
+@keyframes restrictionPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.restriction-icon {
+  font-size: 4rem;
+  color: #dc3545;
+  margin-bottom: 1rem;
+  animation: lockShake 2s infinite;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes lockShake {
+  0%, 50%, 100% {
+    transform: rotate(0deg);
+  }
+  10%, 30% {
+    transform: rotate(-5deg);
+  }
+  20%, 40% {
+    transform: rotate(5deg);
+  }
+}
+
+.restriction-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #dc3545;
+  margin-bottom: 0.8rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.restriction-text {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* Blurred content styles - ADDED ONLY THESE */
+.blurred-card {
+  filter: blur(8px) !important;
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.blurred-table {
+  filter: blur(8px) !important;
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Mobile teams grid specific styling - ADDED ONLY THESE */
+.mobile-teams-grid.restricted-content {
+  min-height: 400px;
+}
+
+.mobile-teams-grid .restriction-overlay {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  min-height: 400px;
+}
+
+/* Desktop table specific styling - ADDED ONLY THESE */
+.table-wrapper.restricted-content {
+  min-height: 300px;
+}
+
+.table-wrapper .restriction-overlay {
+  min-height: 300px;
+}
+
 /* Mobile team cards */
 .mobile-teams-grid {
   display: grid;
@@ -1276,6 +1449,38 @@ export default {
   .history-actions {
     gap: 0.25rem;
   }
+  
+  /* Restriction mobile adjustments - ADDED ONLY THESE */
+  .restriction-overlay {
+    min-height: 350px;
+  }
+  
+  .mobile-teams-grid.restricted-content {
+    min-height: 350px;
+  }
+  
+  .mobile-teams-grid .restriction-overlay {
+    min-height: 350px;
+  }
+  
+  .restriction-message {
+    padding: 1.5rem;
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+    border-width: 2px;
+  }
+  
+  .restriction-icon {
+    font-size: 3rem;
+  }
+  
+  .restriction-title {
+    font-size: 1.4rem;
+  }
+  
+  .restriction-text {
+    font-size: 1rem;
+  }
 }
 
 /* Mobile responsive improvements */
@@ -1345,6 +1550,36 @@ export default {
   
   .history-actions {
     gap: 0.25rem;
+  }
+  
+  /* Restriction smallest mobile adjustments - ADDED ONLY THESE */
+  .restriction-overlay {
+    min-height: 300px;
+  }
+  
+  .mobile-teams-grid.restricted-content {
+    min-height: 300px;
+  }
+  
+  .mobile-teams-grid .restriction-overlay {
+    min-height: 300px;
+  }
+  
+  .restriction-message {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  
+  .restriction-icon {
+    font-size: 2.5rem;
+  }
+  
+  .restriction-title {
+    font-size: 1.2rem;
+  }
+  
+  .restriction-text {
+    font-size: 0.9rem;
   }
 }
 
@@ -1492,6 +1727,42 @@ export default {
   
   .delete-btn.is-loading::after {
     border-top-color: #ff6b6b;
+  }
+  
+  /* Dark mode for restrictions - ADDED ONLY THESE */
+  .restriction-overlay {
+    background: rgba(42, 42, 42, 0.98);
+  }
+  
+  .mobile-teams-grid .restriction-overlay {
+    background: rgba(42, 42, 42, 0.98);
+  }
+  
+  .restriction-message {
+    background: #2d2d2d;
+    border-color: #ff6b6b;
+    color: #ffffff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+  
+  .restriction-icon {
+    color: #ff6b6b;
+  }
+  
+  .restriction-title {
+    color: #ff6b6b;
+  }
+  
+  .restriction-text {
+    color: #e9ecef;
+  }
+  
+  .delete-btn-disabled {
+    color: #888888;
+  }
+  
+  .delete-btn-disabled-table .icon {
+    color: #888888 !important;
   }
 }
 
