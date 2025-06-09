@@ -87,59 +87,63 @@ export default {
   methods: {
     async login() {
       try {
-        const response = await fetch('/credentials.json');
+        // Chiama la funzione serverless invece del file JSON
+        const response = await fetch('/.netlify/functions/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: this.username,
+            password: this.password
+          })
+        });
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const credentials = await response.json();
+
+        const result = await response.json();
         
-        const user = credentials.find(
-          user => user.username === this.username && user.password === this.password
-        );
-        
-        if (user) {
+        if (result.success) {
           // Salva l'utente con informazioni sulla sessione
           const userSession = {
-            ...user,
+            username: result.user.username,
+            isAdmin: result.user.isAdmin,
             rememberMe: this.rememberMe,
             loginTime: new Date().getTime()
           };
           
           if (this.rememberMe) {
-            // Salva in localStorage per sessioni persistenti
             localStorage.setItem('loggedInUser', JSON.stringify(userSession));
           } else {
-            // Salva in sessionStorage per sessioni temporanee
             sessionStorage.setItem('loggedInUser', JSON.stringify(userSession));
-            // Rimuovi da localStorage se esistente
             localStorage.removeItem('loggedInUser');
           }
           
-          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone', 'DonGio',  'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
-          if (specialUsers.includes(user.username)) {
+          // Redirect basato sul ruolo
+          if (result.user.isAdmin) {
             this.$router.push('/total-point');
           } else {
             this.$router.push('/add-point');
           }
         } else {
-          this.error = 'Invalid credentials';
+          this.error = 'Credenziali non valide';
         }
       } catch (error) {
-        this.error = `An error occurred: ${error.message}`;
+        console.error('Login error:', error);
+        this.error = `Errore durante il login: ${error.message}`;
       }
     },
     
     checkExistingSession() {
-      // Controlla prima localStorage, poi sessionStorage
       let loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
       if (!loggedInUser) {
         loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
       }
       
       if (loggedInUser) {
-          const specialUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone', 'DonGio',  'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
-
-        if (specialUsers.includes(loggedInUser.username)) {
+        if (loggedInUser.isAdmin) {
           this.$router.push('/total-point');
         } else {
           this.$router.push('/add-point');

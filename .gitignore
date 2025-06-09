@@ -6,6 +6,12 @@ node_modules
 # local env files
 .env.local
 .env.*.local
+.env
+.env.production
+
+# Credentials (IMPORTANT!)
+credentials.json
+public/credentials.json
 
 # Log files
 npm-debug.log*
