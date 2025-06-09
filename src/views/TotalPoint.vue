@@ -34,6 +34,20 @@
     </div>
   </div>
 
+  <!-- Special Inter Animation for DonGio -->
+  <div v-if="showInterAnimation" class="inter-animation-overlay">
+    <div class="inter-animation-container">
+      <div class="inter-logo">
+        <div class="inter-text">INTER</div>
+        <div class="inter-subtitle">FORZA INTER! 🖤💙</div>
+        <div class="inter-stars">⭐⭐⭐</div>
+      </div>
+      <div class="inter-message">
+        Bentornato campione nerazzurro! 
+      </div>
+    </div>
+  </div>
+
   <section class="section">
     <div class="container">
       <!-- Mobile: Card layout per squadre -->
@@ -565,7 +579,9 @@ export default {
       entryToDelete: null,
       deletingEntry: false,
       // Lista utenti con accesso limitato
-      restrictedUsers: ['FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone']
+      restrictedUsers: ['FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone'],
+      // Inter animation for DonGio
+      showInterAnimation: false
     };
   },
   computed: {
@@ -591,11 +607,33 @@ export default {
     },
     canDeleteEntries() {
       return !this.isRestrictedUser;
+    },
+    isDonGio() {
+      return this.currentUser && this.currentUser.username === 'DonGio';
     }
   },
   async created() {
     await this.fetchTeamPoints();
     await this.fetchPointsHistory();
+    
+    // Show Inter animation for DonGio with fade in/out
+    if (this.isDonGio) {
+      this.showInterAnimation = true;
+      
+      // Hide animation after 3.5 seconds with fade out
+      setTimeout(() => {
+        // Add fade out class
+        const overlay = document.querySelector('.inter-animation-overlay');
+        if (overlay) {
+          overlay.classList.add('fade-out');
+        }
+        
+        // Remove from DOM after fade out completes
+        setTimeout(() => {
+          this.showInterAnimation = false;
+        }, 800); // Wait for fade out animation to complete
+      }, 3500);
+    }
   },
   mounted() {
     // Debug: stampa lo stato dei dropdown
@@ -2210,7 +2248,7 @@ export default {
 }
 
 .warning-content {
-  display: flex;
+   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
 }
@@ -2433,6 +2471,333 @@ export default {
   .tag.is-medium {
     font-size: 0.8rem;
     height: 1.75rem;
+  }
+}
+
+/* Inter Animation Styles for DonGio */
+.inter-animation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, #000000 0%, #0066cc 50%, #000000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  animation: interFadeIn 0.8s ease-out;
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+/* Fade in animation */
+@keyframes interFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Fade out class */
+.inter-animation-overlay.fade-out {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.8s ease-in, transform 0.8s ease-in;
+}
+
+.inter-animation-container {
+  text-align: center;
+  color: white;
+  animation: interBounce 2s ease-in-out infinite alternate;
+  transition: transform 0.8s ease-out;
+}
+
+/* Enhanced bounce animation */
+@keyframes interBounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(-15px) scale(1.03);
+  }
+}
+
+.inter-logo {
+  margin-bottom: 2rem;
+  animation: interGlow 2s ease-in-out infinite alternate;
+  transition: all 0.8s ease-out;
+}
+
+@keyframes interGlow {
+  0% {
+    text-shadow: 0 0 20px #0066cc, 0 0 30px #0066cc, 0 0 40px #0066cc;
+    filter: brightness(1);
+  }
+  100% {
+    text-shadow: 0 0 30px #00aaff, 0 0 50px #00aaff, 0 0 70px #00aaff;
+    filter: brightness(1.2);
+  }
+}
+
+.inter-text {
+  font-size: 6rem;
+  font-weight: 900;
+  letter-spacing: 0.5rem;
+  background: linear-gradient(45deg, #0066cc, #00aaff, #ffffff, #00aaff, #0066cc);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: interGradient 3s ease-in-out infinite, interTextPulse 4s ease-in-out infinite;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 50px rgba(0, 170, 255, 0.8);
+  transition: all 0.8s ease-out;
+}
+
+@keyframes interGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* New text pulse animation */
+@keyframes interTextPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.05);
+  }
+  75% {
+    transform: scale(0.98);
+  }
+}
+
+.inter-subtitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #00aaff;
+  animation: interPulse 1.5s ease-in-out infinite, interSubtitleSlide 1s ease-out 0.3s both;
+  transition: all 0.8s ease-out;
+}
+
+@keyframes interPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+/* Subtitle slide in animation */
+@keyframes interSubtitleSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.inter-stars {
+  font-size: 3rem;
+  margin-bottom: 2rem;
+  animation: interRotate 4s linear infinite, interStarsZoom 1.2s ease-out 0.6s both;
+  transition: all 0.8s ease-out;
+}
+
+@keyframes interRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Stars zoom in animation */
+@keyframes interStarsZoom {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(180deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(270deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(360deg);
+  }
+}
+
+.inter-message {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(0, 102, 204, 0.3);
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  border: 2px solid #0066cc;
+  box-shadow: 0 0 30px rgba(0, 102, 204, 0.5);
+  animation: interMessageSlide 1s ease-out 1s both, interMessageGlow 3s ease-in-out infinite;
+  transition: all 0.8s ease-out;
+}
+
+@keyframes interMessageSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Message glow animation */
+@keyframes interMessageGlow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(0, 102, 204, 0.5);
+    border-color: #0066cc;
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(0, 170, 255, 0.8);
+    border-color: #00aaff;
+  }
+}
+
+/* Enhanced fade out effects for all elements */
+.inter-animation-overlay.fade-out .inter-animation-container {
+  transform: translateY(30px) scale(0.9);
+  opacity: 0.8;
+}
+
+.inter-animation-overlay.fade-out .inter-text {
+  transform: scale(0.8);
+  opacity: 0.6;
+}
+
+.inter-animation-overlay.fade-out .inter-subtitle {
+  transform: translateX(-30px);
+  opacity: 0.4;
+}
+
+.inter-animation-overlay.fade-out .inter-stars {
+  transform: rotate(180deg) scale(0.5);
+  opacity: 0.3;
+}
+
+.inter-animation-overlay.fade-out .inter-message {
+  transform: translateY(20px) scale(0.9);
+  opacity: 0.5;
+}
+
+/* Mobile adjustments for Inter animation */
+@media (max-width: 768px) {
+  .inter-text {
+    font-size: 4rem;
+    letter-spacing: 0.3rem;
+  }
+  
+  .inter-subtitle {
+    font-size: 1.5rem;
+  }
+  
+  .inter-stars {
+    font-size: 2rem;
+  }
+  
+  .inter-message {
+    font-size: 1.2rem;
+    padding: 0.75rem 1.5rem;
+    margin: 0 1rem;
+  }
+  
+  /* Mobile fade out adjustments */
+  .inter-animation-overlay.fade-out .inter-animation-container {
+    transform: translateY(20px) scale(0.95);
+  }
+  
+  .inter-animation-overlay.fade-out .inter-subtitle {
+    transform: translateX(-20px);
+  }
+  
+  .inter-animation-overlay.fade-out .inter-message {
+    transform: translateY(15px) scale(0.95);
+  }
+}
+
+@media (max-width: 480px) {
+  .inter-text {
+    font-size: 3rem;
+    letter-spacing: 0.2rem;
+  }
+  
+  .inter-subtitle {
+    font-size: 1.2rem;
+  }
+  
+  .inter-stars {
+    font-size: 1.5rem;
+  }
+  
+  .inter-message {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+  }
+  
+  /* Small mobile fade out adjustments */
+  .inter-animation-overlay.fade-out .inter-animation-container {
+    transform: translateY(15px) scale(0.95);
+  }
+  
+  .inter-animation-overlay.fade-out .inter-subtitle {
+    transform: translateX(-15px);
+  }
+  
+  .inter-animation-overlay.fade-out .inter-message {
+    transform: translateY(10px) scale(0.95);
+  }
+}
+
+/* Dark mode for Inter animation */
+@media (prefers-color-scheme: dark) {
+  .inter-animation-overlay {
+    background: linear-gradient(45deg, #000000 0%, #001a33 50%, #000000 100%);
+  }
+  
+  .inter-message {
+    background: rgba(0, 102, 204, 0.4);
+    border-color: #00aaff;
+    box-shadow: 0 0 30px rgba(0, 170, 255, 0.6);
+  }
+  
+  @keyframes interMessageGlow {
+    0%, 100% {
+      box-shadow: 0 0 30px rgba(0, 170, 255, 0.6);
+      border-color: #00aaff;
+    }
+    50% {
+      box-shadow: 0 0 50px rgba(0, 170, 255, 0.9);
+      border-color: #66d9ff;
+    }
   }
 }
 </style>
