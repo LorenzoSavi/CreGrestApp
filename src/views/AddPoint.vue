@@ -263,7 +263,7 @@ export default {
           { id: "calcetto", name: "Calcetto" }
         ]
       },
-      pointsOptions: [0, 20, 40, 80],
+      pointsOptions: [0, 20, 50, 100],
       error: ''
     };
   },
