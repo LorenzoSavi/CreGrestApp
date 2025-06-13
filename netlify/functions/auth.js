@@ -74,6 +74,7 @@ exports.handler = async (event, context) => {
       'Zehliaj.2527': process.env.ZEHLIAJ_2527_PASSWORD,
       'Zambelli.2528': process.env.ZAMBELLI_2528_PASSWORD,
       'Petrocelli.2529': process.env.PETROCELLI_2529_PASSWORD,
+      'Cattaneo.2531': process.env.CATTANEO_2531_PASSWORD,
       'Scalera.2530': process.env.SCALERA_2530_PASSWORD
     };
 
