@@ -75,7 +75,8 @@ exports.handler = async (event, context) => {
       'Zambelli.2528': process.env.ZAMBELLI_2528_PASSWORD,
       'Petrocelli.2529': process.env.PETROCELLI_2529_PASSWORD,
       'Cattaneo.2531': process.env.CATTANEO_2531_PASSWORD,
-      'Scalera.2530': process.env.SCALERA_2530_PASSWORD
+      'Scalera.2530': process.env.SCALERA_2530_PASSWORD,
+      'Utente.2545': process.env.UTENTE_2545_PASSWORD
     };
 
     const adminUsers = ['FraVita', 'savi', 'NicolaL.1004', 'FalcoCinese', 'AleVitali', 'BreVismara', 'FraTerrone', 'DonGio', 'fedeg', 'corti_sugo', 'meris', 'Lucaespo', 'DavideAnge'];
