@@ -1,189 +1,129 @@
 <template>
-  <!-- Header con titolo e bottone logout -->
-  <div class="level mb-3 px-3 pt-2">
-    <div class="level-left">
-      <h1 class="title is-2 page-title">Aggiungi Punti</h1>
-    </div>
-    <div class="level-right">
-      <button @click="handleLogout" class="button is-danger is-small">
-        <span class="icon is-small">
-          <i class="fas fa-sign-out-alt"></i>
-        </span>
-        <span class="is-hidden-mobile">Esci</span>
+  <!-- Header -->
+  <header class="ap-header">
+    <div class="ap-header-inner">
+      <div class="ap-brand">
+        <span class="ap-trophy">🏆</span>
+        <div>
+          <div class="ap-title">Aggiungi Punti</div>
+          <div class="ap-sub" v-if="currentUser">{{ currentUser.username }}</div>
+        </div>
+      </div>
+      <button @click="handleLogout" class="ap-logout" aria-label="Logout">
+        <i class="fas fa-sign-out-alt"></i>
       </button>
     </div>
-  </div>
+  </header>
 
-  <section class="section py-3">
-    <div class="container">
-      <form @submit.prevent="addPoints">
-        <div class="field" :class="{ 'dropdown-open': showTeamDropdown }">
-          <label class="label">Seleziona Squadra:</label>
-          <div class="control">
-            <div class="custom-dropdown" :class="{ 'is-active': showTeamDropdown }">
-              <div class="dropdown-trigger" @click="toggleTeamDropdown">
-                <div class="dropdown-display">
-                  <span v-if="selectedTeam" :class="[selectedTeam + '-text', 'selected-team']">
-                    {{ teams.find(t => t.id === selectedTeam)?.name }}
-                  </span>
-                  <span v-else class="placeholder">Scegli una squadra...</span>
-                  <span class="dropdown-icon">
-                    <i class="fas fa-chevron-down"></i>
-                  </span>
-                </div>
-              </div>
-              <div class="dropdown-menu" v-if="showTeamDropdown">
-                <div class="dropdown-content">
-                  <div 
-                    v-for="team in teams" 
-                    :key="team.id" 
-                    class="dropdown-item" 
-                    :class="[team.id + '-text', { 'is-active': selectedTeam === team.id }]"
-                    @click="selectTeam(team.id)"
-                  >
-                    {{ team.name }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="field" :class="{ 'dropdown-open': showCycleDropdown }">
-          <label class="label">Seleziona Ciclo:</label>
-          <div class="control">
-            <div class="custom-dropdown" :class="{ 'is-active': showCycleDropdown }">
-              <div class="dropdown-trigger" @click="toggleCycleDropdown">
-                <div class="dropdown-display">
-                  <span v-if="selectedCycle" class="selected-option">
-                    {{ getCycleName(selectedCycle) }}
-                  </span>
-                  <span v-else class="placeholder">Scegli un ciclo...</span>
-                  <span class="dropdown-icon">
-                    <i class="fas fa-chevron-down"></i>
-                  </span>
-                </div>
-              </div>
-              <div class="dropdown-menu" v-if="showCycleDropdown">
-                <div class="dropdown-content">
-                  <div 
-                    class="dropdown-item" 
-                    :class="{ 'is-active': selectedCycle === 'primo' }"
-                    @click="selectCycle('primo')"
-                  >
-                    Primo Ciclo
-                  </div>
-                  <div 
-                    class="dropdown-item" 
-                    :class="{ 'is-active': selectedCycle === 'secondo' }"
-                    @click="selectCycle('secondo')"
-                  >
-                    Secondo Ciclo
-                  </div>
-                  <div 
-                    class="dropdown-item" 
-                    :class="{ 'is-active': selectedCycle === 'terzo' }"
-                    @click="selectCycle('terzo')"
-                  >
-                    Terzo Ciclo
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="field" :class="{ 'dropdown-open': showGameDropdown, 'is-disabled': !selectedCycle }">
-          <label class="label">Seleziona Gioco:</label>
-          <div class="control">
-            <div class="custom-dropdown" :class="{ 'is-active': showGameDropdown, 'is-disabled': !selectedCycle }">
-              <div class="dropdown-trigger" @click="toggleGameDropdown">
-                <div class="dropdown-display">
-                  <span v-if="selectedGame" class="selected-option">
-                    {{ availableGames.find(g => g.id === selectedGame)?.name }}
-                  </span>
-                  <span v-else class="placeholder">
-                    {{ selectedCycle ? 'Scegli un gioco...' : 'Prima seleziona un ciclo' }}
-                  </span>
-                  <span class="dropdown-icon">
-                    <i class="fas fa-chevron-down"></i>
-                  </span>
-                </div>
-              </div>
-              <div class="dropdown-menu" v-if="showGameDropdown && selectedCycle">
-                <div class="dropdown-content">
-                  <div 
-                    v-for="game in availableGames" 
-                    :key="game.id" 
-                    class="dropdown-item" 
-                    :class="{ 'is-active': selectedGame === game.id }"
-                    @click="selectGame(game.id)"
-                  >
-                    {{ game.name }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="field" :class="{ 'dropdown-open': showPointsDropdown }">
-          <label class="label">Punti da Aggiungere:</label>
-          <div class="control">
-            <div class="custom-dropdown" :class="{ 'is-active': showPointsDropdown }">
-              <div class="dropdown-trigger" @click="togglePointsDropdown">
-                <div class="dropdown-display">
-                  <span v-if="pointsToAdd > 0" class="selected-option points-display">
-                    {{ pointsToAdd }} punti
-                  </span>
-                  <span v-else class="placeholder">Scegli i punti...</span>
-                  <span class="dropdown-icon">
-                    <i class="fas fa-chevron-down"></i>
-                  </span>
-                </div>
-              </div>
-              <div class="dropdown-menu" v-if="showPointsDropdown">
-                <div class="dropdown-content">
-                  <div 
-                    v-for="point in pointsOptions.filter(p => p > 0)" 
-                    :key="point" 
-                    class="dropdown-item points-item" 
-                    :class="{ 'is-active': pointsToAdd === point }"
-                    @click="selectPoints(point)"
-                  >
-                    {{ point }} punti
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <p v-if="error" class="has-text-danger has-text-centered mt-3 mb-4">{{ error }}</p>
-      </form>
-      
-      <!-- Bottone Add Points spostato in fondo alla pagina -->
-      <div class="add-button-section">
-        <button @click="addPoints" class="button is-primary is-fullwidth is-large">
-          <span class="icon">
-            <i class="fas fa-plus"></i>
-          </span>
-          <span>Aggiungi Punti</span>
-        </button>
-      </div>
+  <!-- STEP 1: Squadra -->
+  <section class="ap-section">
+    <div class="ap-section-label">1 — Squadra</div>
+    <div class="team-grid">
+      <button
+        v-for="team in teams"
+        :key="team.id"
+        type="button"
+        class="team-tile"
+        :class="[team.id + '-tile', { 'team-tile--active': selectedTeam === team.id }]"
+        @click="selectedTeam = team.id"
+      >
+        <span class="team-tile-dot" :class="team.id + '-dot'"></span>
+        <span class="team-tile-name">{{ team.name }}</span>
+        <span v-if="selectedTeam === team.id" class="team-tile-check">✓</span>
+      </button>
     </div>
   </section>
 
-  <!-- Modal overlay per messaggio di successo -->
-  <div v-if="showSuccessModal" class="modal-overlay" :class="{ closing: modalClosing }" :style="{ backgroundColor: overlayColor }">
-    <div class="success-modal">
-      <div class="success-icon">
-        <i class="fas fa-check-circle"></i>
-      </div>
-      <h3 class="success-title">Punti Aggiunti!</h3>
-      <p class="success-message">{{ successMessage }}</p>
+  <!-- STEP 2: Ciclo -->
+  <section class="ap-section">
+    <div class="ap-section-label">2 — Ciclo</div>
+    <div class="cycle-row">
+      <button
+        v-for="c in cycles"
+        :key="c.id"
+        type="button"
+        class="cycle-btn"
+        :class="{ 'cycle-btn--active': selectedCycle === c.id }"
+        @click="selectCycle(c.id)"
+      >
+        {{ c.name }}
+      </button>
     </div>
+  </section>
+
+  <!-- STEP 3: Gioco -->
+  <section class="ap-section" :class="{ 'ap-section--disabled': !selectedCycle }">
+    <div class="ap-section-label">3 — Gioco <span v-if="!selectedCycle" class="ap-hint">(seleziona prima il ciclo)</span></div>
+    <div class="game-list">
+      <button
+        v-for="game in availableGames"
+        :key="game.id"
+        type="button"
+        class="game-btn"
+        :class="{ 'game-btn--active': selectedGame === game.id }"
+        @click="selectedGame = game.id"
+      >
+        {{ game.name }}
+      </button>
+      <div v-if="!selectedCycle" class="game-placeholder">—</div>
+    </div>
+  </section>
+
+  <!-- STEP 4: Punti -->
+  <section class="ap-section">
+    <div class="ap-section-label">4 — Punti</div>
+    <div class="pts-quick">
+      <button
+        v-for="p in quickPoints"
+        :key="p"
+        type="button"
+        class="pts-quick-btn"
+        :class="{ 'pts-quick-btn--active': pointsToAdd === p }"
+        @click="pointsToAdd = p"
+      >{{ p }}</button>
+    </div>
+    <div class="pts-manual">
+      <button type="button" class="pts-stepper" @click="pointsToAdd = Math.max(0, pointsToAdd - 1)">−</button>
+      <input
+        class="pts-manual-input"
+        type="number"
+        v-model.number="pointsToAdd"
+        min="0"
+        inputmode="numeric"
+        placeholder="0"
+      />
+      <button type="button" class="pts-stepper" @click="pointsToAdd++">+</button>
+    </div>
+  </section>
+
+  <!-- ERRORE -->
+  <div v-if="error" class="ap-error">{{ error }}</div>
+
+  <!-- CTA fissa in basso -->
+  <div class="ap-cta">
+    <!-- Preview selezione -->
+    <div class="ap-preview" v-if="selectedTeam || selectedGame || pointsToAdd > 0">
+      <span v-if="selectedTeam" class="prev-tag" :class="selectedTeam + '-tag'">{{ teamName }}</span>
+      <span v-if="selectedCycle" class="prev-tag prev-tag--neutral">{{ cycleName }}</span>
+      <span v-if="selectedGame" class="prev-tag prev-tag--neutral">{{ gameName }}</span>
+      <span v-if="pointsToAdd > 0" class="prev-pts">+{{ pointsToAdd }} pt</span>
+    </div>
+    <button class="ap-submit" @click="addPoints" :disabled="isLoading">
+      <span v-if="!isLoading"><i class="fas fa-bolt"></i>&nbsp; Aggiungi Punti</span>
+      <span v-else><i class="fas fa-spinner fa-spin"></i>&nbsp; Salvataggio...</span>
+    </button>
   </div>
+
+  <!-- SUCCESS MODAL -->
+  <transition name="smodal">
+    <div v-if="showSuccessModal" class="success-overlay" :style="{ '--team-color': overlayColor }">
+      <div class="success-box">
+        <div class="success-emoji">🎉</div>
+        <div class="success-pts">+{{ lastPoints }} pt</div>
+        <div class="success-msg">{{ successMessage }}</div>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <script>
@@ -195,14 +135,7 @@ export default {
   name: 'AddPoint',
   setup() {
     const { logout } = useLogout()
-
-    const handleLogout = () => {
-      logout()
-    }
-
-    return {
-      handleLogout
-    }
+    return { handleLogout: logout }
   },
   data() {
     return {
@@ -210,787 +143,531 @@ export default {
       selectedCycle: '',
       selectedGame: '',
       pointsToAdd: 0,
+      lastPoints: 0,
       successMessage: '',
       showSuccessModal: false,
-      modalClosing: false,
-      overlayColor: '',
-      showTeamDropdown: false,
-      showCycleDropdown: false,
-      showGameDropdown: false,
-      showPointsDropdown: false,
+      overlayColor: '#667eea',
+      isLoading: false,
+      error: '',
       teams: [
-        { id: 'rossi', name: 'Rossi', points: 0, color: '#FF0000' },
-        { id: 'verdi', name: 'Verdi', points: 0, color: '#008000' },
-        { id: 'arancioni', name: 'Arancioni', points: 0, color: '#FFA500' },
-        { id: 'blu', name: 'Blu', points: 0, color: '#40E0D0' },
-        { id: 'fucsia', name: 'Fucsia', points: 0, color: '#FF00FF' },
-        { id: 'gialli', name: 'Gialli', points: 0, color: '#FFFF00' }
+        { id: 'rossi',     name: 'Rossi',     color: '#DC3545' },
+        { id: 'verdi',     name: 'Verdi',     color: '#28A745' },
+        { id: 'arancioni', name: 'Arancioni', color: '#FD7E14' },
+        { id: 'blu',       name: 'Blu',       color: '#007BFF' },
+        { id: 'fucsia',    name: 'Fucsia',    color: '#E83E8C' },
+        { id: 'gialli',    name: 'Gialli',    color: '#c8960c' },
+      ],
+      cycles: [
+        { id: 'primo',   name: 'I Ciclo'   },
+        { id: 'secondo', name: 'II Ciclo'  },
+        { id: 'terzo',   name: 'III Ciclo' },
       ],
       gamesByCycle: {
         primo: [
-          { id: "bandierina", name: "Bandierina" },
-          { id: "lupo-ghiaccio", name: "Lupo ghiaccio" },
-          { id: "aste-in-movimento", name: "Aste in movimento" },
-          { id: "lupo-coda", name: "Lupo coda" },
-          { id: "staffetta-a-ostacoli-i-ciclo", name: "Staffetta a ostacoli (I Ciclo)" },
-          { id: "sfonda-la-porta", name: "Sfonda la porta" },
-          { id: "nella-palude-tronco-o-liana", name: "Nella Palude (Tronco o Liana)" },
-          { id: "domina-i-cerchi", name: "Domina I cerchi" }
+          { id: 'bandierina', name: 'Bandierina' },
+          { id: 'lupo-ghiaccio', name: 'Lupo Ghiaccio' },
+          { id: 'aste-in-movimento', name: 'Aste in Movimento' },
+          { id: 'lupo-coda', name: 'Lupo Coda' },
+          { id: 'staffetta-a-ostacoli-i-ciclo', name: 'Staffetta Ostacoli' },
+          { id: 'sfonda-la-porta', name: 'Sfonda la Porta' },
+          { id: 'nella-palude-tronco-o-liana', name: 'Nella Palude' },
+          { id: 'domina-i-cerchi', name: 'Domina i Cerchi' },
         ],
         secondo: [
-          { id: "tiro-alla-fune", name: "Tiro alla fune" },
-          { id: "bandierina-mix", name: "Bandierina mix" },
-          { id: "castelli", name: "Castelli" },
-          { id: "pallamano", name: "Pallamano" },
-          { id: "staffetta-a-ostacoli-ii-ciclo", name: "Staffetta a ostacoli (II Ciclo)" },
-          { id: "lupo-ghiaccio", name: "Lupo ghiaccio" },
-          { id: "aste-in-movimento", name: "Aste in movimento" },
-          { id: "lupo-coda", name: "Lupo coda" },
-          { id: "palla-prigioniera", name: "Palla prigioniera" },
-          { id: "tchoukball", name: "Tchoukball" },
-          { id: "nella-palude-tronco-o-liana", name: "Nella Palude (Tronco o Liana)" },
-          { id: "10-tappe", name: "10 tappe" }
+          { id: 'tiro-alla-fune', name: 'Tiro alla Fune' },
+          { id: 'bandierina-mix', name: 'Bandierina Mix' },
+          { id: 'castelli', name: 'Castelli' },
+          { id: 'pallamano', name: 'Pallamano' },
+          { id: 'staffetta-a-ostacoli-ii-ciclo', name: 'Staffetta Ostacoli' },
+          { id: 'lupo-ghiaccio', name: 'Lupo Ghiaccio' },
+          { id: 'aste-in-movimento', name: 'Aste in Movimento' },
+          { id: 'lupo-coda', name: 'Lupo Coda' },
+          { id: 'palla-prigioniera', name: 'Palla Prigioniera' },
+          { id: 'tchoukball', name: 'Tchoukball' },
+          { id: 'nella-palude-tronco-o-liana', name: 'Nella Palude' },
+          { id: '10-tappe', name: '10 Tappe' },
         ],
         terzo: [
-          { id: "dai-fai-canestro", name: "Dai… Fai canestro" },
-          { id: "pallamano", name: "Pallamano" },
-          { id: "castelli", name: "Castelli" },
-          { id: "tchoukball", name: "Tchoukball" },
-          { id: "tiro-alla-fune", name: "Tiro alla fune" },
-          { id: "10-tappe", name: "10 tappe" },
-          { id: "palla-prigioniera", name: "Palla prigioniera" },
-          { id: "bandierina-mix", name: "Bandierina mix" },
-          { id: "calcetto", name: "Calcetto" }
-        ]
+          { id: 'dai-fai-canestro', name: 'Fai Canestro' },
+          { id: 'pallamano', name: 'Pallamano' },
+          { id: 'castelli', name: 'Castelli' },
+          { id: 'tchoukball', name: 'Tchoukball' },
+          { id: 'tiro-alla-fune', name: 'Tiro alla Fune' },
+          { id: '10-tappe', name: '10 Tappe' },
+          { id: 'palla-prigioniera', name: 'Palla Prigioniera' },
+          { id: 'bandierina-mix', name: 'Bandierina Mix' },
+          { id: 'calcetto', name: 'Calcetto' },
+        ],
       },
-      pointsOptions: [0, 20, 50, 100],
-      error: ''
+      quickPoints: [20, 50, 100],
     };
   },
   computed: {
     availableGames() {
       return this.selectedCycle ? this.gamesByCycle[this.selectedCycle] : [];
-    }
+    },
+    currentUser() {
+      return JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'));
+    },
+    teamName() { return this.teams.find(t => t.id === this.selectedTeam)?.name ?? ''; },
+    cycleName() { return this.cycles.find(c => c.id === this.selectedCycle)?.name ?? ''; },
+    gameName()  { return this.availableGames.find(g => g.id === this.selectedGame)?.name ?? ''; },
   },
   watch: {
-    selectedCycle() {
-      // Reset game selection when cycle changes
-      this.selectedGame = '';
-    }
-  },
-  mounted() {
-    // Debug: stampa lo stato dei dropdown
-    console.log('Mounted - Dropdown states:', {
-      team: this.showTeamDropdown,
-      cycle: this.showCycleDropdown,
-      game: this.showGameDropdown,
-      points: this.showPointsDropdown
-    });
-    
-    // Forza chiusura di tutti i dropdown
-    this.$nextTick(() => {
-      this.showTeamDropdown = false;
-      this.showCycleDropdown = false;
-      this.showGameDropdown = false;
-      this.showPointsDropdown = false;
-      
-      console.log('After forced close:', {
-        team: this.showTeamDropdown,
-        cycle: this.showCycleDropdown,
-        game: this.showGameDropdown,
-        points: this.showPointsDropdown
-      });
-    });
-    
-    // Chiudi dropdown quando si clicca fuori
-    document.addEventListener('click', this.closeDropdowns);
-  },
-  beforeUnmount() {
-    document.removeEventListener('click', this.closeDropdowns);
+    selectedCycle() { this.selectedGame = ''; }
   },
   methods: {
+    selectCycle(id) {
+      this.selectedCycle = id;
+      this.selectedGame = '';
+    },
     async addPoints() {
+      if (!this.selectedTeam || !this.selectedCycle || !this.selectedGame || this.pointsToAdd <= 0) {
+        this.error = 'Completa tutti i campi e inserisci almeno 1 punto.';
+        setTimeout(() => { this.error = ''; }, 3500);
+        return;
+      }
+      this.isLoading = true;
+      this.error = '';
       try {
-        if (!this.selectedTeam || !this.selectedCycle || !this.selectedGame || this.pointsToAdd <= 0) {
-          this.error = 'Compila tutti i campi e aggiungi almeno un punto.';
-          return;
-        }
-
-        const docRef = doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ');
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const currentPoints = docSnap.data()[this.selectedTeam] || 0;
-          const newPoints = currentPoints + this.pointsToAdd;
-
-          await updateDoc(docRef, {
-            [this.selectedTeam]: newPoints
-          });
-
+        const ref = doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ');
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          await updateDoc(ref, { [this.selectedTeam]: (snap.data()[this.selectedTeam] || 0) + this.pointsToAdd });
           await this.addHistory();
-          
-          // Messaggio di successo con modal
-          const teamName = this.teams.find(t => t.id === this.selectedTeam)?.name;
-          const teamColor = this.teams.find(t => t.id === this.selectedTeam)?.color;
-          const gameName = this.availableGames.find(g => g.id === this.selectedGame)?.name;
-          this.successMessage = `${this.pointsToAdd} punti aggiunti al team ${teamName} per ${gameName}`;
-          this.error = '';
-          
-          // Imposta colore overlay basato sulla squadra
-          this.overlayColor = teamColor ? `${teamColor}CC` : 'rgba(0, 0, 0, 0.8)';
-          
-          // Mostra modal
+          const team = this.teams.find(t => t.id === this.selectedTeam);
+          this.lastPoints = this.pointsToAdd;
+          this.successMessage = `${team.name} — ${this.gameName}`;
+          this.overlayColor = team.color;
           this.showSuccessModal = true;
-          this.modalClosing = false;
-          
-          // Reset form
           this.selectedTeam = '';
           this.selectedCycle = '';
           this.selectedGame = '';
           this.pointsToAdd = 0;
-          
-          // Nasconde il modal dopo 3 secondi con animazione
-          setTimeout(() => {
-            this.modalClosing = true;
-            setTimeout(() => {
-              this.showSuccessModal = false;
-              this.modalClosing = false;
-            }, 300);
-          }, 3000);
-        } else {
-          this.error = 'Points document does not exist.';
+          setTimeout(() => { this.showSuccessModal = false; }, 2800);
         }
-      } catch (error) {
-        console.error('Error adding points:', error);
-        this.error = 'An error occurred while adding points.';
+      } catch (e) {
+        this.error = 'Errore durante il salvataggio. Riprova.';
+      } finally {
+        this.isLoading = false;
       }
     },
-
     async addHistory() {
-      const docRef = doc(db, 'points', 'history');
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        // Aggiornato per supportare il nuovo sistema di sessioni
-        const getCurrentUser = () => {
-          let user = JSON.parse(localStorage.getItem('loggedInUser'));
-          if (!user) {
-            user = JSON.parse(sessionStorage.getItem('loggedInUser'));
-          }
-          return user;
-        };
-
-        await updateDoc(docRef, {
-          history: arrayUnion({
-            username: getCurrentUser() ? getCurrentUser().username : 'sconosciuto',
-            team: this.selectedTeam,
-            game: this.selectedGame,
-            cycle: this.selectedCycle,
-            points: this.pointsToAdd,
-            timestamp: new Date()
-          })
-        });
-      } else {
-        this.error = 'Points document does not exist.';
-      }
+      const ref = doc(db, 'points', 'history');
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const user = this.currentUser;
+      await updateDoc(ref, {
+        history: arrayUnion({
+          username: user?.username ?? 'sconosciuto',
+          team: this.selectedTeam,
+          game: this.selectedGame,
+          cycle: this.selectedCycle,
+          points: this.pointsToAdd,
+          timestamp: new Date()
+        })
+      });
     },
-    
-    // Metodi per gestire i dropdown personalizzati
-    toggleTeamDropdown(event) {
-      event?.stopPropagation();
-      console.log('Toggle team dropdown - before:', this.showTeamDropdown);
-      this.showTeamDropdown = !this.showTeamDropdown;
-      console.log('Toggle team dropdown - after:', this.showTeamDropdown);
-      this.closeOtherDropdowns('team');
-    },
-    
-    toggleCycleDropdown(event) {
-      event?.stopPropagation();
-      console.log('Toggle cycle dropdown - before:', this.showCycleDropdown);
-      this.showCycleDropdown = !this.showCycleDropdown;
-      console.log('Toggle cycle dropdown - after:', this.showCycleDropdown);
-      this.closeOtherDropdowns('cycle');
-    },
-    
-    toggleGameDropdown(event) {
-      event?.stopPropagation();
-      if (!this.selectedCycle) return;
-      console.log('Toggle game dropdown - before:', this.showGameDropdown);
-      this.showGameDropdown = !this.showGameDropdown;
-      console.log('Toggle game dropdown - after:', this.showGameDropdown);
-      this.closeOtherDropdowns('game');
-    },
-    
-    togglePointsDropdown(event) {
-      event?.stopPropagation();
-      console.log('Toggle points dropdown - before:', this.showPointsDropdown);
-      this.showPointsDropdown = !this.showPointsDropdown;
-      console.log('Toggle points dropdown - after:', this.showPointsDropdown);
-      this.closeOtherDropdowns('points');
-    },
-    
-    selectTeam(teamId, event) {
-      event?.stopPropagation();
-      this.selectedTeam = teamId;
-      this.showTeamDropdown = false;
-    },
-    
-    selectCycle(cycleId, event) {
-      event?.stopPropagation();
-      this.selectedCycle = cycleId;
-      this.selectedGame = ''; // Reset game when cycle changes
-      this.showCycleDropdown = false;
-    },
-    
-    selectGame(gameId, event) {
-      event?.stopPropagation();
-      this.selectedGame = gameId;
-      this.showGameDropdown = false;
-    },
-    
-    selectPoints(points, event) {
-      event?.stopPropagation();
-      this.pointsToAdd = points;
-      this.showPointsDropdown = false;
-    },
-    
-    getCycleName(cycle) {
-      const names = {
-        primo: 'Primo Ciclo',
-        secondo: 'Secondo Ciclo',
-        terzo: 'Terzo Ciclo'
-      };
-      return names[cycle] || '';
-    },
-    
-    closeOtherDropdowns(except) {
-      if (except !== 'team') this.showTeamDropdown = false;
-      if (except !== 'cycle') this.showCycleDropdown = false;
-      if (except !== 'game') this.showGameDropdown = false;
-      if (except !== 'points') this.showPointsDropdown = false;
-    },
-    
-    closeDropdowns(event) {
-      // Chiudi tutti i dropdown se si clicca fuori
-      if (!event.target.closest('.custom-dropdown')) {
-        this.showTeamDropdown = false;
-        this.showCycleDropdown = false;
-        this.showGameDropdown = false;
-        this.showPointsDropdown = false;
-      }
-    }
   }
 }
 </script>
 
 <style scoped>
-.page-title {
-  font-size: 2.5rem !important;
-  font-weight: bold !important;
-  margin: 0 !important;
-}
-
-/* Custom Dropdown Styles */
-.custom-dropdown {
-  position: relative;
-  width: 100%;
+/* ── HEADER ── */
+.ap-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  position: sticky;
+  top: 0;
   z-index: 50;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
 }
-
-.custom-dropdown.is-active {
-  z-index: 100;
-}
-
-.custom-dropdown.is-disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.dropdown-trigger {
-  cursor: pointer;
-  width: 100%;
-  user-select: none;
-  position: relative;
-  z-index: 1;
-}
-
-.dropdown-display {
+.ap-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e3e3e3;
-  border-radius: 8px;
-  background: white;
-  transition: all 0.3s ease;
-  min-height: 3rem;
+  padding: 0.85rem 1.25rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.ap-brand { display: flex; align-items: center; gap: 0.65rem; }
+.ap-trophy { font-size: 1.6rem; filter: drop-shadow(0 0 8px rgba(255,200,0,0.5)); }
+.ap-title  { font-size: 1.05rem; font-weight: 800; color: #fff; line-height: 1.2; }
+.ap-sub    { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
+.ap-logout {
+  background: rgba(220,53,69,0.15);
+  border: 1.5px solid rgba(220,53,69,0.4);
+  color: #ff6b6b;
+  border-radius: 10px;
+  width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s;
+}
+.ap-logout:active { background: rgba(220,53,69,0.4); }
+
+/* ── SECTIONS ── */
+.ap-section {
+  padding: 1.25rem 1.25rem 0;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.ap-section--disabled { opacity: 0.45; pointer-events: none; }
+.ap-section-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+  margin-bottom: 0.65rem;
+}
+.ap-hint { font-weight: 400; text-transform: none; font-size: 0.7rem; color: #aaa; }
+
+/* ── TEAM GRID ── */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+.team-tile {
   position: relative;
-  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.5rem;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.15s, border-color 0.15s;
+  font-size: 0.9rem;
+  font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 72px;
+}
+.team-tile:active { transform: scale(0.95); }
+.team-tile-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+.team-tile-name { line-height: 1; }
+.team-tile-check {
+  position: absolute;
+  top: 6px; right: 8px;
+  font-size: 0.7rem;
+  font-weight: 900;
 }
 
-.custom-dropdown.is-active .dropdown-display {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.125em rgba(102, 126, 234, 0.25);
-}
+/* Team tile colors */
+.rossi-tile     { background: #fff0f1; color: #DC3545; border-color: rgba(220,53,69,0.2); }
+.verdi-tile     { background: #f0fbf3; color: #28A745; border-color: rgba(40,167,69,0.2); }
+.arancioni-tile { background: #fff8f0; color: #FD7E14; border-color: rgba(253,126,20,0.2); }
+.blu-tile       { background: #f0f8ff; color: #007BFF; border-color: rgba(0,123,255,0.2); }
+.fucsia-tile    { background: #fff0f8; color: #E83E8C; border-color: rgba(232,62,140,0.2); }
+.gialli-tile    { background: #fffde0; color: #a07800; border-color: rgba(200,150,12,0.2); }
 
-.dropdown-display:hover {
-  border-color: #667eea;
-}
+.rossi-tile.team-tile--active     { background: #ffe0e3; border-color: #DC3545; box-shadow: 0 4px 16px rgba(220,53,69,0.25); }
+.verdi-tile.team-tile--active     { background: #d8f5e1; border-color: #28A745; box-shadow: 0 4px 16px rgba(40,167,69,0.25); }
+.arancioni-tile.team-tile--active { background: #ffe8d0; border-color: #FD7E14; box-shadow: 0 4px 16px rgba(253,126,20,0.25); }
+.blu-tile.team-tile--active       { background: #d5ecff; border-color: #007BFF; box-shadow: 0 4px 16px rgba(0,123,255,0.25); }
+.fucsia-tile.team-tile--active    { background: #ffd5ec; border-color: #E83E8C; box-shadow: 0 4px 16px rgba(232,62,140,0.25); }
+.gialli-tile.team-tile--active    { background: #fff5b0; border-color: #c8960c; box-shadow: 0 4px 16px rgba(200,150,12,0.25); }
 
-.placeholder {
-  color: #999;
-  font-style: italic;
-}
+/* Dots */
+.rossi-dot     { background: #DC3545; }
+.verdi-dot     { background: #28A745; }
+.arancioni-dot { background: #FD7E14; }
+.blu-dot       { background: #007BFF; }
+.fucsia-dot    { background: #E83E8C; }
+.gialli-dot    { background: #c8960c; }
 
-.selected-option {
-  color: #333;
-  font-weight: 500;
+/* ── CYCLE BUTTONS ── */
+.cycle-row {
+  display: flex;
+  gap: 0.6rem;
 }
-
-.selected-team {
-  font-weight: bold;
-}
-
-.points-display {
+.cycle-btn {
+  flex: 1;
+  padding: 0.75rem 0.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(102,126,234,0.2);
+  background: #f4f5ff;
   color: #667eea;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+}
+.cycle-btn:active { transform: scale(0.95); }
+.cycle-btn--active {
+  background: #667eea;
+  color: #fff;
+  border-color: #667eea;
+  box-shadow: 0 4px 14px rgba(102,126,234,0.35);
+}
+
+/* ── GAME LIST ── */
+.game-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.game-btn {
+  padding: 0.55rem 1rem;
+  border-radius: 22px;
+  border: 1.5px solid rgba(0,0,0,0.1);
+  background: #f8f8f8;
+  color: #444;
+  font-size: 0.86rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 40px;
+}
+.game-btn:active { transform: scale(0.95); }
+.game-btn--active {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+.game-placeholder { color: #ccc; font-size: 0.85rem; padding: 0.5rem 0; }
+
+/* ── POINTS ── */
+.pts-quick {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+.pts-quick-btn {
+  flex: 1;
+  padding: 0.7rem 0;
+  border-radius: 12px;
+  border: 2px solid rgba(102,126,234,0.2);
+  background: #f4f5ff;
+  color: #667eea;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 50px;
+}
+.pts-quick-btn:active { transform: scale(0.95); }
+.pts-quick-btn--active {
+  background: #667eea;
+  color: #fff;
+  border-color: #667eea;
+  box-shadow: 0 4px 14px rgba(102,126,234,0.35);
+}
+.pts-manual {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pts-stepper {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  background: #f8f8f8;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #555;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.pts-stepper:active { background: #667eea; border-color: #667eea; color: #fff; transform: scale(0.93); }
+.pts-manual-input {
+  flex: 1;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 0.6rem 0;
+  outline: none;
+  transition: border-color 0.2s;
+  -moz-appearance: textfield;
+  min-height: 52px;
+}
+.pts-manual-input::-webkit-inner-spin-button,
+.pts-manual-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.pts-manual-input:focus { border-color: #667eea; }
+
+/* ── ERROR ── */
+.ap-error {
+  max-width: 640px;
+  margin: 0.75rem auto 0;
+  padding: 0.75rem 1.25rem;
+  background: #ffe8e8;
+  border-radius: 10px;
+  color: #c0392b;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
 }
 
-.dropdown-icon {
-  color: #999;
-  transition: transform 0.3s ease;
-  font-size: 0.8rem;
-}
-
-.custom-dropdown.is-active .dropdown-icon {
-  transform: rotate(180deg);
-}
-
-.dropdown-menu {
-  position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 99999 !important;
-  margin-top: 4px !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Force hide when not active */
-.custom-dropdown:not(.is-active) .dropdown-menu {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
-
-.dropdown-content {
-  background: white !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
-  border: 1px solid #e3e3e3 !important;
-  max-height: 300px !important;
-  overflow-y: auto !important;
-  animation: dropdownSlide 0.2s ease-out !important;
-  position: relative !important;
-  width: 100% !important;
-  z-index: 99999 !important;
-}
-
-@keyframes dropdownSlide {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.dropdown-item {
-  padding: 0.75rem 1rem !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  border-bottom: 1px solid #f5f5f5 !important;
-  user-select: none !important;
-  position: relative !important;
-  display: block !important;
-  width: 100% !important;
-  background: white !important;
-  color: #333 !important;
-  z-index: 99999 !important;
-}
-
-.dropdown-item:last-child {
-  border-bottom: none !important;
-}
-
-.dropdown-item:hover {
-  background-color: #f8f9fa !important;
-}
-
-.dropdown-item.is-active {
-  background-color: #667eea !important;
-  color: white !important;
-}
-
-.dropdown-item.is-active.rossi-text,
-.dropdown-item.is-active.verdi-text,
-.dropdown-item.is-active.arancioni-text,
-.dropdown-item.is-active.blu-text,
-.dropdown-item.is-active.fucsia-text,
-.dropdown-item.is-active.gialli-text {
-  color: white !important;
-}
-
-.points-item.is-active {
-  background-color: #667eea !important;
-  color: white !important;
-}
-
-.add-button-section {
+/* ── CTA BAR ── */
+.ap-cta {
   position: fixed;
-  bottom: 10px;
-  left: 20px;
-  right: 20px;
-  z-index: 100;
-  background: inherit;
-  padding: 0;
+  bottom: 0;
+  left: 0; right: 0;
+  padding: 0.75rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 640px;
+  margin: 0 auto;
+  /* full bleed */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
 }
-
-.section {
-  padding: 1rem;
-  padding-bottom: 100px;
-  position: relative;
-  z-index: 1;
+/* Safari fix: sticky bottom across full width */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .ap-cta {
+    left: 0;
+    transform: none;
+    max-width: 100%;
+  }
 }
-
-.level {
-  margin-bottom: 1rem;
+.ap-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  min-height: 24px;
 }
+.prev-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+}
+.prev-tag--neutral { background: #f0f0f0; color: #555; }
+.rossi-tag     { background: #ffe0e3; color: #DC3545; }
+.verdi-tag     { background: #d8f5e1; color: #28A745; }
+.arancioni-tag { background: #ffe8d0; color: #FD7E14; }
+.blu-tag       { background: #d5ecff; color: #007BFF; }
+.fucsia-tag    { background: #ffd5ec; color: #E83E8C; }
+.gialli-tag    { background: #fff5b0; color: #a07800; }
+.prev-pts { font-size: 1rem; font-weight: 900; color: #667eea; margin-left: auto; }
 
-.button.is-primary {
+.ap-submit {
+  width: 100%;
+  min-height: 54px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  height: 3rem;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+  transition: transform 0.12s, opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: 0.02em;
 }
+.ap-submit:active:not(:disabled) { transform: scale(0.97); }
+.ap-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.button.is-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-}
+/* Space for fixed CTA */
+.ap-section:last-of-type { padding-bottom: 0.5rem; }
+body { padding-bottom: 140px; }
 
-.button.is-danger {
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.label {
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-}
-
-.field {
-  margin-bottom: 1.5rem;
-  position: relative;
-  z-index: auto;
-}
-
-.field.dropdown-open {
-  z-index: 100000;
-}
-
-/* Colori squadre */
-.rossi-text {
-  color: #DC3545 !important;
-  font-weight: bold;
-}
-.verdi-text {
-  color: #28A745 !important;
-  font-weight: bold;
-}
-.arancioni-text {
-  color: #FD7E14 !important;
-  font-weight: bold;
-}
-.blu-text {
-  color: #007BFF !important;
-  font-weight: bold;
-}
-.fucsia-text {
-  color: #E83E8C !important;
-  font-weight: bold;
-}
-.gialli-text {
-  color: #FFC107 !important;
-  font-weight: bold;
-}
-
-/* Dark mode support - inherit from App.vue */
-@media (prefers-color-scheme: dark) {
-  .page-title {
-    color: #ffffff !important;
-  }
-  
-  .label {
-    color: #ffffff;
-  }
-  
-  .dropdown-display {
-    background-color: #3a3a3a !important;
-    border-color: #555555 !important;
-    color: #ffffff !important;
-  }
-  
-  .dropdown-content {
-    background-color: #3a3a3a !important;
-    border-color: #555555 !important;
-  }
-  
-  .dropdown-item {
-    color: #ffffff !important;
-    border-bottom-color: #555555 !important;
-    background-color: #3a3a3a !important;
-  }
-  
-  .dropdown-item:hover {
-    background-color: #4a4a4a !important;
-  }
-  
-  .placeholder {
-    color: #aaa;
-  }
-  
-  .selected-option {
-    color: #ffffff;
-  }
-  
-  /* Team colors for dark mode - più visibili */
-  .rossi-text {
-    color: #FF6B6B !important;
-  }
-  .verdi-text {
-    color: #51CF66 !important;
-  }
-  .arancioni-text {
-    color: #FF922B !important;
-  }
-  .blu-text {
-    color: #74C0FC !important;
-  }
-  .fucsia-text {
-    color: #F06292 !important;
-  }
-  .gialli-text {
-    color: #FFD43B !important;
-  }
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .level {
-    flex-direction: row !important;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-  
-  .page-title {
-    font-size: 1.8rem !important;
-  }
-  
-  .section {
-    padding: 0.5rem;
-    padding-bottom: 80px;
-  }
-  
-  .field {
-    margin-bottom: 1rem;
-  }
-  
-  .label {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .dropdown-display {
-    padding: 0.75rem;
-    font-size: 1rem;
-    line-height: 1.4;
-  }
-  
-  .button.is-danger.is-small {
-    padding: 0.5rem 0.75rem;
-  }
-  
-  .button.is-danger.is-small span:not(.icon) {
-    display: none;
-  }
-  
-  .add-button-section {
-    bottom: 5px;
-    left: 10px;
-    right: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .page-title {
-    font-size: 1.5rem !important;
-  }
-  
-  .section {
-    padding: 0.25rem;
-    padding-bottom: 70px;
-  }
-  
-  .level {
-    margin-bottom: 0.25rem;
-  }
-  
-  .field {
-    margin-bottom: 0.75rem;
-  }
-  
-  .dropdown-content {
-    max-height: 200px !important;
-  }
-}
-
-/* Modal overlay per messaggio di successo */
-.modal-overlay {
+/* ── SUCCESS OVERLAY ── */
+.success-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
-  animation: fadeIn 0.3s ease-in-out;
-  backdrop-filter: blur(5px);
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-
-.modal-overlay.closing {
-  animation: fadeOut 0.3s ease-in-out;
-}
-
-.success-modal {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
+.success-box {
+  background: #fff;
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
   text-align: center;
-  max-width: 400px;
-  margin: 1rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease-in-out;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: popIn 0.35s cubic-bezier(.16,1,.3,1);
+  border-top: 6px solid var(--team-color, #667eea);
+}
+.success-emoji { font-size: 3.5rem; margin-bottom: 0.5rem; }
+.success-pts {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--team-color, #667eea);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+.success-msg { font-size: 1rem; color: #555; font-weight: 600; }
+
+.smodal-enter-active, .smodal-leave-active { transition: opacity 0.25s; }
+.smodal-enter-from, .smodal-leave-to { opacity: 0; }
+
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
-.modal-overlay.closing .success-modal {
-  animation: slideDown 0.3s ease-in-out;
-}
-
-.success-icon {
-  font-size: 4rem;
-  color: #28a745;
-  margin-bottom: 1rem;
-  animation: bounceIn 0.6s ease-in-out;
-}
-
-.success-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #28a745;
-  margin-bottom: 1rem;
-}
-
-.success-message {
-  font-size: 1.1rem;
-  color: #333;
-  line-height: 1.5;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-}
-
-@keyframes bounceIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Dark mode per modal */
+/* ── DARK MODE ── */
 @media (prefers-color-scheme: dark) {
-  .success-modal {
-    background: #2d2d2d;
-    color: #ffffff;
-  }
-  
-  .success-message {
-    color: #ffffff;
-  }
-}
+  .ap-section-label { color: #666; }
+  .ap-hint { color: #555; }
 
-/* Mobile responsive per modal */
-@media (max-width: 768px) {
-  .success-modal {
-    padding: 1.5rem;
-    margin: 0.5rem;
+  .team-tile {
+    filter: brightness(0.8);
   }
-  
-  .success-icon {
-    font-size: 3rem;
+  .rossi-tile     { background: #2d1517; color: #ff6b6b; border-color: rgba(220,53,69,0.25); }
+  .verdi-tile     { background: #172d1e; color: #51cf66; border-color: rgba(40,167,69,0.25); }
+  .arancioni-tile { background: #2d1e0d; color: #ff922b; border-color: rgba(253,126,20,0.25); }
+  .blu-tile       { background: #0d1e2d; color: #74c0fc; border-color: rgba(0,123,255,0.25); }
+  .fucsia-tile    { background: #2d0e1e; color: #f78cc6; border-color: rgba(232,62,140,0.25); }
+  .gialli-tile    { background: #2d2800; color: #ffd43b; border-color: rgba(200,150,12,0.25); }
+  .rossi-tile.team-tile--active     { background: #5c1520; border-color: #ff6b6b; }
+  .verdi-tile.team-tile--active     { background: #1a4d25; border-color: #51cf66; }
+  .arancioni-tile.team-tile--active { background: #5c3210; border-color: #ff922b; }
+  .blu-tile.team-tile--active       { background: #0a2e5c; border-color: #74c0fc; }
+  .fucsia-tile.team-tile--active    { background: #5c0f2f; border-color: #f78cc6; }
+  .gialli-tile.team-tile--active    { background: #5c5000; border-color: #ffd43b; }
+
+  .cycle-btn { background: #232530; color: #848ae8; border-color: rgba(102,126,234,0.2); }
+  .cycle-btn--active { background: #667eea; color: #fff; }
+
+  .game-btn { background: #1e2028; color: #ccc; border-color: rgba(255,255,255,0.08); }
+  .game-btn--active { background: #667eea; color: #fff; border-color: #667eea; }
+
+  .pts-quick-btn { background: #232530; color: #848ae8; border-color: rgba(102,126,234,0.2); }
+  .pts-quick-btn--active { background: #667eea; color: #fff; }
+  .pts-stepper  { background: #2a2c36; border-color: #3a3c46; color: #ccc; }
+  .pts-manual-input { background: #2a2c36; border-color: #3a3c46; color: #fff; }
+
+  .ap-cta {
+    background: rgba(26,26,40,0.96);
+    border-top-color: rgba(255,255,255,0.08);
   }
-  
-  .success-title {
-    font-size: 1.3rem;
-  }
-  
-  .success-message {
-    font-size: 1rem;
-  }
+  .prev-tag--neutral { background: #2a2c36; color: #aaa; }
+  .success-box { background: #1e2028; }
+  .success-msg { color: #aaa; }
 }
 </style>

@@ -1,76 +1,83 @@
 <template>
-  <section class="hero is-fullheight">
-    <div class="hero-body">
-      <div class="container">
-        <div class="login-box">
-          <div class="has-text-centered mb-5">
-            <h1 class="title is-3 has-text-weight-bold">Benvenuto</h1>
-            <p class="subtitle is-6 has-text-grey">Accedi al tuo account</p>
+  <div class="login-root">
+    <!-- Background decoration -->
+    <div class="login-bg">
+      <div class="bg-blob bg-blob--1"></div>
+      <div class="bg-blob bg-blob--2"></div>
+    </div>
+
+    <div class="login-wrap">
+      <!-- Logo / Brand -->
+      <div class="login-brand">
+        <div class="login-trophy">🏆</div>
+        <h1 class="login-title">Cre Grest</h1>
+        <p class="login-subtitle">Accedi al tuo account</p>
+      </div>
+
+      <!-- Card -->
+      <div class="login-card">
+        <form @submit.prevent="login" autocomplete="on">
+
+          <div class="lf-group">
+            <label class="lf-label" for="login-user">Username</label>
+            <div class="lf-input-wrap">
+              <span class="lf-icon"><i class="fas fa-user"></i></span>
+              <input
+                id="login-user"
+                class="lf-input"
+                type="text"
+                v-model.trim="username"
+                placeholder="Il tuo username"
+                autocomplete="username"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
+                required
+              />
+            </div>
           </div>
-          
-          <form @submit.prevent="login">
-            <div class="field">
-              <label class="label">Username</label>
-              <div class="control has-icons-left">
-                <input 
-                  class="input is-medium" 
-                  type="text" 
-                  v-model.trim="username" 
-                  placeholder="Inserisci il tuo username"
-                  required
-                >
-                <span class="icon is-small is-left">
-                  <i class="fas fa-user"></i>
-                </span>
-              </div>
-            </div>
 
-            <div class="field">
-              <label class="label">Password</label>
-              <div class="control has-icons-left">
-                <input 
-                  class="input is-medium" 
-                  type="password" 
-                  v-model="password" 
-                  placeholder="Inserisci la tua password"
-                  required
-                >
-                <span class="icon is-small is-left">
-                  <i class="fas fa-lock"></i>
-                </span>
-              </div>
+          <div class="lf-group">
+            <label class="lf-label" for="login-pass">Password</label>
+            <div class="lf-input-wrap">
+              <span class="lf-icon"><i class="fas fa-lock"></i></span>
+              <input
+                id="login-pass"
+                class="lf-input"
+                :type="showPass ? 'text' : 'password'"
+                v-model="password"
+                placeholder="La tua password"
+                autocomplete="current-password"
+                required
+              />
+              <button type="button" class="lf-eye" @click="showPass = !showPass" :aria-label="showPass ? 'Nascondi' : 'Mostra'">
+                <i :class="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+              </button>
             </div>
-
-            <div class="field">
-              <div class="control">
-                <label class="custom-checkbox">
-                  <input type="checkbox" v-model="rememberMe">
-                  <span class="checkmark"></span>
-                  <span class="checkbox-text">Ricordami</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="field">
-              <div class="control">
-                <button class="button is-primary is-fullwidth is-medium login-btn" type="submit" :disabled="isLoading">
-                  <span class="icon">
-                    <i class="fas fa-sign-in-alt"></i>
-                  </span>
-                  <span>{{ isLoading ? 'Accesso...' : 'Accedi' }}</span>
-                </button>
-              </div>
-            </div>
-          </form>
-          
-          <div v-if="error" class="notification is-danger is-light mt-4">
-            <button class="delete" @click="error = ''"></button>
-            {{ error }}
           </div>
-        </div>
+
+          <label class="lf-remember">
+            <input type="checkbox" v-model="rememberMe" />
+            <span class="lf-check"></span>
+            <span>Ricordami</span>
+          </label>
+
+          <button class="lf-submit" type="submit" :disabled="isLoading">
+            <span v-if="!isLoading"><i class="fas fa-sign-in-alt"></i>&nbsp; Accedi</span>
+            <span v-else><i class="fas fa-spinner fa-spin"></i>&nbsp; Accesso...</span>
+          </button>
+        </form>
+
+        <transition name="err">
+          <div v-if="error" class="lf-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ error }}</span>
+            <button @click="error = ''" class="lf-error-close">&times;</button>
+          </div>
+        </transition>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script>
@@ -81,324 +88,294 @@ export default {
       username: '',
       password: '',
       rememberMe: false,
+      showPass: false,
       error: '',
       isLoading: false
     };
   },
   methods: {
-    normalizeUsername(value) {
-      return (value || '').trim();
-    },
     async login() {
       this.error = '';
       this.isLoading = true;
-
       try {
-        const normalizedUsername = this.normalizeUsername(this.username);
-
-        const response = await fetch('/.netlify/functions/auth', {
+        const res = await fetch('/.netlify/functions/auth', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: normalizedUsername,
-            password: this.password
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: this.username, password: this.password })
         });
-
-        const result = await response.json().catch(() => ({}));
-        
-        if (!response.ok) {
-          this.error = result.message || result.error || 'Credenziali non valide';
-          return;
-        }
-        
+        const result = await res.json().catch(() => ({}));
+        if (!res.ok) { this.error = result.message || result.error || 'Credenziali non valide'; return; }
         if (result.success) {
-          const userSession = {
-            username: result.user.username,
-            isAdmin: result.user.isAdmin,
-            rememberMe: this.rememberMe,
-            loginTime: new Date().getTime()
-          };
-          
+          const session = { username: result.user.username, isAdmin: result.user.isAdmin, rememberMe: this.rememberMe, loginTime: Date.now() };
           if (this.rememberMe) {
-            localStorage.setItem('loggedInUser', JSON.stringify(userSession));
+            localStorage.setItem('loggedInUser', JSON.stringify(session));
             sessionStorage.removeItem('loggedInUser');
           } else {
-            sessionStorage.setItem('loggedInUser', JSON.stringify(userSession));
+            sessionStorage.setItem('loggedInUser', JSON.stringify(session));
             localStorage.removeItem('loggedInUser');
           }
-          
-          if (result.user.isAdmin) {
-            this.$router.push('/total-point');
-          } else {
-            this.$router.push('/add-point');
-          }
+          this.$router.push(result.user.isAdmin ? '/total-point' : '/add-point');
         } else {
           this.error = result.message || 'Credenziali non valide';
         }
-      } catch (error) {
-        console.error('Login error:', error);
-        this.error = 'Errore di connessione. Riprova tra qualche secondo.';
+      } catch {
+        this.error = 'Errore di connessione. Riprova.';
       } finally {
         this.isLoading = false;
       }
     },
-    
     checkExistingSession() {
-      let loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-      if (!loggedInUser) {
-        loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
-      }
-      
-      if (loggedInUser) {
-        if (loggedInUser.isAdmin) {
-          this.$router.push('/total-point');
-        } else {
-          this.$router.push('/add-point');
-        }
-      }
+      const u = JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'));
+      if (u) this.$router.push(u.isAdmin ? '/total-point' : '/add-point');
     }
   },
-  created() {
-    this.checkExistingSession();
-  }
+  created() { this.checkExistingSession(); }
 }
 </script>
 
 <style scoped>
-.hero {
-  min-height: calc(100vh - 200px);
+/* ── ROOT ── */
+.login-root {
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.hero-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.login-box {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem 1.5rem;
-  box-shadow: 
-    0 8px 32px rgba(102, 126, 234, 0.15),
-    0 4px 16px rgba(118, 75, 162, 0.12),
-    0 2px 8px rgba(102, 126, 234, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  width: 90%;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.title {
-  color: #363636;
-}
-
-.subtitle {
-  margin-bottom: 2rem !important;
-}
-
-.input {
-  border-radius: 8px;
-  border: 2px solid #e3e3e3;
-  transition: all 0.3s ease;
-}
-
-.input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.125em rgba(102, 126, 234, 0.25);
-}
-
-.login-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  height: 3rem;
-}
-
-.login-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.login-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-}
-
-.custom-checkbox {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  font-size: 0.95rem;
-  color: #4a4a4a;
-  padding: 0.5rem 0;
-}
-
-.custom-checkbox input[type="checkbox"] {
-  opacity: 0;
-  position: absolute;
-  width: 0;
-  height: 0;
-}
-
-.checkmark {
+  background: #0d1117;
   position: relative;
-  width: 20px;
-  height: 20px;
-  background-color: #fff;
-  border: 2px solid #e3e3e3;
-  border-radius: 4px;
-  margin-right: 12px;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
+  overflow: hidden;
+  padding: 1.5rem 1.25rem;
 }
 
-.checkmark:after {
-  content: "";
+/* ── BG BLOBS ── */
+.login-bg { position: absolute; inset: 0; pointer-events: none; }
+.bg-blob {
   position: absolute;
-  display: none;
-  left: 6px;
-  top: 2px;
-  width: 5px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+.bg-blob--1 {
+  width: 340px; height: 340px;
+  background: radial-gradient(circle, #667eea, #764ba2);
+  top: -80px; right: -80px;
+}
+.bg-blob--2 {
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, #11998e, #38ef7d);
+  bottom: -60px; left: -60px;
+}
+
+/* ── WRAP ── */
+.login-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+/* ── BRAND ── */
+.login-brand { text-align: center; }
+.login-trophy {
+  font-size: 3.5rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 0 16px rgba(255,200,0,0.6));
+  animation: trophyFloat 3s ease-in-out infinite;
+}
+@keyframes trophyFloat {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.login-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-shadow: 0 2px 20px rgba(102,126,234,0.5);
+}
+.login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-top: 0.3rem; }
+
+/* ── CARD ── */
+.login-card {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 2rem 1.75rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+/* ── FORM GROUP ── */
+.lf-group { margin-bottom: 1.25rem; }
+.lf-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 0.5rem;
+}
+.lf-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.lf-icon {
+  position: absolute;
+  left: 1rem;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+.lf-input {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 0.9rem 2.75rem;
+  font-size: 1rem;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.lf-input::placeholder { color: rgba(255,255,255,0.25); }
+.lf-input:focus {
+  border-color: #667eea;
+  background: rgba(102,126,234,0.12);
+}
+.lf-eye {
+  position: absolute;
+  right: 0.85rem;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lf-eye:hover { color: rgba(255,255,255,0.7); }
+
+/* ── REMEMBER ── */
+.lf-remember {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  user-select: none;
+  padding: 0.25rem 0;
+}
+.lf-remember input { display: none; }
+.lf-check {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 6px;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.05);
+}
+.lf-remember input:checked ~ .lf-check {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #667eea;
+}
+.lf-remember input:checked ~ .lf-check::after {
+  content: '';
+  position: absolute;
+  left: 5px; top: 1px;
+  width: 5px; height: 10px;
+  border: 2px solid #fff;
+  border-top: none; border-left: none;
   transform: rotate(45deg);
 }
 
-.custom-checkbox:hover .checkmark {
-  border-color: #667eea;
-  background-color: #f8f9ff;
-}
-
-.custom-checkbox input[type="checkbox"]:checked ~ .checkmark {
+/* ── SUBMIT ── */
+.lf-submit {
+  width: 100%;
+  min-height: 54px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+  box-shadow: 0 6px 24px rgba(102,126,234,0.4);
+  -webkit-tap-highlight-color: transparent;
 }
+.lf-submit:active:not(:disabled) { transform: scale(0.97); }
+.lf-submit:hover:not(:disabled)  { box-shadow: 0 10px 32px rgba(102,126,234,0.55); }
+.lf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.custom-checkbox input[type="checkbox"]:checked ~ .checkmark:after {
-  display: block;
+/* ── ERROR ── */
+.lf-error {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(220,53,69,0.15);
+  border: 1px solid rgba(220,53,69,0.35);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: #ff8b96;
+  font-size: 0.9rem;
+  margin-top: 1rem;
 }
-
-.custom-checkbox input[type="checkbox"]:focus ~ .checkmark {
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+.lf-error-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #ff8b96;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  min-width: 32px;
+  min-height: 32px;
 }
+.err-enter-active, .err-leave-active { transition: opacity 0.25s, transform 0.25s; }
+.err-enter-from, .err-leave-to { opacity: 0; transform: translateY(-8px); }
 
-.checkbox-text {
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.custom-checkbox:hover .checkbox-text {
-  color: #667eea;
-}
-
-.field {
-  margin-bottom: 1.5rem;
-}
-
-.label {
-  font-weight: 600;
-  color: #4a4a4a;
-  margin-bottom: 0.5rem;
-}
-
-.notification {
-  border-radius: 8px;
-}
-
-.section {
-  padding: 1rem;
-  min-height: calc(100vh - 2rem);
-}
-
-@media (prefers-color-scheme: dark) {
-  .hero {
-    background-color: #1a1a1a;
+/* ── LIGHT MODE ── */
+@media (prefers-color-scheme: light) {
+  .login-root { background: #f0f2f8; }
+  .bg-blob--1 { opacity: 0.25; }
+  .bg-blob--2 { opacity: 0.2; }
+  .login-title { color: #1a1a2e; text-shadow: none; }
+  .login-subtitle { color: #666; }
+  .login-card {
+    background: #fff;
+    border-color: rgba(0,0,0,0.06);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+    backdrop-filter: none;
   }
-  
-  .login-box {
-    background: #2d2d2d;
-    box-shadow: 
-      0 8px 32px rgba(102, 126, 234, 0.25),
-      0 4px 16px rgba(118, 75, 162, 0.20),
-      0 2px 8px rgba(102, 126, 234, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  .lf-label { color: #555; }
+  .lf-input {
+    background: #f5f6fa;
+    border-color: #dde1ef;
+    color: #1a1a2e;
   }
-  
-  .title {
-    color: #ffffff;
-  }
-  
-  .subtitle {
-    color: #cccccc !important;
-  }
-  
-  .label {
-    color: #ffffff;
-  }
-  
-  .input {
-    background-color: #3a3a3a;
-    border-color: #555555;
-    color: #ffffff;
-  }
-  
-  .input::placeholder {
-    color: #999999;
-  }
-  
-  .input:focus {
-    background-color: #404040;
-    border-color: #667eea;
-  }
-}
-
-@media (max-width: 768px) {
-  .section {
-    padding: 0.5rem;
-    min-height: calc(100vh - 1rem);
-  }
-  
-  .field {
-    margin-bottom: 1rem;
-  }
-  
-  .login-box {
-    width: 90%;
-    padding: 1.5rem 1rem;
-  }
-  
-  .title.is-3 {
-    font-size: 1.5rem !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .section {
-    padding: 0.25rem;
-    min-height: calc(100vh - 0.5rem);
-  }
-  
-  .field {
-    margin-bottom: 0.75rem;
-  }
+  .lf-input::placeholder { color: #aaa; }
+  .lf-icon { color: #aaa; }
+  .lf-eye { color: #aaa; }
+  .lf-remember { color: #555; }
+  .lf-check { border-color: #ccc; background: #f5f5f5; }
 }
 </style>
