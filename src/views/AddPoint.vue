@@ -1,12 +1,12 @@
 <template>
-  <!-- Header -->
+  <!-- HEADER -->
   <header class="ap-header">
     <div class="ap-header-inner">
       <div class="ap-brand">
         <span class="ap-trophy">🏆</span>
         <div>
           <div class="ap-title">Aggiungi Punti</div>
-          <div class="ap-sub" v-if="currentUser">{{ currentUser.username }}</div>
+          <div class="ap-sub" v-if="currentUser">👤 {{ currentUser.username }}</div>
         </div>
       </div>
       <button @click="handleLogout" class="ap-logout" aria-label="Logout">
@@ -15,111 +15,155 @@
     </div>
   </header>
 
-  <!-- STEP 1: Squadra -->
-  <section class="ap-section">
-    <div class="ap-section-label">1 — Squadra</div>
-    <div class="team-grid">
-      <button
-        v-for="team in teams"
-        :key="team.id"
-        type="button"
-        class="team-tile"
-        :class="[team.id + '-tile', { 'team-tile--active': selectedTeam === team.id }]"
-        @click="selectedTeam = team.id"
-      >
-        <span class="team-tile-dot" :class="team.id + '-dot'"></span>
-        <span class="team-tile-name">{{ team.name }}</span>
-        <span v-if="selectedTeam === team.id" class="team-tile-check">✓</span>
-      </button>
-    </div>
-  </section>
+  <!-- PROGRESS BAR -->
+  <div class="ap-progress-bar">
+    <div class="ap-progress-fill" :style="{ width: progressPct + '%' }"></div>
+  </div>
 
-  <!-- STEP 2: Ciclo -->
-  <section class="ap-section">
-    <div class="ap-section-label">2 — Ciclo</div>
-    <div class="cycle-row">
-      <button
-        v-for="c in cycles"
-        :key="c.id"
-        type="button"
-        class="cycle-btn"
-        :class="{ 'cycle-btn--active': selectedCycle === c.id }"
-        @click="selectCycle(c.id)"
-      >
-        {{ c.name }}
-      </button>
-    </div>
-  </section>
+  <main class="ap-main">
 
-  <!-- STEP 3: Gioco -->
-  <section class="ap-section" :class="{ 'ap-section--disabled': !selectedCycle }">
-    <div class="ap-section-label">3 — Gioco <span v-if="!selectedCycle" class="ap-hint">(seleziona prima il ciclo)</span></div>
-    <div class="game-list">
-      <button
-        v-for="game in availableGames"
-        :key="game.id"
-        type="button"
-        class="game-btn"
-        :class="{ 'game-btn--active': selectedGame === game.id }"
-        @click="selectedGame = game.id"
-      >
-        {{ game.name }}
-      </button>
-      <div v-if="!selectedCycle" class="game-placeholder">—</div>
-    </div>
-  </section>
+    <!-- STEP 1: Squadra -->
+    <section class="ap-section">
+      <div class="ap-step-head">
+        <div class="ap-step-num" :class="{ done: selectedTeam }">{{ selectedTeam ? '✓' : '1' }}</div>
+        <div class="ap-step-title">Scegli la squadra</div>
+      </div>
+      <div class="team-grid">
+        <button
+          v-for="team in teams" :key="team.id"
+          type="button"
+          class="team-tile"
+          :class="[team.id + '-tile', { 'team-tile--active': selectedTeam === team.id }]"
+          @click="selectedTeam = team.id"
+          :aria-pressed="selectedTeam === team.id"
+        >
+          <span class="team-tile-emoji">{{ team.emoji }}</span>
+          <span class="team-tile-name">{{ team.name }}</span>
+          <span v-if="selectedTeam === team.id" class="team-tile-check">✓</span>
+        </button>
+      </div>
+    </section>
 
-  <!-- STEP 4: Punti -->
-  <section class="ap-section">
-    <div class="ap-section-label">4 — Punti</div>
-    <div class="pts-quick">
-      <button
-        v-for="p in quickPoints"
-        :key="p"
-        type="button"
-        class="pts-quick-btn"
-        :class="{ 'pts-quick-btn--active': pointsToAdd === p }"
-        @click="pointsToAdd = p"
-      >{{ p }}</button>
-    </div>
-    <div class="pts-manual">
-      <button type="button" class="pts-stepper" @click="pointsToAdd = Math.max(0, pointsToAdd - 1)">−</button>
-      <input
-        class="pts-manual-input"
-        type="number"
-        v-model.number="pointsToAdd"
-        min="0"
-        inputmode="numeric"
-        placeholder="0"
-      />
-      <button type="button" class="pts-stepper" @click="pointsToAdd++">+</button>
-    </div>
-  </section>
+    <!-- STEP 2: Ciclo -->
+    <section class="ap-section" :class="{ 'ap-section--locked': !selectedTeam }">
+      <div class="ap-step-head">
+        <div class="ap-step-num" :class="{ done: selectedCycle }">{{ selectedCycle ? '✓' : '2' }}</div>
+        <div class="ap-step-title">Ciclo
+          <span v-if="!selectedTeam" class="ap-hint">← prima scegli la squadra</span>
+        </div>
+      </div>
+      <div class="cycle-row">
+        <button
+          v-for="c in cycles" :key="c.id"
+          type="button"
+          class="cycle-btn"
+          :class="{ 'cycle-btn--active': selectedCycle === c.id }"
+          @click="selectCycle(c.id)"
+          :aria-pressed="selectedCycle === c.id"
+        >
+          <span class="cycle-num">{{ c.num }}</span>
+          <span class="cycle-label">{{ c.name }}</span>
+        </button>
+      </div>
+    </section>
 
-  <!-- ERRORE -->
-  <div v-if="error" class="ap-error">{{ error }}</div>
+    <!-- STEP 3: Gioco -->
+    <section class="ap-section" :class="{ 'ap-section--locked': !selectedCycle }">
+      <div class="ap-step-head">
+        <div class="ap-step-num" :class="{ done: selectedGame }">{{ selectedGame ? '✓' : '3' }}</div>
+        <div class="ap-step-title">Gioco
+          <span v-if="!selectedCycle" class="ap-hint">← prima scegli il ciclo</span>
+        </div>
+      </div>
+      <transition name="games-fade">
+        <div class="game-list" v-if="selectedCycle">
+          <button
+            v-for="game in availableGames" :key="game.id"
+            type="button"
+            class="game-btn"
+            :class="{ 'game-btn--active': selectedGame === game.id }"
+            @click="selectedGame = game.id"
+            :aria-pressed="selectedGame === game.id"
+          >
+            <i class="fas fa-gamepad"></i>
+            {{ game.name }}
+          </button>
+        </div>
+      </transition>
+    </section>
 
-  <!-- CTA fissa in basso -->
+    <!-- STEP 4: Punti -->
+    <section class="ap-section">
+      <div class="ap-step-head">
+        <div class="ap-step-num" :class="{ done: pointsToAdd > 0 }">{{ pointsToAdd > 0 ? '✓' : '4' }}</div>
+        <div class="ap-step-title">Punti da assegnare</div>
+      </div>
+      <div class="pts-quick">
+        <button
+          v-for="p in quickPoints" :key="p"
+          type="button"
+          class="pts-quick-btn"
+          :class="{ 'pts-quick-btn--active': pointsToAdd === p }"
+          @click="pointsToAdd = p"
+        >
+          <span class="pts-q-val">{{ p }}</span>
+          <span class="pts-q-label">pt</span>
+        </button>
+      </div>
+      <div class="pts-manual">
+        <button type="button" class="pts-stepper" @click="decPoints" aria-label="Riduci punti">−</button>
+        <div class="pts-display">
+          <input
+            class="pts-manual-input"
+            type="number"
+            v-model.number="pointsToAdd"
+            min="0" inputmode="numeric"
+          />
+          <span class="pts-unit">pt</span>
+        </div>
+        <button type="button" class="pts-stepper" @click="pointsToAdd++" aria-label="Aumenta punti">+</button>
+      </div>
+    </section>
+
+    <!-- ERRORE inline -->
+    <transition name="err">
+      <div v-if="error" class="ap-error" role="alert">
+        <i class="fas fa-exclamation-triangle"></i> {{ error }}
+      </div>
+    </transition>
+
+    <!-- Spacer per CTA -->
+    <div class="ap-spacer"></div>
+  </main>
+
+  <!-- CTA FISSA -->
   <div class="ap-cta">
-    <!-- Preview selezione -->
-    <div class="ap-preview" v-if="selectedTeam || selectedGame || pointsToAdd > 0">
-      <span v-if="selectedTeam" class="prev-tag" :class="selectedTeam + '-tag'">{{ teamName }}</span>
-      <span v-if="selectedCycle" class="prev-tag prev-tag--neutral">{{ cycleName }}</span>
-      <span v-if="selectedGame" class="prev-tag prev-tag--neutral">{{ gameName }}</span>
-      <span v-if="pointsToAdd > 0" class="prev-pts">+{{ pointsToAdd }} pt</span>
+    <div class="ap-preview" v-if="hasAnySelection">
+      <transition-group name="tag" tag="div" class="ap-preview-inner">
+        <span v-if="selectedTeam" :key="'t'" class="prev-tag" :class="selectedTeam + '-tag'">{{ teamName }}</span>
+        <span v-if="selectedCycle" :key="'c'" class="prev-tag prev-tag--cycle">{{ cycleName }}</span>
+        <span v-if="selectedGame" :key="'g'" class="prev-tag prev-tag--game">🎮 {{ gameName }}</span>
+        <span v-if="pointsToAdd > 0" :key="'p'" class="prev-pts">+{{ pointsToAdd }}</span>
+      </transition-group>
     </div>
-    <button class="ap-submit" @click="addPoints" :disabled="isLoading">
-      <span v-if="!isLoading"><i class="fas fa-bolt"></i>&nbsp; Aggiungi Punti</span>
+    <button class="ap-submit" @click="addPoints" :disabled="isLoading || !canSubmit">
+      <span v-if="!isLoading">
+        <i class="fas fa-bolt"></i>&nbsp; Aggiungi Punti
+      </span>
       <span v-else><i class="fas fa-spinner fa-spin"></i>&nbsp; Salvataggio...</span>
     </button>
   </div>
 
   <!-- SUCCESS MODAL -->
   <transition name="smodal">
-    <div v-if="showSuccessModal" class="success-overlay" :style="{ '--team-color': overlayColor }">
-      <div class="success-box">
+    <div v-if="showSuccessModal" class="success-overlay" @click="showSuccessModal = false">
+      <div class="success-box" :style="{ '--team-color': overlayColor }">
+        <div class="success-confetti">
+          <span v-for="n in 8" :key="n" class="confetti-dot" :style="confettiStyle(n)"></span>
+        </div>
         <div class="success-emoji">🎉</div>
-        <div class="success-pts">+{{ lastPoints }} pt</div>
+        <div class="success-pts">+{{ lastPoints }}</div>
+        <div class="success-label">punti assegnati!</div>
         <div class="success-msg">{{ successMessage }}</div>
       </div>
     </div>
@@ -150,17 +194,17 @@ export default {
       isLoading: false,
       error: '',
       teams: [
-        { id: 'rossi',     name: 'Rossi',     color: '#DC3545' },
-        { id: 'verdi',     name: 'Verdi',     color: '#28A745' },
-        { id: 'arancioni', name: 'Arancioni', color: '#FD7E14' },
-        { id: 'blu',       name: 'Blu',       color: '#007BFF' },
-        { id: 'fucsia',    name: 'Fucsia',    color: '#E83E8C' },
-        { id: 'gialli',    name: 'Gialli',    color: '#c8960c' },
+        { id: 'rossi',     name: 'Rossi',     color: '#DC3545', emoji: '🔴' },
+        { id: 'verdi',     name: 'Verdi',     color: '#28A745', emoji: '🟢' },
+        { id: 'arancioni', name: 'Arancioni', color: '#FD7E14', emoji: '🟠' },
+        { id: 'blu',       name: 'Blu',       color: '#007BFF', emoji: '🔵' },
+        { id: 'fucsia',    name: 'Fucsia',    color: '#E83E8C', emoji: '🟣' },
+        { id: 'gialli',    name: 'Gialli',    color: '#c8960c', emoji: '🟡' },
       ],
       cycles: [
-        { id: 'primo',   name: 'I Ciclo'   },
-        { id: 'secondo', name: 'II Ciclo'  },
-        { id: 'terzo',   name: 'III Ciclo' },
+        { id: 'primo',   name: 'Ciclo',  num: 'I'   },
+        { id: 'secondo', name: 'Ciclo',  num: 'II'  },
+        { id: 'terzo',   name: 'Ciclo',  num: 'III' },
       ],
       gamesByCycle: {
         primo: [
@@ -203,32 +247,43 @@ export default {
     };
   },
   computed: {
-    availableGames() {
-      return this.selectedCycle ? this.gamesByCycle[this.selectedCycle] : [];
-    },
+    availableGames() { return this.selectedCycle ? this.gamesByCycle[this.selectedCycle] : []; },
     currentUser() {
       return JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'));
     },
-    teamName() { return this.teams.find(t => t.id === this.selectedTeam)?.name ?? ''; },
-    cycleName() { return this.cycles.find(c => c.id === this.selectedCycle)?.name ?? ''; },
+    teamName()  { return this.teams.find(t => t.id === this.selectedTeam)?.name ?? ''; },
+    cycleName() { return this.cycles.find(c => c.id === this.selectedCycle) ? this.cycles.find(c => c.id === this.selectedCycle).num + ' Ciclo' : ''; },
     gameName()  { return this.availableGames.find(g => g.id === this.selectedGame)?.name ?? ''; },
+    hasAnySelection() { return this.selectedTeam || this.selectedCycle || this.selectedGame || this.pointsToAdd > 0; },
+    canSubmit() { return this.selectedTeam && this.selectedCycle && this.selectedGame && this.pointsToAdd > 0; },
+    progressPct() {
+      let s = 0;
+      if (this.selectedTeam)  s += 25;
+      if (this.selectedCycle) s += 25;
+      if (this.selectedGame)  s += 25;
+      if (this.pointsToAdd > 0) s += 25;
+      return s;
+    },
   },
-  watch: {
-    selectedCycle() { this.selectedGame = ''; }
-  },
+  watch: { selectedCycle() { this.selectedGame = ''; } },
   methods: {
-    selectCycle(id) {
-      this.selectedCycle = id;
-      this.selectedGame = '';
+    selectCycle(id) { this.selectedCycle = id; this.selectedGame = ''; },
+    decPoints() { if (this.pointsToAdd > 0) this.pointsToAdd--; },
+    confettiStyle(n) {
+      const colors = ['#DC3545','#28A745','#FD7E14','#007BFF','#E83E8C','#c8960c','#667eea','#fff'];
+      const angle = (n - 1) * 45;
+      return {
+        '--angle': angle + 'deg',
+        '--color': colors[(n-1) % colors.length]
+      };
     },
     async addPoints() {
-      if (!this.selectedTeam || !this.selectedCycle || !this.selectedGame || this.pointsToAdd <= 0) {
-        this.error = 'Completa tutti i campi e inserisci almeno 1 punto.';
+      if (!this.canSubmit) {
+        this.error = 'Completa tutti i passaggi prima di confermare.';
         setTimeout(() => { this.error = ''; }, 3500);
         return;
       }
-      this.isLoading = true;
-      this.error = '';
+      this.isLoading = true; this.error = '';
       try {
         const ref = doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ');
         const snap = await getDoc(ref);
@@ -237,20 +292,14 @@ export default {
           await this.addHistory();
           const team = this.teams.find(t => t.id === this.selectedTeam);
           this.lastPoints = this.pointsToAdd;
-          this.successMessage = `${team.name} — ${this.gameName}`;
+          this.successMessage = team.name + ' — ' + this.gameName;
           this.overlayColor = team.color;
           this.showSuccessModal = true;
-          this.selectedTeam = '';
-          this.selectedCycle = '';
-          this.selectedGame = '';
-          this.pointsToAdd = 0;
+          this.selectedTeam = ''; this.selectedCycle = ''; this.selectedGame = ''; this.pointsToAdd = 0;
           setTimeout(() => { this.showSuccessModal = false; }, 2800);
         }
-      } catch (e) {
-        this.error = 'Errore durante il salvataggio. Riprova.';
-      } finally {
-        this.isLoading = false;
-      }
+      } catch { this.error = 'Errore durante il salvataggio. Riprova.'; }
+      finally { this.isLoading = false; }
     },
     async addHistory() {
       const ref = doc(db, 'points', 'history');
@@ -260,10 +309,8 @@ export default {
       await updateDoc(ref, {
         history: arrayUnion({
           username: user?.username ?? 'sconosciuto',
-          team: this.selectedTeam,
-          game: this.selectedGame,
-          cycle: this.selectedCycle,
-          points: this.pointsToAdd,
+          team: this.selectedTeam, game: this.selectedGame,
+          cycle: this.selectedCycle, points: this.pointsToAdd,
           timestamp: new Date()
         })
       });
@@ -273,354 +320,285 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+* { box-sizing: border-box; }
+
+:root { font-family: 'Nunito', sans-serif; }
+
 /* ── HEADER ── */
 .ap-header {
   background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
 }
 .ap-header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 1.25rem;
-  max-width: 640px;
-  margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.85rem 1.25rem; max-width: 640px; margin: 0 auto;
 }
 .ap-brand { display: flex; align-items: center; gap: 0.65rem; }
-.ap-trophy { font-size: 1.6rem; filter: drop-shadow(0 0 8px rgba(255,200,0,0.5)); }
-.ap-title  { font-size: 1.05rem; font-weight: 800; color: #fff; line-height: 1.2; }
+.ap-trophy { font-size: 1.7rem; filter: drop-shadow(0 0 8px rgba(255,200,0,0.5)); }
+.ap-title  { font-size: 1.05rem; font-weight: 900; color: #fff; line-height: 1.2; font-family: 'Nunito', sans-serif; }
 .ap-sub    { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
 .ap-logout {
-  background: rgba(220,53,69,0.15);
-  border: 1.5px solid rgba(220,53,69,0.4);
-  color: #ff6b6b;
-  border-radius: 10px;
-  width: 42px; height: 42px;
+  background: rgba(220,53,69,0.15); border: 1.5px solid rgba(220,53,69,0.4);
+  color: #ff6b6b; border-radius: 12px; width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  font-size: 1rem;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.2s;
+  cursor: pointer; font-size: 1rem;
+  -webkit-tap-highlight-color: transparent; transition: background 0.2s;
 }
 .ap-logout:active { background: rgba(220,53,69,0.4); }
 
+/* ── PROGRESS BAR ── */
+.ap-progress-bar {
+  height: 3px; background: rgba(102,126,234,0.15);
+  position: sticky; top: 62px; z-index: 49;
+}
+.ap-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transition: width 0.5s cubic-bezier(.16,1,.3,1);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── MAIN ── */
+.ap-main { font-family: 'Nunito', sans-serif; }
+.ap-spacer { height: 140px; }
+
 /* ── SECTIONS ── */
 .ap-section {
-  padding: 1.25rem 1.25rem 0;
-  max-width: 640px;
-  margin: 0 auto;
+  padding: 1.1rem 1.25rem 0;
+  max-width: 640px; margin: 0 auto;
+  transition: opacity 0.25s;
 }
-.ap-section--disabled { opacity: 0.45; pointer-events: none; }
-.ap-section-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #888;
-  margin-bottom: 0.65rem;
+.ap-section--locked { opacity: 0.4; pointer-events: none; }
+
+/* ── STEP HEAD ── */
+.ap-step-head {
+  display: flex; align-items: center; gap: 0.65rem;
+  margin-bottom: 0.75rem;
 }
-.ap-hint { font-weight: 400; text-transform: none; font-size: 0.7rem; color: #aaa; }
+.ap-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #e8ecff; color: #667eea;
+  font-size: 0.82rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.2s;
+}
+.ap-step-num.done { background: #667eea; color: #fff; }
+.ap-step-title {
+  font-size: 0.82rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: #888; display: flex; align-items: center; gap: 0.5rem;
+}
+.ap-hint { font-weight: 600; text-transform: none; font-size: 0.72rem; color: #bbb; }
 
 /* ── TEAM GRID ── */
 .team-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0.55rem;
 }
 .team-tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.85rem 0.5rem;
-  border-radius: 14px;
-  border: 2px solid transparent;
-  cursor: pointer;
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0.3rem;
+  padding: 0.9rem 0.4rem; border-radius: 16px;
+  border: 2.5px solid transparent; cursor: pointer;
   transition: transform 0.12s, box-shadow 0.15s, border-color 0.15s;
-  font-size: 0.9rem;
-  font-weight: 700;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 72px;
+  font-family: 'Nunito', sans-serif;
+  -webkit-tap-highlight-color: transparent; min-height: 78px;
 }
-.team-tile:active { transform: scale(0.95); }
-.team-tile-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-}
-.team-tile-name { line-height: 1; }
+.team-tile:active { transform: scale(0.93); }
+.team-tile-emoji { font-size: 1.5rem; line-height: 1; }
+.team-tile-name { font-size: 0.85rem; font-weight: 800; line-height: 1; }
 .team-tile-check {
-  position: absolute;
-  top: 6px; right: 8px;
-  font-size: 0.7rem;
-  font-weight: 900;
+  position: absolute; top: 5px; right: 7px;
+  font-size: 0.75rem; font-weight: 900;
 }
 
-/* Team tile colors */
 .rossi-tile     { background: #fff0f1; color: #DC3545; border-color: rgba(220,53,69,0.2); }
 .verdi-tile     { background: #f0fbf3; color: #28A745; border-color: rgba(40,167,69,0.2); }
 .arancioni-tile { background: #fff8f0; color: #FD7E14; border-color: rgba(253,126,20,0.2); }
 .blu-tile       { background: #f0f8ff; color: #007BFF; border-color: rgba(0,123,255,0.2); }
 .fucsia-tile    { background: #fff0f8; color: #E83E8C; border-color: rgba(232,62,140,0.2); }
 .gialli-tile    { background: #fffde0; color: #a07800; border-color: rgba(200,150,12,0.2); }
-
-.rossi-tile.team-tile--active     { background: #ffe0e3; border-color: #DC3545; box-shadow: 0 4px 16px rgba(220,53,69,0.25); }
-.verdi-tile.team-tile--active     { background: #d8f5e1; border-color: #28A745; box-shadow: 0 4px 16px rgba(40,167,69,0.25); }
-.arancioni-tile.team-tile--active { background: #ffe8d0; border-color: #FD7E14; box-shadow: 0 4px 16px rgba(253,126,20,0.25); }
-.blu-tile.team-tile--active       { background: #d5ecff; border-color: #007BFF; box-shadow: 0 4px 16px rgba(0,123,255,0.25); }
-.fucsia-tile.team-tile--active    { background: #ffd5ec; border-color: #E83E8C; box-shadow: 0 4px 16px rgba(232,62,140,0.25); }
-.gialli-tile.team-tile--active    { background: #fff5b0; border-color: #c8960c; box-shadow: 0 4px 16px rgba(200,150,12,0.25); }
-
-/* Dots */
-.rossi-dot     { background: #DC3545; }
-.verdi-dot     { background: #28A745; }
-.arancioni-dot { background: #FD7E14; }
-.blu-dot       { background: #007BFF; }
-.fucsia-dot    { background: #E83E8C; }
-.gialli-dot    { background: #c8960c; }
+.rossi-tile.team-tile--active     { background: #ffe0e3; border-color: #DC3545; box-shadow: 0 4px 18px rgba(220,53,69,0.28); transform: translateY(-2px); }
+.verdi-tile.team-tile--active     { background: #d8f5e1; border-color: #28A745; box-shadow: 0 4px 18px rgba(40,167,69,0.28); transform: translateY(-2px); }
+.arancioni-tile.team-tile--active { background: #ffe8d0; border-color: #FD7E14; box-shadow: 0 4px 18px rgba(253,126,20,0.28); transform: translateY(-2px); }
+.blu-tile.team-tile--active       { background: #d5ecff; border-color: #007BFF; box-shadow: 0 4px 18px rgba(0,123,255,0.28); transform: translateY(-2px); }
+.fucsia-tile.team-tile--active    { background: #ffd5ec; border-color: #E83E8C; box-shadow: 0 4px 18px rgba(232,62,140,0.28); transform: translateY(-2px); }
+.gialli-tile.team-tile--active    { background: #fff5b0; border-color: #c8960c; box-shadow: 0 4px 18px rgba(200,150,12,0.28); transform: translateY(-2px); }
 
 /* ── CYCLE BUTTONS ── */
-.cycle-row {
-  display: flex;
-  gap: 0.6rem;
-}
+.cycle-row { display: flex; gap: 0.6rem; }
 .cycle-btn {
-  flex: 1;
-  padding: 0.75rem 0.5rem;
-  border-radius: 12px;
-  border: 2px solid rgba(102,126,234,0.2);
-  background: #f4f5ff;
-  color: #667eea;
-  font-weight: 700;
-  font-size: 0.88rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 48px;
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 0.7rem 0.5rem; border-radius: 14px;
+  border: 2px solid rgba(102,126,234,0.18);
+  background: #f4f5ff; color: #667eea;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; min-height: 56px;
 }
 .cycle-btn:active { transform: scale(0.95); }
-.cycle-btn--active {
-  background: #667eea;
-  color: #fff;
-  border-color: #667eea;
-  box-shadow: 0 4px 14px rgba(102,126,234,0.35);
-}
+.cycle-btn--active { background: #667eea; color: #fff; border-color: #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.38); }
+.cycle-num  { font-size: 1rem; font-weight: 900; line-height: 1; }
+.cycle-label { font-size: 0.7rem; font-weight: 700; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ── GAME LIST ── */
-.game-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+.game-list { display: flex; flex-wrap: wrap; gap: 0.45rem; }
 .game-btn {
-  padding: 0.55rem 1rem;
-  border-radius: 22px;
-  border: 1.5px solid rgba(0,0,0,0.1);
-  background: #f8f8f8;
-  color: #444;
-  font-size: 0.86rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 40px;
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.9rem; border-radius: 24px;
+  border: 1.5px solid rgba(0,0,0,0.09);
+  background: #f8f8f8; color: #555;
+  font-size: 0.85rem; font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; min-height: 40px;
 }
-.game-btn:active { transform: scale(0.95); }
+.game-btn i { font-size: 0.7rem; opacity: 0.6; }
+.game-btn:active { transform: scale(0.94); }
 .game-btn--active {
-  background: #1a1a2e;
-  color: #fff;
-  border-color: #1a1a2e;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  background: #1a1a2e; color: #fff; border-color: #1a1a2e;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
 }
-.game-placeholder { color: #ccc; font-size: 0.85rem; padding: 0.5rem 0; }
+.game-btn--active i { opacity: 1; }
+.games-fade-enter-active { transition: opacity 0.3s, transform 0.3s; }
+.games-fade-enter-from { opacity: 0; transform: translateY(6px); }
 
 /* ── POINTS ── */
-.pts-quick {
-  display: flex;
-  gap: 0.6rem;
-  margin-bottom: 0.85rem;
-}
+.pts-quick { display: flex; gap: 0.55rem; margin-bottom: 0.9rem; }
 .pts-quick-btn {
-  flex: 1;
-  padding: 0.7rem 0;
-  border-radius: 12px;
-  border: 2px solid rgba(102,126,234,0.2);
-  background: #f4f5ff;
-  color: #667eea;
-  font-weight: 800;
-  font-size: 1.05rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 50px;
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 0.65rem 0; border-radius: 14px;
+  border: 2px solid rgba(102,126,234,0.18);
+  background: #f4f5ff; color: #667eea;
+  cursor: pointer; transition: all 0.15s;
+  font-family: 'Nunito', sans-serif;
+  -webkit-tap-highlight-color: transparent; min-height: 56px;
 }
 .pts-quick-btn:active { transform: scale(0.95); }
-.pts-quick-btn--active {
-  background: #667eea;
-  color: #fff;
-  border-color: #667eea;
-  box-shadow: 0 4px 14px rgba(102,126,234,0.35);
-}
-.pts-manual {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+.pts-quick-btn--active { background: #667eea; color: #fff; border-color: #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.38); }
+.pts-q-val  { font-size: 1.2rem; font-weight: 900; line-height: 1; }
+.pts-q-label{ font-size: 0.65rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; }
+
+.pts-manual { display: flex; align-items: center; gap: 0.55rem; }
 .pts-stepper {
-  width: 52px; height: 52px;
-  border-radius: 12px;
-  border: 2px solid #e0e0e0;
-  background: #f8f8f8;
-  font-size: 1.5rem;
-  font-weight: 700;
-  cursor: pointer;
+  width: 54px; height: 54px; border-radius: 14px;
+  border: 2px solid #e0e0e0; background: #f8f8f8;
+  font-size: 1.6rem; font-weight: 700; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  color: #555;
-  transition: all 0.15s;
-  flex-shrink: 0;
+  color: #555; transition: all 0.15s; flex-shrink: 0;
+  font-family: 'Nunito', sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 .pts-stepper:active { background: #667eea; border-color: #667eea; color: #fff; transform: scale(0.93); }
+.pts-display {
+  flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+}
 .pts-manual-input {
-  flex: 1;
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 900;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 0.6rem 0;
-  outline: none;
-  transition: border-color 0.2s;
-  -moz-appearance: textfield;
-  min-height: 52px;
+  width: 100%; text-align: center; font-size: 1.6rem; font-weight: 900;
+  border: 2px solid #e0e0e0; border-radius: 14px;
+  padding: 0.6rem 2rem 0.6rem 0; outline: none;
+  transition: border-color 0.2s; font-family: 'Nunito', sans-serif;
+  -moz-appearance: textfield; min-height: 54px; background: transparent;
 }
 .pts-manual-input::-webkit-inner-spin-button,
 .pts-manual-input::-webkit-outer-spin-button { -webkit-appearance: none; }
-.pts-manual-input:focus { border-color: #667eea; }
+.pts-manual-input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+.pts-unit {
+  position: absolute; right: 0.75rem;
+  font-size: 0.8rem; font-weight: 800; color: #aaa; pointer-events: none;
+}
 
 /* ── ERROR ── */
 .ap-error {
-  max-width: 640px;
-  margin: 0.75rem auto 0;
-  padding: 0.75rem 1.25rem;
-  background: #ffe8e8;
-  border-radius: 10px;
-  color: #c0392b;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-align: center;
+  max-width: 640px; margin: 0.75rem auto 0;
+  padding: 0.8rem 1.25rem;
+  background: #ffe8e8; border-radius: 12px;
+  color: #c0392b; font-size: 0.9rem; font-weight: 700; text-align: center;
 }
+.err-enter-active, .err-leave-active { transition: opacity 0.25s, transform 0.25s; }
+.err-enter-from, .err-leave-to { opacity: 0; transform: translateY(-6px); }
 
 /* ── CTA BAR ── */
 .ap-cta {
-  position: fixed;
-  bottom: 0;
-  left: 0; right: 0;
-  padding: 0.75rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
-  background: rgba(255,255,255,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(0,0,0,0.08);
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 640px;
-  margin: 0 auto;
-  /* full bleed */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 0.7rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(0,0,0,0.07);
+  z-index: 40; display: flex; flex-direction: column; gap: 0.5rem;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
 }
-/* Safari fix: sticky bottom across full width */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .ap-cta {
-    left: 0;
-    transform: none;
-    max-width: 100%;
-  }
-}
-.ap-preview {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  min-height: 24px;
-}
+.ap-preview { overflow: hidden; }
+.ap-preview-inner { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-height: 26px; }
 .prev-tag {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.2rem 0.6rem;
-  border-radius: 99px;
+  font-size: 0.75rem; font-weight: 800;
+  padding: 0.22rem 0.65rem; border-radius: 99px;
 }
-.prev-tag--neutral { background: #f0f0f0; color: #555; }
+.prev-tag--cycle { background: #f0f0f0; color: #555; }
+.prev-tag--game  { background: #1a1a2e; color: #fff; }
 .rossi-tag     { background: #ffe0e3; color: #DC3545; }
 .verdi-tag     { background: #d8f5e1; color: #28A745; }
 .arancioni-tag { background: #ffe8d0; color: #FD7E14; }
 .blu-tag       { background: #d5ecff; color: #007BFF; }
 .fucsia-tag    { background: #ffd5ec; color: #E83E8C; }
 .gialli-tag    { background: #fff5b0; color: #a07800; }
-.prev-pts { font-size: 1rem; font-weight: 900; color: #667eea; margin-left: auto; }
+.prev-pts { font-size: 1.1rem; font-weight: 900; color: #667eea; margin-left: auto; }
+.tag-enter-active, .tag-leave-active { transition: opacity 0.2s, transform 0.2s; }
+.tag-enter-from, .tag-leave-to { opacity: 0; transform: scale(0.8); }
 
 .ap-submit {
-  width: 100%;
-  min-height: 54px;
+  width: 100%; min-height: 56px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 14px;
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(102,126,234,0.4);
-  transition: transform 0.12s, opacity 0.2s;
+  border: none; border-radius: 16px;
+  color: #fff; font-size: 1.05rem; font-weight: 900;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer; letter-spacing: 0.02em;
+  box-shadow: 0 6px 22px rgba(102,126,234,0.42);
+  transition: transform 0.12s, opacity 0.2s, box-shadow 0.2s;
   -webkit-tap-highlight-color: transparent;
-  letter-spacing: 0.02em;
 }
 .ap-submit:active:not(:disabled) { transform: scale(0.97); }
-.ap-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-
-/* Space for fixed CTA */
-.ap-section:last-of-type { padding-bottom: 0.5rem; }
-body { padding-bottom: 140px; }
+.ap-submit:hover:not(:disabled)  { box-shadow: 0 10px 30px rgba(102,126,234,0.55); }
+.ap-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── SUCCESS OVERLAY ── */
 .success-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 .success-box {
-  background: #fff;
-  border-radius: 24px;
-  padding: 2.5rem 2rem;
-  text-align: center;
-  max-width: 320px;
-  width: 90%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  background: #fff; border-radius: 28px;
+  padding: 2.5rem 2rem 2rem; text-align: center;
+  max-width: 300px; width: 90%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.35);
   animation: popIn 0.35s cubic-bezier(.16,1,.3,1);
   border-top: 6px solid var(--team-color, #667eea);
+  position: relative; overflow: hidden;
 }
-.success-emoji { font-size: 3.5rem; margin-bottom: 0.5rem; }
-.success-pts {
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: var(--team-color, #667eea);
-  line-height: 1;
-  margin-bottom: 0.5rem;
+.success-confetti {
+  position: absolute; inset: 0; pointer-events: none;
 }
-.success-msg { font-size: 1rem; color: #555; font-weight: 600; }
-
+.confetti-dot {
+  position: absolute;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color);
+  top: 50%; left: 50%;
+  animation: confettiBurst 0.6s ease-out forwards;
+  transform-origin: 0 0;
+  animation-delay: calc(var(--angle) * 1ms / 20);
+}
+@keyframes confettiBurst {
+  0%   { transform: translate(-50%,-50%) rotate(var(--angle)) translateY(0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%,-50%) rotate(var(--angle)) translateY(-80px) scale(0); opacity: 0; }
+}
+.success-emoji { font-size: 3.5rem; margin-bottom: 0.3rem; }
+.success-pts { font-size: 3rem; font-weight: 900; color: var(--team-color, #667eea); line-height: 1; font-family: 'Nunito', sans-serif; }
+.success-label { font-size: 0.85rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.success-msg { font-size: 1rem; color: #555; font-weight: 700; }
 .smodal-enter-active, .smodal-leave-active { transition: opacity 0.25s; }
 .smodal-enter-from, .smodal-leave-to { opacity: 0; }
 
@@ -632,12 +610,11 @@ body { padding-bottom: 140px; }
 
 /* ── DARK MODE ── */
 @media (prefers-color-scheme: dark) {
-  .ap-section-label { color: #666; }
-  .ap-hint { color: #555; }
+  .ap-section-label, .ap-step-title { color: #666; }
+  .ap-step-num { background: #232530; color: #848ae8; }
+  .ap-step-num.done { background: #667eea; color: #fff; }
+  .ap-progress-bar { background: rgba(102,126,234,0.1); }
 
-  .team-tile {
-    filter: brightness(0.8);
-  }
   .rossi-tile     { background: #2d1517; color: #ff6b6b; border-color: rgba(220,53,69,0.25); }
   .verdi-tile     { background: #172d1e; color: #51cf66; border-color: rgba(40,167,69,0.25); }
   .arancioni-tile { background: #2d1e0d; color: #ff922b; border-color: rgba(253,126,20,0.25); }
@@ -652,22 +629,18 @@ body { padding-bottom: 140px; }
   .gialli-tile.team-tile--active    { background: #5c5000; border-color: #ffd43b; }
 
   .cycle-btn { background: #232530; color: #848ae8; border-color: rgba(102,126,234,0.2); }
-  .cycle-btn--active { background: #667eea; color: #fff; }
-
+  .cycle-btn--active { background: #667eea; color: #fff; border-color: #667eea; }
   .game-btn { background: #1e2028; color: #ccc; border-color: rgba(255,255,255,0.08); }
   .game-btn--active { background: #667eea; color: #fff; border-color: #667eea; }
-
   .pts-quick-btn { background: #232530; color: #848ae8; border-color: rgba(102,126,234,0.2); }
   .pts-quick-btn--active { background: #667eea; color: #fff; }
-  .pts-stepper  { background: #2a2c36; border-color: #3a3c46; color: #ccc; }
-  .pts-manual-input { background: #2a2c36; border-color: #3a3c46; color: #fff; }
-
-  .ap-cta {
-    background: rgba(26,26,40,0.96);
-    border-top-color: rgba(255,255,255,0.08);
-  }
-  .prev-tag--neutral { background: #2a2c36; color: #aaa; }
+  .pts-stepper { background: #2a2c36; border-color: #3a3c46; color: #ccc; }
+  .pts-manual-input { border-color: #3a3c46; color: #fff; background: #2a2c36; }
+  .ap-error { background: rgba(220,53,69,0.15); color: #ff8b8b; }
+  .ap-cta { background: rgba(18,18,28,0.97); border-top-color: rgba(255,255,255,0.07); }
+  .prev-tag--cycle { background: #2a2c36; color: #aaa; }
   .success-box { background: #1e2028; }
   .success-msg { color: #aaa; }
+  .success-label { color: #666; }
 }
 </style>
