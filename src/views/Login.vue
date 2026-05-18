@@ -1,24 +1,22 @@
 <template>
   <div class="login-root">
-    <!-- Background decoration -->
     <div class="login-bg">
-      <div class="bg-blob bg-blob--1"></div>
-      <div class="bg-blob bg-blob--2"></div>
+      <div class="sun"></div>
+      <div class="cloud cloud--1">☁️</div>
+      <div class="cloud cloud--2">⛅</div>
     </div>
 
     <div class="login-wrap">
-      <!-- Logo / Brand -->
       <div class="login-brand">
-        <div class="login-trophy">🏆</div>
+        <div class="login-logo">🏆</div>
         <h1 class="login-title">Cre Grest</h1>
-        <p class="login-subtitle">Accedi al tuo account</p>
+        <p class="login-subtitle">Bentornato! Accedi per continuare</p>
       </div>
 
-      <!-- Card -->
       <div class="login-card">
-        <form @submit.prevent="login" autocomplete="on">
+        <form @submit.prevent="login" autocomplete="on" novalidate>
 
-          <div class="lf-group">
+          <div class="lf-group" :class="{ 'lf-group--error': fieldErrors.username }">
             <label class="lf-label" for="login-user">Username</label>
             <div class="lf-input-wrap">
               <span class="lf-icon"><i class="fas fa-user"></i></span>
@@ -32,12 +30,13 @@
                 autocapitalize="none"
                 autocorrect="off"
                 spellcheck="false"
-                required
+                @blur="validateUsername"
               />
             </div>
+            <span v-if="fieldErrors.username" class="lf-field-err">{{ fieldErrors.username }}</span>
           </div>
 
-          <div class="lf-group">
+          <div class="lf-group" :class="{ 'lf-group--error': fieldErrors.password }">
             <label class="lf-label" for="login-pass">Password</label>
             <div class="lf-input-wrap">
               <span class="lf-icon"><i class="fas fa-lock"></i></span>
@@ -48,34 +47,37 @@
                 v-model="password"
                 placeholder="La tua password"
                 autocomplete="current-password"
-                required
+                @blur="validatePassword"
               />
-              <button type="button" class="lf-eye" @click="showPass = !showPass" :aria-label="showPass ? 'Nascondi' : 'Mostra'">
+              <button type="button" class="lf-eye" @click="showPass = !showPass" :aria-label="showPass ? 'Nascondi password' : 'Mostra password'">
                 <i :class="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
               </button>
             </div>
+            <span v-if="fieldErrors.password" class="lf-field-err">{{ fieldErrors.password }}</span>
           </div>
 
           <label class="lf-remember">
             <input type="checkbox" v-model="rememberMe" />
             <span class="lf-check"></span>
-            <span>Ricordami</span>
+            <span>Ricordami su questo dispositivo</span>
           </label>
 
           <button class="lf-submit" type="submit" :disabled="isLoading">
-            <span v-if="!isLoading"><i class="fas fa-sign-in-alt"></i>&nbsp; Accedi</span>
-            <span v-else><i class="fas fa-spinner fa-spin"></i>&nbsp; Accesso...</span>
+            <span v-if="!isLoading">Accedi <i class="fas fa-arrow-right"></i></span>
+            <span v-else><i class="fas fa-spinner fa-spin"></i>&nbsp; Accesso in corso...</span>
           </button>
         </form>
 
         <transition name="err">
-          <div v-if="error" class="lf-error">
+          <div v-if="error" class="lf-error" role="alert">
             <i class="fas fa-exclamation-circle"></i>
             <span>{{ error }}</span>
-            <button @click="error = ''" class="lf-error-close">&times;</button>
+            <button @click="error = ''" class="lf-error-close" aria-label="Chiudi errore">&times;</button>
           </div>
         </transition>
       </div>
+
+      <p class="login-footer">Cre Grest {{ currentYear }} &nbsp;·&nbsp; Fatto con ❤️</p>
     </div>
   </div>
 </template>
@@ -90,11 +92,22 @@ export default {
       rememberMe: false,
       showPass: false,
       error: '',
-      isLoading: false
+      isLoading: false,
+      fieldErrors: { username: '', password: '' },
+      currentYear: new Date().getFullYear()
     };
   },
   methods: {
+    validateUsername() {
+      this.fieldErrors.username = this.username.length === 0 ? 'Inserisci il tuo username' : '';
+    },
+    validatePassword() {
+      this.fieldErrors.password = this.password.length === 0 ? 'Inserisci la tua password' : '';
+    },
     async login() {
+      this.validateUsername();
+      this.validatePassword();
+      if (this.fieldErrors.username || this.fieldErrors.password) return;
       this.error = '';
       this.isLoading = true;
       try {
@@ -119,7 +132,7 @@ export default {
           this.error = result.message || 'Credenziali non valide';
         }
       } catch {
-        this.error = 'Errore di connessione. Riprova.';
+        this.error = 'Errore di connessione. Controlla la rete e riprova.';
       } finally {
         this.isLoading = false;
       }
@@ -134,162 +147,146 @@ export default {
 </script>
 
 <style scoped>
-/* ── ROOT ── */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+* { box-sizing: border-box; }
+
 .login-root {
   min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0d1117;
+  background: linear-gradient(160deg, #1a1a3e 0%, #0f2460 50%, #0a1628 100%);
   position: relative;
   overflow: hidden;
   padding: 1.5rem 1.25rem;
+  font-family: 'Nunito', sans-serif;
 }
 
-/* ── BG BLOBS ── */
-.login-bg { position: absolute; inset: 0; pointer-events: none; }
-.bg-blob {
+/* ── BACKGROUND ── */
+.login-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.sun {
   position: absolute;
+  width: 180px; height: 180px;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.35;
+  background: radial-gradient(circle, rgba(255,220,50,0.4) 0%, transparent 70%);
+  top: -40px; right: 10%;
+  animation: sunPulse 4s ease-in-out infinite;
 }
-.bg-blob--1 {
-  width: 340px; height: 340px;
-  background: radial-gradient(circle, #667eea, #764ba2);
-  top: -80px; right: -80px;
+.cloud {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.15;
+  animation: cloudFloat 8s ease-in-out infinite;
 }
-.bg-blob--2 {
-  width: 280px; height: 280px;
-  background: radial-gradient(circle, #11998e, #38ef7d);
-  bottom: -60px; left: -60px;
+.cloud--1 { top: 18%; left: 8%; animation-delay: 0s; }
+.cloud--2 { top: 10%; right: 15%; animation-delay: -3s; font-size: 1.4rem; }
+
+@keyframes sunPulse {
+  0%,100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.1); }
+}
+@keyframes cloudFloat {
+  0%,100% { transform: translateX(0); }
+  50%      { transform: translateX(12px); }
 }
 
 /* ── WRAP ── */
 .login-wrap {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.75rem;
+  position: relative; z-index: 1;
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 1.5rem;
 }
 
 /* ── BRAND ── */
 .login-brand { text-align: center; }
-.login-trophy {
-  font-size: 3.5rem;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-  filter: drop-shadow(0 0 16px rgba(255,200,0,0.6));
-  animation: trophyFloat 3s ease-in-out infinite;
+.login-logo {
+  font-size: 4rem; line-height: 1; margin-bottom: 0.5rem;
+  filter: drop-shadow(0 0 20px rgba(255,200,0,0.7));
+  animation: logoFloat 3s ease-in-out infinite;
+  display: block;
 }
-@keyframes trophyFloat {
-  0%,100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+@keyframes logoFloat {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-8px) rotate(3deg); }
 }
 .login-title {
-  font-size: 2rem;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: 0.04em;
-  margin: 0;
-  text-shadow: 0 2px 20px rgba(102,126,234,0.5);
+  font-size: 2.2rem; font-weight: 900;
+  color: #fff; letter-spacing: 0.03em; margin: 0;
+  text-shadow: 0 2px 24px rgba(102,126,234,0.6);
 }
-.login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-top: 0.3rem; }
+.login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.92rem; margin-top: 0.3rem; font-weight: 600; }
 
 /* ── CARD ── */
 .login-card {
   width: 100%;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 20px;
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 24px;
   padding: 2rem 1.75rem;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 /* ── FORM GROUP ── */
-.lf-group { margin-bottom: 1.25rem; }
+.lf-group { margin-bottom: 1.1rem; }
 .lf-label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.55);
-  margin-bottom: 0.5rem;
+  display: block; font-size: 0.75rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  color: rgba(255,255,255,0.5); margin-bottom: 0.45rem;
 }
-.lf-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
+.lf-input-wrap { position: relative; display: flex; align-items: center; }
 .lf-icon {
-  position: absolute;
-  left: 1rem;
-  color: rgba(255,255,255,0.35);
-  font-size: 0.9rem;
-  pointer-events: none;
+  position: absolute; left: 0.95rem;
+  color: rgba(255,255,255,0.3); font-size: 0.88rem; pointer-events: none;
 }
 .lf-input {
   width: 100%;
-  background: rgba(255,255,255,0.08);
-  border: 1.5px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  padding: 0.9rem 1rem 0.9rem 2.75rem;
-  font-size: 1rem;
-  color: #fff;
-  outline: none;
-  transition: border-color 0.2s, background 0.2s;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 0.9rem 1rem 0.9rem 2.7rem;
+  font-size: 1rem; font-weight: 600;
+  color: #fff; outline: none;
+  font-family: 'Nunito', sans-serif;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   -webkit-appearance: none;
-  appearance: none;
 }
-.lf-input::placeholder { color: rgba(255,255,255,0.25); }
+.lf-input::placeholder { color: rgba(255,255,255,0.22); font-weight: 400; }
 .lf-input:focus {
-  border-color: #667eea;
-  background: rgba(102,126,234,0.12);
+  border-color: rgba(102,126,234,0.8);
+  background: rgba(102,126,234,0.1);
+  box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
 }
+.lf-group--error .lf-input { border-color: rgba(255,107,107,0.7); }
+.lf-group--error .lf-input:focus { box-shadow: 0 0 0 3px rgba(255,107,107,0.2); }
+.lf-field-err { font-size: 0.75rem; color: #ff8b8b; font-weight: 600; margin-top: 0.3rem; display: block; padding-left: 0.2rem; }
 .lf-eye {
-  position: absolute;
-  right: 0.85rem;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.35);
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute; right: 0.6rem;
+  background: none; border: none;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer; padding: 0.5rem;
+  min-width: 44px; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; transition: color 0.15s, background 0.15s;
 }
-.lf-eye:hover { color: rgba(255,255,255,0.7); }
+.lf-eye:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
 
 /* ── REMEMBER ── */
 .lf-remember {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  cursor: pointer;
-  color: rgba(255,255,255,0.6);
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-  user-select: none;
-  padding: 0.25rem 0;
+  display: flex; align-items: center; gap: 0.65rem;
+  cursor: pointer; color: rgba(255,255,255,0.55);
+  font-size: 0.88rem; font-weight: 600;
+  margin-bottom: 1.4rem; user-select: none; padding: 0.2rem 0;
 }
 .lf-remember input { display: none; }
 .lf-check {
-  width: 20px; height: 20px;
-  border: 2px solid rgba(255,255,255,0.25);
-  border-radius: 6px;
-  flex-shrink: 0;
-  position: relative;
-  transition: all 0.2s;
+  width: 22px; height: 22px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 7px; flex-shrink: 0;
+  position: relative; transition: all 0.2s;
   background: rgba(255,255,255,0.05);
 }
 .lf-remember input:checked ~ .lf-check {
@@ -298,84 +295,75 @@ export default {
 }
 .lf-remember input:checked ~ .lf-check::after {
   content: '';
-  position: absolute;
-  left: 5px; top: 1px;
-  width: 5px; height: 10px;
-  border: 2px solid #fff;
+  position: absolute; left: 5px; top: 1px;
+  width: 6px; height: 11px;
+  border: 2.5px solid #fff;
   border-top: none; border-left: none;
   transform: rotate(45deg);
 }
 
 /* ── SUBMIT ── */
 .lf-submit {
-  width: 100%;
-  min-height: 54px;
+  width: 100%; min-height: 56px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 14px;
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.03em;
+  border: none; border-radius: 16px;
+  color: #fff; font-size: 1.05rem; font-weight: 800;
+  cursor: pointer; letter-spacing: 0.03em;
+  font-family: 'Nunito', sans-serif;
   transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
-  box-shadow: 0 6px 24px rgba(102,126,234,0.4);
+  box-shadow: 0 8px 28px rgba(102,126,234,0.45);
   -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
 }
+.lf-submit i { transition: transform 0.2s; }
+.lf-submit:hover:not(:disabled) i.fa-arrow-right { transform: translateX(4px); }
+.lf-submit:hover:not(:disabled) { box-shadow: 0 12px 36px rgba(102,126,234,0.6); transform: translateY(-1px); }
 .lf-submit:active:not(:disabled) { transform: scale(0.97); }
-.lf-submit:hover:not(:disabled)  { box-shadow: 0 10px 32px rgba(102,126,234,0.55); }
 .lf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── ERROR ── */
 .lf-error {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  display: flex; align-items: center; gap: 0.6rem;
   background: rgba(220,53,69,0.15);
-  border: 1px solid rgba(220,53,69,0.35);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  color: #ff8b96;
-  font-size: 0.9rem;
+  border: 1px solid rgba(220,53,69,0.3);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  color: #ff8b96; font-size: 0.9rem; font-weight: 600;
   margin-top: 1rem;
 }
 .lf-error-close {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: #ff8b96;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0.25rem;
-  min-width: 32px;
-  min-height: 32px;
+  margin-left: auto; background: none; border: none;
+  color: #ff8b96; font-size: 1.3rem; cursor: pointer;
+  padding: 0.2rem 0.4rem; border-radius: 6px;
+  min-width: 32px; min-height: 32px; display: flex; align-items: center; justify-content: center;
 }
 .err-enter-active, .err-leave-active { transition: opacity 0.25s, transform 0.25s; }
 .err-enter-from, .err-leave-to { opacity: 0; transform: translateY(-8px); }
 
+/* ── FOOTER ── */
+.login-footer { color: rgba(255,255,255,0.25); font-size: 0.78rem; font-weight: 600; text-align: center; }
+
 /* ── LIGHT MODE ── */
 @media (prefers-color-scheme: light) {
-  .login-root { background: #f0f2f8; }
-  .bg-blob--1 { opacity: 0.25; }
-  .bg-blob--2 { opacity: 0.2; }
-  .login-title { color: #1a1a2e; text-shadow: none; }
+  .login-root { background: linear-gradient(160deg, #e8ecf8 0%, #d0daf5 50%, #c8d4f0 100%); }
+  .login-title { color: #1a1a3e; text-shadow: none; }
   .login-subtitle { color: #666; }
   .login-card {
-    background: #fff;
+    background: rgba(255,255,255,0.92);
     border-color: rgba(0,0,0,0.06);
-    box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.12);
     backdrop-filter: none;
   }
-  .lf-label { color: #555; }
-  .lf-input {
-    background: #f5f6fa;
-    border-color: #dde1ef;
-    color: #1a1a2e;
-  }
+  .lf-label { color: #666; }
+  .lf-input { background: #f5f6fa; border-color: #dde1ef; color: #1a1a2e; }
   .lf-input::placeholder { color: #aaa; }
+  .lf-input:focus { background: #eef0fc; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
   .lf-icon { color: #aaa; }
-  .lf-eye { color: #aaa; }
-  .lf-remember { color: #555; }
-  .lf-check { border-color: #ccc; background: #f5f5f5; }
+  .lf-eye { color: #bbb; }
+  .lf-eye:hover { color: #667eea; background: rgba(102,126,234,0.06); }
+  .lf-remember { color: #666; }
+  .lf-check { border-color: #ccc; background: #f0f0f0; }
+  .login-footer { color: rgba(0,0,0,0.3); }
+  .sun { background: radial-gradient(circle, rgba(255,220,50,0.6) 0%, transparent 70%); }
 }
 </style>
