@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <img id="img" src="@/assets/image.png" alt="Cre logo" />
+    <img id="img" src="@/assets/image.png" alt="CRE Grest 2026 - Bella Fra!" title="CRE Grest 2026 - Oratorio San Giovanni Bosco Zanica" />
 
     <router-view></router-view>
   </div>
