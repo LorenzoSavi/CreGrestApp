@@ -15,7 +15,7 @@
                 <input 
                   class="input is-medium" 
                   type="text" 
-                  v-model="username" 
+                  v-model.trim="username" 
                   placeholder="Inserisci il tuo username"
                   required
                 >
@@ -53,11 +53,11 @@
 
             <div class="field">
               <div class="control">
-                <button class="button is-primary is-fullwidth is-medium login-btn" type="submit">
+                <button class="button is-primary is-fullwidth is-medium login-btn" type="submit" :disabled="isLoading">
                   <span class="icon">
                     <i class="fas fa-sign-in-alt"></i>
                   </span>
-                  <span>Accedi</span>
+                  <span>{{ isLoading ? 'Accesso...' : 'Accedi' }}</span>
                 </button>
               </div>
             </div>
@@ -81,32 +81,40 @@ export default {
       username: '',
       password: '',
       rememberMe: false,
-      error: ''
+      error: '',
+      isLoading: false
     };
   },
   methods: {
+    normalizeUsername(value) {
+      return (value || '').trim();
+    },
     async login() {
+      this.error = '';
+      this.isLoading = true;
+
       try {
-        // Chiama la funzione serverless invece del file JSON
+        const normalizedUsername = this.normalizeUsername(this.username);
+
         const response = await fetch('/.netlify/functions/auth', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            username: this.username,
+            username: normalizedUsername,
             password: this.password
           })
         });
 
+        const result = await response.json().catch(() => ({}));
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          this.error = result.message || result.error || 'Credenziali non valide';
+          return;
         }
-
-        const result = await response.json();
         
         if (result.success) {
-          // Salva l'utente con informazioni sulla sessione
           const userSession = {
             username: result.user.username,
             isAdmin: result.user.isAdmin,
@@ -116,23 +124,25 @@ export default {
           
           if (this.rememberMe) {
             localStorage.setItem('loggedInUser', JSON.stringify(userSession));
+            sessionStorage.removeItem('loggedInUser');
           } else {
             sessionStorage.setItem('loggedInUser', JSON.stringify(userSession));
             localStorage.removeItem('loggedInUser');
           }
           
-          // Redirect basato sul ruolo
           if (result.user.isAdmin) {
             this.$router.push('/total-point');
           } else {
             this.$router.push('/add-point');
           }
         } else {
-          this.error = 'Credenziali non valide';
+          this.error = result.message || 'Credenziali non valide';
         }
       } catch (error) {
         console.error('Login error:', error);
-        this.error = `Errore durante il login: ${error.message}`;
+        this.error = 'Errore di connessione. Riprova tra qualche secondo.';
+      } finally {
+        this.isLoading = false;
       }
     },
     
@@ -158,7 +168,6 @@ export default {
 </script>
 
 <style scoped>
-/* Reset di tutti gli stili precedenti */
 .hero {
   min-height: calc(100vh - 200px);
   display: flex;
@@ -222,7 +231,12 @@ export default {
   height: 3rem;
 }
 
-.login-btn:hover {
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
@@ -315,7 +329,6 @@ export default {
   min-height: calc(100vh - 2rem);
 }
 
-/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .hero {
     background-color: #1a1a1a;
@@ -358,7 +371,6 @@ export default {
   }
 }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
   .section {
     padding: 0.5rem;
