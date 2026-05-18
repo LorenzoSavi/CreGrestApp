@@ -144,6 +144,7 @@ export default {
       try {
         const u = JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'));
         if (u) this.$router.push(u.isAdmin ? '/total-point' : '/add-point');
+      // eslint-disable-next-line no-empty
       } catch {}
     }
   },

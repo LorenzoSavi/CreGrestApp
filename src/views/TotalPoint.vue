@@ -366,12 +366,14 @@ export default {
         if (snap.exists()) {
           await updateDoc(ref, { history: arrayUnion({ username: this.currentUser?.username ?? 'unknown', team: this.selectedTeam, game: this.selectedGame, points: pts, timestamp: new Date() }) });
         }
+      // eslint-disable-next-line no-empty
       } catch {}
     },
     async fetchPointsHistory() {
       try {
         const snap = await getDoc(doc(db, 'points', 'history'));
         if (snap.exists()) this.pointsHistory = snap.data().history || [];
+      // eslint-disable-next-line no-empty
       } catch {}
     },
     formatDate(ts) {
@@ -667,46 +669,11 @@ export default {
 .md-row span { color: #888; font-weight: 600; } .md-row strong { font-weight: 800; }
 .modal-warn { padding: 0.6rem 0.85rem; background: #fff3cd; border-radius: 9px; border: 1px solid #ffc107; font-size: 0.78rem; font-weight: 700; color: #856404; }
 .modal-foot { padding: 0.9rem 1.1rem; border-top: 1px solid #f0f0f0; display: flex; gap: 0.55rem; }
-.modal-del { flex: 1; padding: 0.7rem; background: linear-gradient(135deg,#dc3545,#c0392b); border: none; border-radius: 11px; color: #fff; font-size: 0.88rem; font-weight: 800; cursor: pointer; font-family: 'Nunito', sans-serif; box-shadow: 0 4px 12px rgba(220,53,69,.32); transition: transform .12s; }
-.modal-del:active { transform: scale(0.97); } .modal-del:disabled { opacity: 0.55; cursor: not-allowed; }
-.modal-cancel { padding: 0.7rem 1.1rem; background: #f0f0f0; border: none; border-radius: 11px; color: #555; font-size: 0.88rem; font-weight: 800; cursor: pointer; font-family: 'Nunito', sans-serif; transition: background .15s; }
-.modal-cancel:active { background: #e0e0e0; }
+.modal-del { flex: 1; padding: 0.7rem; background: linear-gradient(135deg,#dc3545,#c0392b); border: none; border-radius: 11px; color: #fff; font-size: 0.88rem; font-weight: 800; cursor: pointer; font-family: 'Nunito', sans-serif; box-shadow: 0 4px 12px rgba(220,53,69,.32); }
+.modal-del:disabled { opacity: 0.6; cursor: not-allowed; }
+.modal-cancel { flex: 1; padding: 0.7rem; background: #f0f0f0; border: none; border-radius: 11px; color: #555; font-size: 0.88rem; font-weight: 800; cursor: pointer; font-family: 'Nunito', sans-serif; }
+.modal-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
+@keyframes popIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
 .modal-enter-active, .modal-leave-active { transition: opacity .25s; }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
-@keyframes popIn { 0%{opacity:0;transform:scale(0.8)} 60%{transform:scale(1.02)} 100%{opacity:1;transform:scale(1)} }
-
-/* ── DARK MODE ── */
-@media (prefers-color-scheme: dark) {
-  .tp-tabs    { background: #1a1c26; border-bottom-color: #2a2c38; }
-  .tp-tab     { color: #666; }
-  .tp-tab--active { color: #848ae8; border-bottom-color: #848ae8; }
-  .fp-card    { background: #232530 !important; border-color: rgba(255,255,255,.08) !important; }
-  .fp-label   { color: #666; }
-  .rank-row   { background: #1e2028; border-color: rgba(255,255,255,.05); }
-  .rank-row--podium { background: #232530; }
-  .rank-bar-track { background: #2a2c36; }
-  .rank-num   { color: #555; }
-  .stat-card  { background: #232530; border-color: rgba(102,126,234,.15); }
-  .stat-val   { color: #848ae8; } .stat-label { color: #555; }
-  .form-card  { background: #1e2028; border-color: rgba(255,255,255,.06); }
-  .team-pill:not(.team-pill--active) { filter: brightness(0.7); }
-  .game-pill:not(.game-pill--active) { background: #232530; border-color: rgba(102,126,234,.2); }
-  .pts-q:not(.pts-q--active) { background: #232530; color: #848ae8; border-color: rgba(102,126,234,.2); }
-  .pts-btn    { background: #2a2c36; border-color: #3a3c46; color: #ccc; }
-  .pts-input  { border-color: #3a3c46; color: #fff; background: #2a2c36; }
-  .pts-preview { background: #232530; color: #ccc; }
-  .h-filter-btn { background: #2a2c36; border-color: rgba(255,255,255,.08); color: #888; }
-  .h-entry    { background: #1e2028; border-color: rgba(255,255,255,.04); }
-  .h-entry--recent { background: #232530; border-color: rgba(102,126,234,.15); }
-  .h-game     { color: #aaa; }
-  .h-loadmore { border-color: #3a3c46; color: #666; }
-  .modal-box  { background: #1e2028; }
-  .modal-head { background: #2d1517; border-bottom-color: rgba(220,53,69,.2); }
-  .md-row     { background: #2a2c36; }
-  .md-row span { color: #666; } .md-row strong { color: #eee; }
-  .modal-warn { background: #2d2810; border-color: rgba(255,193,7,.3); color: #ffd43b; }
-  .modal-foot { border-top-color: #2a2c36; }
-  .modal-cancel { background: #2a2c36; color: #aaa; }
-  .sk { background: linear-gradient(90deg,#2a2c36 25%,#3a3c46 50%,#2a2c36 75%); background-size: 200% 100%; }
-}
 </style>
