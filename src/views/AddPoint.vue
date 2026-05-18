@@ -110,19 +110,6 @@
           <span class="pts-q-label">pt</span>
         </button>
       </div>
-      <div class="pts-manual">
-        <button type="button" class="pts-stepper" @click="decPoints" aria-label="Riduci punti">−</button>
-        <div class="pts-display">
-          <input
-            class="pts-manual-input"
-            type="number"
-            v-model.number="pointsToAdd"
-            min="0" inputmode="numeric"
-          />
-          <span class="pts-unit">pt</span>
-        </div>
-        <button type="button" class="pts-stepper" @click="pointsToAdd++" aria-label="Aumenta punti">+</button>
-      </div>
     </section>
 
     <!-- ERRORE inline -->
@@ -243,7 +230,7 @@ export default {
           { id: 'calcetto', name: 'Calcetto' },
         ],
       },
-      quickPoints: [20, 50, 100],
+      quickPoints: [25, 50, 100],
     };
   },
   computed: {
@@ -268,7 +255,6 @@ export default {
   watch: { selectedCycle() { this.selectedGame = ''; } },
   methods: {
     selectCycle(id) { this.selectedCycle = id; this.selectedGame = ''; },
-    decPoints() { if (this.pointsToAdd > 0) this.pointsToAdd--; },
     confettiStyle(n) {
       const colors = ['#DC3545','#28A745','#FD7E14','#007BFF','#E83E8C','#c8960c','#667eea','#fff'];
       const angle = (n - 1) * 45;
@@ -466,49 +452,20 @@ export default {
 .games-fade-enter-from { opacity: 0; transform: translateY(6px); }
 
 /* ── POINTS ── */
-.pts-quick { display: flex; gap: 0.55rem; margin-bottom: 0.9rem; }
+.pts-quick { display: flex; gap: 0.55rem; }
 .pts-quick-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  padding: 0.65rem 0; border-radius: 14px;
+  padding: 1rem 0; border-radius: 14px;
   border: 2px solid rgba(102,126,234,0.18);
   background: #f4f5ff; color: #667eea;
   cursor: pointer; transition: all 0.15s;
   font-family: 'Nunito', sans-serif;
-  -webkit-tap-highlight-color: transparent; min-height: 56px;
+  -webkit-tap-highlight-color: transparent; min-height: 72px;
 }
 .pts-quick-btn:active { transform: scale(0.95); }
 .pts-quick-btn--active { background: #667eea; color: #fff; border-color: #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.38); }
-.pts-q-val  { font-size: 1.2rem; font-weight: 900; line-height: 1; }
-.pts-q-label{ font-size: 0.65rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; }
-
-.pts-manual { display: flex; align-items: center; gap: 0.55rem; }
-.pts-stepper {
-  width: 54px; height: 54px; border-radius: 14px;
-  border: 2px solid #e0e0e0; background: #f8f8f8;
-  font-size: 1.6rem; font-weight: 700; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  color: #555; transition: all 0.15s; flex-shrink: 0;
-  font-family: 'Nunito', sans-serif;
-  -webkit-tap-highlight-color: transparent;
-}
-.pts-stepper:active { background: #667eea; border-color: #667eea; color: #fff; transform: scale(0.93); }
-.pts-display {
-  flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
-}
-.pts-manual-input {
-  width: 100%; text-align: center; font-size: 1.6rem; font-weight: 900;
-  border: 2px solid #e0e0e0; border-radius: 14px;
-  padding: 0.6rem 2rem 0.6rem 0; outline: none;
-  transition: border-color 0.2s; font-family: 'Nunito', sans-serif;
-  -moz-appearance: textfield; min-height: 54px; background: transparent;
-}
-.pts-manual-input::-webkit-inner-spin-button,
-.pts-manual-input::-webkit-outer-spin-button { -webkit-appearance: none; }
-.pts-manual-input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
-.pts-unit {
-  position: absolute; right: 0.75rem;
-  font-size: 0.8rem; font-weight: 800; color: #aaa; pointer-events: none;
-}
+.pts-q-val  { font-size: 1.5rem; font-weight: 900; line-height: 1; }
+.pts-q-label{ font-size: 0.7rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; margin-top: 0.2rem; }
 
 /* ── ERROR ── */
 .ap-error {
@@ -634,8 +591,6 @@ export default {
   .game-btn--active { background: #667eea; color: #fff; border-color: #667eea; }
   .pts-quick-btn { background: #232530; color: #848ae8; border-color: rgba(102,126,234,0.2); }
   .pts-quick-btn--active { background: #667eea; color: #fff; }
-  .pts-stepper { background: #2a2c36; border-color: #3a3c46; color: #ccc; }
-  .pts-manual-input { border-color: #3a3c46; color: #fff; background: #2a2c36; }
   .ap-error { background: rgba(220,53,69,0.15); color: #ff8b8b; }
   .ap-cta { background: rgba(18,18,28,0.97); border-top-color: rgba(255,255,255,0.07); }
   .prev-tag--cycle { background: #2a2c36; color: #aaa; }
