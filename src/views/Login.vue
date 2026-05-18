@@ -7,6 +7,9 @@
     </div>
 
     <div class="login-wrap">
+      <!-- Logo Cre sopra il trofeo, piccolo -->
+      <img class="login-cre-logo" src="/logo.png" alt="Bella Fra logo" />
+
       <div class="login-brand">
         <div class="login-logo">🏆</div>
         <h1 class="login-title">Cre Grest</h1>
@@ -77,7 +80,7 @@
         </transition>
       </div>
 
-      <p class="login-footer">Cre Grest {{ currentYear }} &nbsp;·&nbsp; Fatto con ❤️</p>
+      <p class="login-footer">Cre Grest {{ currentYear }} &nbsp;·&nbsp; Fatto da Savi🦞</p>
     </div>
   </div>
 </template>
@@ -138,8 +141,10 @@ export default {
       }
     },
     checkExistingSession() {
-      const u = JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'));
-      if (u) this.$router.push(u.isAdmin ? '/total-point' : '/add-point');
+      try {
+        const u = JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'));
+        if (u) this.$router.push(u.isAdmin ? '/total-point' : '/add-point');
+      } catch {}
     }
   },
   created() { this.checkExistingSession(); }
@@ -148,18 +153,19 @@ export default {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-
 * { box-sizing: border-box; }
 
+/* ── ROOT: occupa esattamente lo schermo, NO scroll ── */
 .login-root {
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(160deg, #1a1a3e 0%, #0f2460 50%, #0a1628 100%);
   position: relative;
-  overflow: hidden;
-  padding: 1.5rem 1.25rem;
+  padding: 0 1.25rem;
   font-family: 'Nunito', sans-serif;
 }
 
@@ -167,88 +173,83 @@ export default {
 .login-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .sun {
   position: absolute;
-  width: 180px; height: 180px;
+  width: 160px; height: 160px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255,220,50,0.4) 0%, transparent 70%);
-  top: -40px; right: 10%;
+  top: -30px; right: 10%;
   animation: sunPulse 4s ease-in-out infinite;
 }
-.cloud {
-  position: absolute;
-  font-size: 2rem;
-  opacity: 0.15;
-  animation: cloudFloat 8s ease-in-out infinite;
-}
+.cloud { position: absolute; font-size: 2rem; opacity: 0.15; animation: cloudFloat 8s ease-in-out infinite; }
 .cloud--1 { top: 18%; left: 8%; animation-delay: 0s; }
 .cloud--2 { top: 10%; right: 15%; animation-delay: -3s; font-size: 1.4rem; }
-
-@keyframes sunPulse {
-  0%,100% { opacity: 0.4; transform: scale(1); }
-  50%      { opacity: 0.7; transform: scale(1.1); }
-}
-@keyframes cloudFloat {
-  0%,100% { transform: translateX(0); }
-  50%      { transform: translateX(12px); }
-}
+@keyframes sunPulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.7;transform:scale(1.1)} }
+@keyframes cloudFloat { 0%,100%{transform:translateX(0)} 50%{transform:translateX(12px)} }
 
 /* ── WRAP ── */
 .login-wrap {
   position: relative; z-index: 1;
   width: 100%; max-width: 400px;
   display: flex; flex-direction: column;
-  align-items: center; gap: 1.5rem;
+  align-items: center;
+  /* gap ridotto per stare nello schermo */
+  gap: 0.65rem;
 }
 
-/* ── BRAND ── */
+/* ── LOGO CRE (Bella Fra) — piccolo, sopra il trofeo ── */
+.login-cre-logo {
+  width: 80px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+  flex-shrink: 0;
+}
+
+/* ── BRAND (trofeo + titolo) ── */
 .login-brand { text-align: center; }
 .login-logo {
-  font-size: 4rem; line-height: 1; margin-bottom: 0.5rem;
-  filter: drop-shadow(0 0 20px rgba(255,200,0,0.7));
+  font-size: 2.8rem; line-height: 1; margin-bottom: 0.25rem;
+  filter: drop-shadow(0 0 18px rgba(255,200,0,0.7));
   animation: logoFloat 3s ease-in-out infinite;
   display: block;
 }
 @keyframes logoFloat {
   0%,100% { transform: translateY(0) rotate(-3deg); }
-  50%      { transform: translateY(-8px) rotate(3deg); }
+  50%      { transform: translateY(-6px) rotate(3deg); }
 }
 .login-title {
-  font-size: 2.2rem; font-weight: 900;
+  font-size: 1.9rem; font-weight: 900;
   color: #fff; letter-spacing: 0.03em; margin: 0;
-  text-shadow: 0 2px 24px rgba(102,126,234,0.6);
+  text-shadow: 0 2px 20px rgba(102,126,234,0.6);
 }
-.login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.92rem; margin-top: 0.3rem; font-weight: 600; }
+.login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 0.15rem; font-weight: 600; }
 
 /* ── CARD ── */
 .login-card {
   width: 100%;
   background: rgba(255,255,255,0.07);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
   border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 24px;
-  padding: 2rem 1.75rem;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
+  border-radius: 22px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 20px 56px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 /* ── FORM GROUP ── */
-.lf-group { margin-bottom: 1.1rem; }
+.lf-group { margin-bottom: 0.75rem; }
 .lf-label {
-  display: block; font-size: 0.75rem; font-weight: 800;
+  display: block; font-size: 0.72rem; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.09em;
-  color: rgba(255,255,255,0.5); margin-bottom: 0.45rem;
+  color: rgba(255,255,255,0.5); margin-bottom: 0.35rem;
 }
 .lf-input-wrap { position: relative; display: flex; align-items: center; }
-.lf-icon {
-  position: absolute; left: 0.95rem;
-  color: rgba(255,255,255,0.3); font-size: 0.88rem; pointer-events: none;
-}
+.lf-icon { position: absolute; left: 0.9rem; color: rgba(255,255,255,0.3); font-size: 0.85rem; pointer-events: none; }
 .lf-input {
   width: 100%;
   background: rgba(255,255,255,0.07);
   border: 1.5px solid rgba(255,255,255,0.1);
-  border-radius: 14px;
-  padding: 0.9rem 1rem 0.9rem 2.7rem;
-  font-size: 1rem; font-weight: 600;
+  border-radius: 13px;
+  padding: 0.75rem 1rem 0.75rem 2.6rem;
+  font-size: 0.98rem; font-weight: 600;
   color: #fff; outline: none;
   font-family: 'Nunito', sans-serif;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
@@ -262,12 +263,11 @@ export default {
 }
 .lf-group--error .lf-input { border-color: rgba(255,107,107,0.7); }
 .lf-group--error .lf-input:focus { box-shadow: 0 0 0 3px rgba(255,107,107,0.2); }
-.lf-field-err { font-size: 0.75rem; color: #ff8b8b; font-weight: 600; margin-top: 0.3rem; display: block; padding-left: 0.2rem; }
+.lf-field-err { font-size: 0.72rem; color: #ff8b8b; font-weight: 600; margin-top: 0.2rem; display: block; padding-left: 0.2rem; }
 .lf-eye {
-  position: absolute; right: 0.6rem;
-  background: none; border: none;
-  color: rgba(255,255,255,0.3);
-  cursor: pointer; padding: 0.5rem;
+  position: absolute; right: 0.5rem;
+  background: none; border: none; color: rgba(255,255,255,0.3);
+  cursor: pointer; padding: 0.45rem;
   min-width: 44px; min-height: 44px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 8px; transition: color 0.15s, background 0.15s;
@@ -276,48 +276,44 @@ export default {
 
 /* ── REMEMBER ── */
 .lf-remember {
-  display: flex; align-items: center; gap: 0.65rem;
+  display: flex; align-items: center; gap: 0.6rem;
   cursor: pointer; color: rgba(255,255,255,0.55);
-  font-size: 0.88rem; font-weight: 600;
-  margin-bottom: 1.4rem; user-select: none; padding: 0.2rem 0;
+  font-size: 0.85rem; font-weight: 600;
+  margin-bottom: 1rem; user-select: none; padding: 0.1rem 0;
 }
 .lf-remember input { display: none; }
 .lf-check {
-  width: 22px; height: 22px;
+  width: 20px; height: 20px;
   border: 2px solid rgba(255,255,255,0.2);
-  border-radius: 7px; flex-shrink: 0;
+  border-radius: 6px; flex-shrink: 0;
   position: relative; transition: all 0.2s;
   background: rgba(255,255,255,0.05);
 }
-.lf-remember input:checked ~ .lf-check {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-color: #667eea;
-}
+.lf-remember input:checked ~ .lf-check { background: linear-gradient(135deg, #667eea, #764ba2); border-color: #667eea; }
 .lf-remember input:checked ~ .lf-check::after {
   content: '';
-  position: absolute; left: 5px; top: 1px;
-  width: 6px; height: 11px;
-  border: 2.5px solid #fff;
-  border-top: none; border-left: none;
+  position: absolute; left: 4px; top: 1px;
+  width: 6px; height: 10px;
+  border: 2.5px solid #fff; border-top: none; border-left: none;
   transform: rotate(45deg);
 }
 
 /* ── SUBMIT ── */
 .lf-submit {
-  width: 100%; min-height: 56px;
+  width: 100%; min-height: 52px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none; border-radius: 16px;
-  color: #fff; font-size: 1.05rem; font-weight: 800;
+  border: none; border-radius: 14px;
+  color: #fff; font-size: 1rem; font-weight: 800;
   cursor: pointer; letter-spacing: 0.03em;
   font-family: 'Nunito', sans-serif;
   transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
-  box-shadow: 0 8px 28px rgba(102,126,234,0.45);
+  box-shadow: 0 6px 24px rgba(102,126,234,0.45);
   -webkit-tap-highlight-color: transparent;
   display: flex; align-items: center; justify-content: center; gap: 0.5rem;
 }
 .lf-submit i { transition: transform 0.2s; }
 .lf-submit:hover:not(:disabled) i.fa-arrow-right { transform: translateX(4px); }
-.lf-submit:hover:not(:disabled) { box-shadow: 0 12px 36px rgba(102,126,234,0.6); transform: translateY(-1px); }
+.lf-submit:hover:not(:disabled) { box-shadow: 0 10px 32px rgba(102,126,234,0.6); transform: translateY(-1px); }
 .lf-submit:active:not(:disabled) { transform: scale(0.97); }
 .lf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -326,14 +322,14 @@ export default {
   display: flex; align-items: center; gap: 0.6rem;
   background: rgba(220,53,69,0.15);
   border: 1px solid rgba(220,53,69,0.3);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
-  color: #ff8b96; font-size: 0.9rem; font-weight: 600;
-  margin-top: 1rem;
+  border-radius: 11px;
+  padding: 0.75rem 1rem;
+  color: #ff8b96; font-size: 0.88rem; font-weight: 600;
+  margin-top: 0.85rem;
 }
 .lf-error-close {
   margin-left: auto; background: none; border: none;
-  color: #ff8b96; font-size: 1.3rem; cursor: pointer;
+  color: #ff8b96; font-size: 1.2rem; cursor: pointer;
   padding: 0.2rem 0.4rem; border-radius: 6px;
   min-width: 32px; min-height: 32px; display: flex; align-items: center; justify-content: center;
 }
@@ -341,7 +337,7 @@ export default {
 .err-enter-from, .err-leave-to { opacity: 0; transform: translateY(-8px); }
 
 /* ── FOOTER ── */
-.login-footer { color: rgba(255,255,255,0.25); font-size: 0.78rem; font-weight: 600; text-align: center; }
+.login-footer { color: rgba(255,255,255,0.25); font-size: 0.75rem; font-weight: 600; text-align: center; }
 
 /* ── LIGHT MODE ── */
 @media (prefers-color-scheme: light) {
@@ -349,10 +345,8 @@ export default {
   .login-title { color: #1a1a3e; text-shadow: none; }
   .login-subtitle { color: #666; }
   .login-card {
-    background: rgba(255,255,255,0.92);
-    border-color: rgba(0,0,0,0.06);
-    box-shadow: 0 8px 48px rgba(0,0,0,0.12);
-    backdrop-filter: none;
+    background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.06);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12); backdrop-filter: none;
   }
   .lf-label { color: #666; }
   .lf-input { background: #f5f6fa; border-color: #dde1ef; color: #1a1a2e; }
@@ -365,5 +359,17 @@ export default {
   .lf-check { border-color: #ccc; background: #f0f0f0; }
   .login-footer { color: rgba(0,0,0,0.3); }
   .sun { background: radial-gradient(circle, rgba(255,220,50,0.6) 0%, transparent 70%); }
+}
+
+/* ── SCHERMI MOLTO PICCOLI (iPhone SE, 568px h) ── */
+@media (max-height: 650px) {
+  .login-cre-logo { width: 60px; }
+  .login-logo { font-size: 2.2rem; }
+  .login-title { font-size: 1.6rem; }
+  .login-wrap { gap: 0.45rem; }
+  .login-card { padding: 1rem 1.25rem; }
+  .lf-group { margin-bottom: 0.55rem; }
+  .lf-remember { margin-bottom: 0.75rem; }
+  .lf-submit { min-height: 46px; }
 }
 </style>
