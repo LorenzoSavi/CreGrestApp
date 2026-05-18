@@ -1,79 +1,53 @@
 <template>
   <div id="app">
     <img id="img" src="@/assets/image.png" alt="CRE Grest 2026 - Bella Fra!" title="CRE Grest 2026 - Oratorio San Giovanni Bosco Zanica" />
-
     <router-view></router-view>
   </div>
 </template>
 <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #12122a;
+}
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Nunito', Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #1a1a1a;
   padding: 0;
   margin: 0;
-  min-height: 100vh;
-  background-color: #ffffff;
-}
-
-nav {
-  padding: 30px;
-}
-
-nav a {
-  font-weight: bold;
-  color: #1a1a1a;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
+  height: 100dvh;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #12122a;
 }
 
 #img {
   width: 100%;
-  height: 250px;
+  height: 130px;
   object-fit: contain;
   margin: 0;
   display: block;
+  flex-shrink: 0;
   filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+  background: #12122a;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  #app {
-    background-color: #1a1a1a;
-    color: #ffffff;
-  }
-  
-  nav a {
-    color: #ffffff;
-  }
-  
-  nav a.router-link-exact-active {
-    color: #667eea;
-  }
-  
-  #img {
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
-  }
-}
-
-/* Media query per dispositivi mobili */
 @media (max-width: 768px) {
-  #img {
-    height: 180px;
-  }
-  
-  #app {
-    padding: 0;
-  }
+  #img { height: 110px; }
 }
 
 @media (max-width: 480px) {
-  #img {
-    height: 150px;
-  }
+  #img { height: 95px; }
+}
+
+@media (max-height: 650px) {
+  #img { height: 75px; }
 }
 </style>

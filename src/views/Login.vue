@@ -7,9 +7,6 @@
     </div>
 
     <div class="login-wrap">
-      <!-- Logo Cre sopra il trofeo, piccolo -->
-      <img class="login-cre-logo" src="/logo.png" alt="Bella Fra logo" />
-
       <div class="login-brand">
         <div class="login-logo">🏆</div>
         <h1 class="login-title">Cre Grest</h1>
@@ -156,21 +153,23 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 * { box-sizing: border-box; }
 
-/* ── ROOT: occupa esattamente lo schermo, NO scroll ── */
+/* ROOT: riempie lo spazio rimasto sotto il logo in App.vue */
 .login-root {
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, #1a1a3e 0%, #0f2460 50%, #0a1628 100%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: transparent;
   position: relative;
-  padding: 0 1.25rem;
+  padding: 0.75rem 1.25rem 1rem;
   font-family: 'Nunito', sans-serif;
 }
 
-/* ── BACKGROUND ── */
+/* BACKGROUND */
 .login-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .sun {
   position: absolute;
@@ -186,29 +185,19 @@ export default {
 @keyframes sunPulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.7;transform:scale(1.1)} }
 @keyframes cloudFloat { 0%,100%{transform:translateX(0)} 50%{transform:translateX(12px)} }
 
-/* ── WRAP ── */
+/* WRAP */
 .login-wrap {
   position: relative; z-index: 1;
   width: 100%; max-width: 400px;
   display: flex; flex-direction: column;
   align-items: center;
-  /* gap ridotto per stare nello schermo */
-  gap: 0.65rem;
+  gap: 0.7rem;
 }
 
-/* ── LOGO CRE (Bella Fra) — piccolo, sopra il trofeo ── */
-.login-cre-logo {
-  width: 80px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
-  flex-shrink: 0;
-}
-
-/* ── BRAND (trofeo + titolo) ── */
+/* BRAND */
 .login-brand { text-align: center; }
 .login-logo {
-  font-size: 2.8rem; line-height: 1; margin-bottom: 0.25rem;
+  font-size: 2.5rem; line-height: 1; margin-bottom: 0.2rem;
   filter: drop-shadow(0 0 18px rgba(255,200,0,0.7));
   animation: logoFloat 3s ease-in-out infinite;
   display: block;
@@ -218,29 +207,29 @@ export default {
   50%      { transform: translateY(-6px) rotate(3deg); }
 }
 .login-title {
-  font-size: 1.9rem; font-weight: 900;
+  font-size: 1.8rem; font-weight: 900;
   color: #fff; letter-spacing: 0.03em; margin: 0;
   text-shadow: 0 2px 20px rgba(102,126,234,0.6);
 }
-.login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 0.15rem; font-weight: 600; }
+.login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.82rem; margin-top: 0.1rem; font-weight: 600; }
 
-/* ── CARD ── */
+/* CARD */
 .login-card {
   width: 100%;
   background: rgba(255,255,255,0.07);
   backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 22px;
-  padding: 1.25rem 1.5rem;
+  padding: 1.1rem 1.4rem;
   box-shadow: 0 20px 56px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
-/* ── FORM GROUP ── */
-.lf-group { margin-bottom: 0.75rem; }
+/* FORM GROUP */
+.lf-group { margin-bottom: 0.7rem; }
 .lf-label {
   display: block; font-size: 0.72rem; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.09em;
-  color: rgba(255,255,255,0.5); margin-bottom: 0.35rem;
+  color: rgba(255,255,255,0.5); margin-bottom: 0.3rem;
 }
 .lf-input-wrap { position: relative; display: flex; align-items: center; }
 .lf-icon { position: absolute; left: 0.9rem; color: rgba(255,255,255,0.3); font-size: 0.85rem; pointer-events: none; }
@@ -249,7 +238,7 @@ export default {
   background: rgba(255,255,255,0.07);
   border: 1.5px solid rgba(255,255,255,0.1);
   border-radius: 13px;
-  padding: 0.75rem 1rem 0.75rem 2.6rem;
+  padding: 0.7rem 1rem 0.7rem 2.6rem;
   font-size: 0.98rem; font-weight: 600;
   color: #fff; outline: none;
   font-family: 'Nunito', sans-serif;
@@ -275,12 +264,12 @@ export default {
 }
 .lf-eye:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
 
-/* ── REMEMBER ── */
+/* REMEMBER */
 .lf-remember {
   display: flex; align-items: center; gap: 0.6rem;
   cursor: pointer; color: rgba(255,255,255,0.55);
-  font-size: 0.85rem; font-weight: 600;
-  margin-bottom: 1rem; user-select: none; padding: 0.1rem 0;
+  font-size: 0.82rem; font-weight: 600;
+  margin-bottom: 0.85rem; user-select: none; padding: 0.1rem 0;
 }
 .lf-remember input { display: none; }
 .lf-check {
@@ -299,9 +288,9 @@ export default {
   transform: rotate(45deg);
 }
 
-/* ── SUBMIT ── */
+/* SUBMIT */
 .lf-submit {
-  width: 100%; min-height: 52px;
+  width: 100%; min-height: 50px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none; border-radius: 14px;
   color: #fff; font-size: 1rem; font-weight: 800;
@@ -318,7 +307,7 @@ export default {
 .lf-submit:active:not(:disabled) { transform: scale(0.97); }
 .lf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* ── ERROR ── */
+/* ERROR */
 .lf-error {
   display: flex; align-items: center; gap: 0.6rem;
   background: rgba(220,53,69,0.15);
@@ -326,7 +315,7 @@ export default {
   border-radius: 11px;
   padding: 0.75rem 1rem;
   color: #ff8b96; font-size: 0.88rem; font-weight: 600;
-  margin-top: 0.85rem;
+  margin-top: 0.75rem;
 }
 .lf-error-close {
   margin-left: auto; background: none; border: none;
@@ -337,40 +326,17 @@ export default {
 .err-enter-active, .err-leave-active { transition: opacity 0.25s, transform 0.25s; }
 .err-enter-from, .err-leave-to { opacity: 0; transform: translateY(-8px); }
 
-/* ── FOOTER ── */
+/* FOOTER */
 .login-footer { color: rgba(255,255,255,0.25); font-size: 0.75rem; font-weight: 600; text-align: center; }
 
-/* ── LIGHT MODE ── */
-@media (prefers-color-scheme: light) {
-  .login-root { background: linear-gradient(160deg, #e8ecf8 0%, #d0daf5 50%, #c8d4f0 100%); }
-  .login-title { color: #1a1a3e; text-shadow: none; }
-  .login-subtitle { color: #666; }
-  .login-card {
-    background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.06);
-    box-shadow: 0 8px 40px rgba(0,0,0,0.12); backdrop-filter: none;
-  }
-  .lf-label { color: #666; }
-  .lf-input { background: #f5f6fa; border-color: #dde1ef; color: #1a1a2e; }
-  .lf-input::placeholder { color: #aaa; }
-  .lf-input:focus { background: #eef0fc; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
-  .lf-icon { color: #aaa; }
-  .lf-eye { color: #bbb; }
-  .lf-eye:hover { color: #667eea; background: rgba(102,126,234,0.06); }
-  .lf-remember { color: #666; }
-  .lf-check { border-color: #ccc; background: #f0f0f0; }
-  .login-footer { color: rgba(0,0,0,0.3); }
-  .sun { background: radial-gradient(circle, rgba(255,220,50,0.6) 0%, transparent 70%); }
-}
-
-/* ── SCHERMI MOLTO PICCOLI (iPhone SE, 568px h) ── */
-@media (max-height: 650px) {
-  .login-cre-logo { width: 60px; }
-  .login-logo { font-size: 2.2rem; }
-  .login-title { font-size: 1.6rem; }
+/* SCHERMI PICCOLI */
+@media (max-height: 600px) {
+  .login-logo { font-size: 1.8rem; }
+  .login-title { font-size: 1.4rem; }
   .login-wrap { gap: 0.45rem; }
-  .login-card { padding: 1rem 1.25rem; }
-  .lf-group { margin-bottom: 0.55rem; }
-  .lf-remember { margin-bottom: 0.75rem; }
-  .lf-submit { min-height: 46px; }
+  .login-card { padding: 0.85rem 1.1rem; }
+  .lf-group { margin-bottom: 0.5rem; }
+  .lf-remember { margin-bottom: 0.6rem; }
+  .lf-submit { min-height: 44px; }
 }
 </style>
