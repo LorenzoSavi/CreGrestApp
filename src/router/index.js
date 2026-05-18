@@ -11,13 +11,13 @@ const routes = [
     path: '/add-point',
     name: 'AddPoint',
     component: () => import('@/views/AddPoint.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresNonAdmin: false }
   },
   {
     path: '/total-point',
     name: 'TotalPoint',
     component: () => import('@/views/TotalPoint.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/',
@@ -38,24 +38,24 @@ export const logout = () => {
 
 router.beforeEach((to, from, next) => {
   const getCurrentUser = () => {
-    let user = JSON.parse(localStorage.getItem('loggedInUser'))
-    if (!user) {
-      user = JSON.parse(sessionStorage.getItem('loggedInUser'))
-    }
-    return user
+    try {
+      return JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'))
+    } catch { return null }
   }
 
   const loggedInUser = getCurrentUser()
   const isAuthenticated = !!loggedInUser
-  
+  const isAdmin = loggedInUser?.isAdmin === true
+
   if (to.meta.requiresAuth && !isAuthenticated) {
+    // Non loggato → login
     next('/login')
+  } else if (to.meta.requiresAdmin && isAuthenticated && !isAdmin) {
+    // Tenta di accedere a una rotta admin senza essere admin → rimanda ad add-point
+    next('/add-point')
   } else if (to.meta.requiresGuest && isAuthenticated) {
-    if (loggedInUser.isAdmin) {
-      next('/total-point')
-    } else {
-      next('/add-point')
-    }
+    // Già loggato → redirige alla pagina giusta
+    next(isAdmin ? '/total-point' : '/add-point')
   } else {
     next()
   }

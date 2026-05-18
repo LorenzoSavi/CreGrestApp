@@ -20,6 +20,7 @@
     <div class="ap-progress-fill" :style="{ width: progressPct + '%' }"></div>
   </div>
 
+  <!-- SCROLLABILE -->
   <main class="ap-main">
 
     <!-- STEP 1: Squadra -->
@@ -119,27 +120,27 @@
       </div>
     </transition>
 
-    <!-- Spacer per CTA -->
-    <div class="ap-spacer"></div>
-  </main>
-
-  <!-- CTA FISSA -->
-  <div class="ap-cta">
-    <div class="ap-preview" v-if="hasAnySelection">
-      <transition-group name="tag" tag="div" class="ap-preview-inner">
-        <span v-if="selectedTeam" :key="'t'" class="prev-tag" :class="selectedTeam + '-tag'">{{ teamName }}</span>
-        <span v-if="selectedCycle" :key="'c'" class="prev-tag prev-tag--cycle">{{ cycleName }}</span>
-        <span v-if="selectedGame" :key="'g'" class="prev-tag prev-tag--game">🎮 {{ gameName }}</span>
-        <span v-if="pointsToAdd > 0" :key="'p'" class="prev-pts">+{{ pointsToAdd }}</span>
-      </transition-group>
+    <!-- PREVIEW + SUBMIT nella pagina (non fixed) -->
+    <div class="ap-cta-inline">
+      <div class="ap-preview" v-if="hasAnySelection">
+        <transition-group name="tag" tag="div" class="ap-preview-inner">
+          <span v-if="selectedTeam" :key="'t'" class="prev-tag" :class="selectedTeam + '-tag'">{{ teamName }}</span>
+          <span v-if="selectedCycle" :key="'c'" class="prev-tag prev-tag--cycle">{{ cycleName }}</span>
+          <span v-if="selectedGame" :key="'g'" class="prev-tag prev-tag--game">🎮 {{ gameName }}</span>
+          <span v-if="pointsToAdd > 0" :key="'p'" class="prev-pts">+{{ pointsToAdd }}</span>
+        </transition-group>
+      </div>
+      <button class="ap-submit" @click="addPoints" :disabled="isLoading || !canSubmit">
+        <span v-if="!isLoading">
+          <i class="fas fa-bolt"></i>&nbsp; Aggiungi Punti
+        </span>
+        <span v-else><i class="fas fa-spinner fa-spin"></i>&nbsp; Salvataggio...</span>
+      </button>
     </div>
-    <button class="ap-submit" @click="addPoints" :disabled="isLoading || !canSubmit">
-      <span v-if="!isLoading">
-        <i class="fas fa-bolt"></i>&nbsp; Aggiungi Punti
-      </span>
-      <span v-else><i class="fas fa-spinner fa-spin"></i>&nbsp; Salvataggio...</span>
-    </button>
-  </div>
+
+    <!-- spazio respiro fondo pagina -->
+    <div style="height: 1.5rem"></div>
+  </main>
 
   <!-- SUCCESS MODAL -->
   <transition name="smodal">
@@ -309,13 +310,12 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 * { box-sizing: border-box; }
 
-:root { font-family: 'Nunito', sans-serif; }
-
-/* ── HEADER ── */
+/* ── HEADER (sticky) ── */
 .ap-header {
   background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
   position: sticky; top: 0; z-index: 50;
   box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  flex-shrink: 0;
 }
 .ap-header-inner {
   display: flex; align-items: center; justify-content: space-between;
@@ -334,10 +334,11 @@ export default {
 }
 .ap-logout:active { background: rgba(220,53,69,0.4); }
 
-/* ── PROGRESS BAR ── */
+/* ── PROGRESS BAR (sticky sotto header) ── */
 .ap-progress-bar {
   height: 3px; background: rgba(102,126,234,0.15);
   position: sticky; top: 62px; z-index: 49;
+  flex-shrink: 0;
 }
 .ap-progress-fill {
   height: 100%;
@@ -346,9 +347,16 @@ export default {
   border-radius: 0 2px 2px 0;
 }
 
-/* ── MAIN ── */
-.ap-main { font-family: 'Nunito', sans-serif; }
-.ap-spacer { height: 140px; }
+/* ── MAIN: scorre liberamente ── */
+.ap-main {
+  font-family: 'Nunito', sans-serif;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: #12122a;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
 
 /* ── SECTIONS ── */
 .ap-section {
@@ -365,7 +373,7 @@ export default {
 }
 .ap-step-num {
   width: 28px; height: 28px; border-radius: 50%;
-  background: #e8ecff; color: #667eea;
+  background: #232540; color: #667eea;
   font-size: 0.82rem; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: all 0.2s;
@@ -374,9 +382,9 @@ export default {
 .ap-step-title {
   font-size: 0.82rem; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.08em;
-  color: #888; display: flex; align-items: center; gap: 0.5rem;
+  color: rgba(255,255,255,0.45); display: flex; align-items: center; gap: 0.5rem;
 }
-.ap-hint { font-weight: 600; text-transform: none; font-size: 0.72rem; color: #bbb; }
+.ap-hint { font-weight: 600; text-transform: none; font-size: 0.72rem; color: rgba(255,255,255,0.25); }
 
 /* ── TEAM GRID ── */
 .team-grid {
@@ -400,26 +408,26 @@ export default {
   font-size: 0.75rem; font-weight: 900;
 }
 
-.rossi-tile     { background: #fff0f1; color: #DC3545; border-color: rgba(220,53,69,0.2); }
-.verdi-tile     { background: #f0fbf3; color: #28A745; border-color: rgba(40,167,69,0.2); }
-.arancioni-tile { background: #fff8f0; color: #FD7E14; border-color: rgba(253,126,20,0.2); }
-.blu-tile       { background: #f0f8ff; color: #007BFF; border-color: rgba(0,123,255,0.2); }
-.fucsia-tile    { background: #fff0f8; color: #E83E8C; border-color: rgba(232,62,140,0.2); }
-.gialli-tile    { background: #fffde0; color: #a07800; border-color: rgba(200,150,12,0.2); }
-.rossi-tile.team-tile--active     { background: #ffe0e3; border-color: #DC3545; box-shadow: 0 4px 18px rgba(220,53,69,0.28); transform: translateY(-2px); }
-.verdi-tile.team-tile--active     { background: #d8f5e1; border-color: #28A745; box-shadow: 0 4px 18px rgba(40,167,69,0.28); transform: translateY(-2px); }
-.arancioni-tile.team-tile--active { background: #ffe8d0; border-color: #FD7E14; box-shadow: 0 4px 18px rgba(253,126,20,0.28); transform: translateY(-2px); }
-.blu-tile.team-tile--active       { background: #d5ecff; border-color: #007BFF; box-shadow: 0 4px 18px rgba(0,123,255,0.28); transform: translateY(-2px); }
-.fucsia-tile.team-tile--active    { background: #ffd5ec; border-color: #E83E8C; box-shadow: 0 4px 18px rgba(232,62,140,0.28); transform: translateY(-2px); }
-.gialli-tile.team-tile--active    { background: #fff5b0; border-color: #c8960c; box-shadow: 0 4px 18px rgba(200,150,12,0.28); transform: translateY(-2px); }
+.rossi-tile     { background: rgba(220,53,69,0.15); color: #ff6b6b; border-color: rgba(220,53,69,0.25); }
+.verdi-tile     { background: rgba(40,167,69,0.15); color: #51cf66; border-color: rgba(40,167,69,0.25); }
+.arancioni-tile { background: rgba(253,126,20,0.15); color: #ffa94d; border-color: rgba(253,126,20,0.25); }
+.blu-tile       { background: rgba(0,123,255,0.15); color: #74c0fc; border-color: rgba(0,123,255,0.25); }
+.fucsia-tile    { background: rgba(232,62,140,0.15); color: #f78cc6; border-color: rgba(232,62,140,0.25); }
+.gialli-tile    { background: rgba(200,150,12,0.15); color: #ffd43b; border-color: rgba(200,150,12,0.25); }
+.rossi-tile.team-tile--active     { background: rgba(220,53,69,0.3); border-color: #ff6b6b; box-shadow: 0 4px 18px rgba(220,53,69,0.35); transform: translateY(-2px); }
+.verdi-tile.team-tile--active     { background: rgba(40,167,69,0.3); border-color: #51cf66; box-shadow: 0 4px 18px rgba(40,167,69,0.35); transform: translateY(-2px); }
+.arancioni-tile.team-tile--active { background: rgba(253,126,20,0.3); border-color: #ffa94d; box-shadow: 0 4px 18px rgba(253,126,20,0.35); transform: translateY(-2px); }
+.blu-tile.team-tile--active       { background: rgba(0,123,255,0.3); border-color: #74c0fc; box-shadow: 0 4px 18px rgba(0,123,255,0.35); transform: translateY(-2px); }
+.fucsia-tile.team-tile--active    { background: rgba(232,62,140,0.3); border-color: #f78cc6; box-shadow: 0 4px 18px rgba(232,62,140,0.35); transform: translateY(-2px); }
+.gialli-tile.team-tile--active    { background: rgba(200,150,12,0.3); border-color: #ffd43b; box-shadow: 0 4px 18px rgba(200,150,12,0.35); transform: translateY(-2px); }
 
 /* ── CYCLE BUTTONS ── */
 .cycle-row { display: flex; gap: 0.6rem; }
 .cycle-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   padding: 0.7rem 0.5rem; border-radius: 14px;
-  border: 2px solid rgba(102,126,234,0.18);
-  background: #f4f5ff; color: #667eea;
+  border: 2px solid rgba(102,126,234,0.2);
+  background: rgba(102,126,234,0.1); color: #848ae8;
   font-family: 'Nunito', sans-serif;
   cursor: pointer; transition: all 0.15s;
   -webkit-tap-highlight-color: transparent; min-height: 56px;
@@ -434,8 +442,8 @@ export default {
 .game-btn {
   display: flex; align-items: center; gap: 0.4rem;
   padding: 0.5rem 0.9rem; border-radius: 24px;
-  border: 1.5px solid rgba(0,0,0,0.09);
-  background: #f8f8f8; color: #555;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
   font-size: 0.85rem; font-weight: 700;
   font-family: 'Nunito', sans-serif;
   cursor: pointer; transition: all 0.15s;
@@ -444,8 +452,8 @@ export default {
 .game-btn i { font-size: 0.7rem; opacity: 0.6; }
 .game-btn:active { transform: scale(0.94); }
 .game-btn--active {
-  background: #1a1a2e; color: #fff; border-color: #1a1a2e;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  background: #667eea; color: #fff; border-color: #667eea;
+  box-shadow: 0 3px 12px rgba(102,126,234,0.35);
 }
 .game-btn--active i { opacity: 1; }
 .games-fade-enter-active { transition: opacity 0.3s, transform 0.3s; }
@@ -456,8 +464,8 @@ export default {
 .pts-quick-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   padding: 1rem 0; border-radius: 14px;
-  border: 2px solid rgba(102,126,234,0.18);
-  background: #f4f5ff; color: #667eea;
+  border: 2px solid rgba(102,126,234,0.2);
+  background: rgba(102,126,234,0.1); color: #848ae8;
   cursor: pointer; transition: all 0.15s;
   font-family: 'Nunito', sans-serif;
   -webkit-tap-highlight-color: transparent; min-height: 72px;
@@ -467,25 +475,21 @@ export default {
 .pts-q-val  { font-size: 1.5rem; font-weight: 900; line-height: 1; }
 .pts-q-label{ font-size: 0.7rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; margin-top: 0.2rem; }
 
-/* ── ERROR ── */
+/* ── ERRORE ── */
 .ap-error {
   max-width: 640px; margin: 0.75rem auto 0;
   padding: 0.8rem 1.25rem;
-  background: #ffe8e8; border-radius: 12px;
-  color: #c0392b; font-size: 0.9rem; font-weight: 700; text-align: center;
+  background: rgba(220,53,69,0.15); border-radius: 12px;
+  color: #ff8b8b; font-size: 0.9rem; font-weight: 700; text-align: center;
 }
 .err-enter-active, .err-leave-active { transition: opacity 0.25s, transform 0.25s; }
 .err-enter-from, .err-leave-to { opacity: 0; transform: translateY(-6px); }
 
-/* ── CTA BAR ── */
-.ap-cta {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 0.7rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(0,0,0,0.07);
-  z-index: 40; display: flex; flex-direction: column; gap: 0.5rem;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+/* ── CTA inline (nella pagina, non fixed) ── */
+.ap-cta-inline {
+  max-width: 640px; margin: 1rem auto 0;
+  padding: 0 1.25rem;
+  display: flex; flex-direction: column; gap: 0.55rem;
 }
 .ap-preview { overflow: hidden; }
 .ap-preview-inner { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-height: 26px; }
@@ -493,15 +497,15 @@ export default {
   font-size: 0.75rem; font-weight: 800;
   padding: 0.22rem 0.65rem; border-radius: 99px;
 }
-.prev-tag--cycle { background: #f0f0f0; color: #555; }
-.prev-tag--game  { background: #1a1a2e; color: #fff; }
-.rossi-tag     { background: #ffe0e3; color: #DC3545; }
-.verdi-tag     { background: #d8f5e1; color: #28A745; }
-.arancioni-tag { background: #ffe8d0; color: #FD7E14; }
-.blu-tag       { background: #d5ecff; color: #007BFF; }
-.fucsia-tag    { background: #ffd5ec; color: #E83E8C; }
-.gialli-tag    { background: #fff5b0; color: #a07800; }
-.prev-pts { font-size: 1.1rem; font-weight: 900; color: #667eea; margin-left: auto; }
+.prev-tag--cycle { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+.prev-tag--game  { background: rgba(255,255,255,0.15); color: #fff; }
+.rossi-tag     { background: rgba(220,53,69,0.25); color: #ff6b6b; }
+.verdi-tag     { background: rgba(40,167,69,0.25); color: #51cf66; }
+.arancioni-tag { background: rgba(253,126,20,0.25); color: #ffa94d; }
+.blu-tag       { background: rgba(0,123,255,0.25); color: #74c0fc; }
+.fucsia-tag    { background: rgba(232,62,140,0.25); color: #f78cc6; }
+.gialli-tag    { background: rgba(200,150,12,0.25); color: #ffd43b; }
+.prev-pts { font-size: 1.1rem; font-weight: 900; color: #848ae8; margin-left: auto; }
 .tag-enter-active, .tag-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .tag-enter-from, .tag-leave-to { opacity: 0; transform: scale(0.8); }
 
@@ -528,10 +532,10 @@ export default {
   z-index: 9999; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 .success-box {
-  background: #fff; border-radius: 28px;
+  background: #1e1e35; border-radius: 28px;
   padding: 2.5rem 2rem 2rem; text-align: center;
   max-width: 300px; width: 90%;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
   animation: popIn 0.35s cubic-bezier(.16,1,.3,1);
   border-top: 6px solid var(--team-color, #667eea);
   position: relative; overflow: hidden;
@@ -554,8 +558,8 @@ export default {
 }
 .success-emoji { font-size: 3.5rem; margin-bottom: 0.3rem; }
 .success-pts { font-size: 3rem; font-weight: 900; color: var(--team-color, #667eea); line-height: 1; font-family: 'Nunito', sans-serif; }
-.success-label { font-size: 0.85rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
-.success-msg { font-size: 1rem; color: #555; font-weight: 700; }
+.success-label { font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.success-msg { font-size: 1rem; color: rgba(255,255,255,0.7); font-weight: 700; }
 .smodal-enter-active, .smodal-leave-active { transition: opacity 0.25s; }
 .smodal-enter-from, .smodal-leave-to { opacity: 0; }
 
@@ -563,39 +567,5 @@ export default {
   0%   { opacity: 0; transform: scale(0.7); }
   60%  { transform: scale(1.04); }
   100% { opacity: 1; transform: scale(1); }
-}
-
-/* ── DARK MODE ── */
-@media (prefers-color-scheme: dark) {
-  .ap-section-label, .ap-step-title { color: #666; }
-  .ap-step-num { background: #232530; color: #848ae8; }
-  .ap-step-num.done { background: #667eea; color: #fff; }
-  .ap-progress-bar { background: rgba(102,126,234,0.1); }
-
-  .rossi-tile     { background: #2d1517; color: #ff6b6b; border-color: rgba(220,53,69,0.25); }
-  .verdi-tile     { background: #172d1e; color: #51cf66; border-color: rgba(40,167,69,0.25); }
-  .arancioni-tile { background: #2d1e0d; color: #ff922b; border-color: rgba(253,126,20,0.25); }
-  .blu-tile       { background: #0d1e2d; color: #74c0fc; border-color: rgba(0,123,255,0.25); }
-  .fucsia-tile    { background: #2d0e1e; color: #f78cc6; border-color: rgba(232,62,140,0.25); }
-  .gialli-tile    { background: #2d2800; color: #ffd43b; border-color: rgba(200,150,12,0.25); }
-  .rossi-tile.team-tile--active     { background: #5c1520; border-color: #ff6b6b; }
-  .verdi-tile.team-tile--active     { background: #1a4d25; border-color: #51cf66; }
-  .arancioni-tile.team-tile--active { background: #5c3210; border-color: #ff922b; }
-  .blu-tile.team-tile--active       { background: #0a2e5c; border-color: #74c0fc; }
-  .fucsia-tile.team-tile--active    { background: #5c0f2f; border-color: #f78cc6; }
-  .gialli-tile.team-tile--active    { background: #5c5000; border-color: #ffd43b; }
-
-  .cycle-btn { background: #232530; color: #848ae8; border-color: rgba(102,126,234,0.2); }
-  .cycle-btn--active { background: #667eea; color: #fff; border-color: #667eea; }
-  .game-btn { background: #1e2028; color: #ccc; border-color: rgba(255,255,255,0.08); }
-  .game-btn--active { background: #667eea; color: #fff; border-color: #667eea; }
-  .pts-quick-btn { background: #232530; color: #848ae8; border-color: rgba(102,126,234,0.2); }
-  .pts-quick-btn--active { background: #667eea; color: #fff; }
-  .ap-error { background: rgba(220,53,69,0.15); color: #ff8b8b; }
-  .ap-cta { background: rgba(18,18,28,0.97); border-top-color: rgba(255,255,255,0.07); }
-  .prev-tag--cycle { background: #2a2c36; color: #aaa; }
-  .success-box { background: #1e2028; }
-  .success-msg { color: #aaa; }
-  .success-label { color: #666; }
 }
 </style>
