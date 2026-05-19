@@ -897,4 +897,51 @@ export default {
   .modal-foot  { border-top-color: rgba(0,0,0,0.06); }
   .modal-cancel { background: #f0f3ff; color: #4a5fd4; }
 }
+
+/* ══════════════════════════════════════
+   LIGHT MODE — TotalPoint
+══════════════════════════════════════ */
+@media (prefers-color-scheme: light) {
+  .tp-header {
+    background: linear-gradient(135deg, #3b4db8 0%, #2355a0 100%);
+    box-shadow: 0 2px 16px rgba(60,80,180,0.18);
+  }
+  .tp-title    { color: #fff; }
+  .tp-sub      { color: rgba(255,255,255,0.7); }
+  .tp-username { color: rgba(255,255,255,0.85); }
+  .tp-avatar   { background: rgba(255,255,255,0.2); color: #fff; }
+  .tp-tabs { background: #fff; border-bottom: 1px solid rgba(102,126,234,0.15); }
+  .tp-tab  { color: #6b7280; }
+  .tp-tab--active { color: #4a5fd4; border-bottom-color: #4a5fd4; }
+  .tp-content { background: #f0f3ff; }
+  .tp-root    { background: #f0f3ff; }
+  .rank-row { background: #fff; }
+  .rank-row--podium { background: #f5f7ff; }
+  .rank-bar-track { background: rgba(102,126,234,0.12); }
+  .rank-score { color: #4a5fd4; }
+  .rank-num { color: #9ca3af; }
+  .fp-card { background: #eef1ff; border-color: rgba(102,126,234,0.3); }
+  .fp-label { color: #6b7280; }
+  .fp-score { color: #4a5fd4; }
+  .stat-card { background: #fff; }
+  .stat-val  { color: #4a5fd4; }
+  .stat-label { color: #9ca3af; }
+  .form-card { background: #fff; }
+  .fc-label  { color: #5a5f9a; }
+  .fc-step   { background: #dde3ff; color: #4a5fd4; }
+  .team-pill { background: #f0f3ff; border-color: rgba(102,126,234,0.25); color: #3a3f7a; }
+  .game-pill { background: #f0f3ff; border-color: rgba(102,126,234,0.2); color: #3a3f7a; }
+  .pts-q   { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
+  .pts-btn  { background: #e8ecff; color: #4a5fd4; }
+  .pts-input { background: #fff; color: #1a1a3e; border-color: rgba(102,126,234,0.3); }
+  .hist-row  { background: #fff; border-color: rgba(102,126,234,0.1); }
+  .hist-meta { color: #9ca3af; }
+  .lock-box { background: #fff; }
+  .lock-box h3 { color: #1a1a3e; }
+  .lock-box p  { color: #6b7280; }
+  .sk { background: linear-gradient(90deg,#e8ecff 25%,#f0f3ff 50%,#e8ecff 75%); background-size: 200% 100%; }
+  .notif-bar { background: #fff; color: #1a1a3e; box-shadow: 0 2px 12px rgba(60,80,180,0.12); }
+  .notif-success { border-left-color: #28a745; }
+  .notif-error   { border-left-color: #dc3545; }
+}
 </style>
