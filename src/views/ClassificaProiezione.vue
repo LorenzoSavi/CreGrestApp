@@ -50,7 +50,7 @@
             <div v-if="!revealStarted" class="cp-tap-invite">
               <div class="cp-tap-icon">🖱️</div>
               <div class="cp-tap-text">Clicca per rivelare</div>
-              <div class="cp-tap-sub">dal {{ sortedTeams.length }}° al 1° posto</div>
+              <div class="cp-tap-sub">dal {{ sortedTeams.length }}° al 2° posto… e poi il sorpresa!</div>
             </div>
           </transition>
 
@@ -59,12 +59,8 @@
               LOGICA VISIVA:
               - displayedTeams: array ordinato [1°, 2°, 3°, 4°, 5°, 6°]
               - flex-direction: column-reverse  =>  il 6° (index 5) finisce in BASSO, il 1° (index 0) in CIMA
-              - RIVELAZIONE: prima il 6° (rank=6), poi 5°, 4°, 3°, 2°, infine 1°
-                Ogni click aggiunge la squadra con rank = (sortedTeams.length - revealedCount)
-                Dopo click 1: revealedCount=1, mostriamo rank >= 6  (solo il 6°)
-                Dopo click 2: revealedCount=2, mostriamo rank >= 5  (6° e 5°)
-                ...
-                Dopo click 6: revealedCount=6, mostriamo tutti
+              - RIVELAZIONE con ordine personalizzato: 6 → 5 → 4 → 3 → 1 → 2
+                Il SECONDO posto viene rivelato PER ULTIMO come colpo di scena finale!
             -->
             <transition-group tag="div" class="cp-cards-list" name="card-enter">
               <div
@@ -74,7 +70,7 @@
                   'cp-card--' + team.id,
                   {
                     'cp-card--shaking': shakingCards.has(team.id),
-                    'cp-card--crazy':   crazyActive && team.rank === 1,
+                    'cp-card--crazy':   crazyActive && team.rank === 2,
                     'cp-card--winner':  team.rank === 1 && allRevealed && !shakingCards.has(team.id),
                   }
                 ]"
@@ -123,7 +119,8 @@
                   <div v-if="phase!=='finale' && team.rank===1 && allRevealed" class="cp-stars">
                     <span v-for="n in 6" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
                   </div>
-                  <div v-if="crazyActive && team.rank===1" class="cp-crazy-burst">
+                  <!-- Effetto crazy sul 2° posto (ultimo rivelato = colpo di scena) -->
+                  <div v-if="crazyActive && team.rank===2" class="cp-crazy-burst">
                     <span v-for="n in 24" :key="n" class="cp-burst-particle" :style="burstStyle(n)"></span>
                   </div>
                 </template>
@@ -223,13 +220,16 @@ export default {
       revealStarted: false,
       /*
         revealedCount = quante squadre sono state rivelate finora.
-        La squadra rivelata al click N ha rank = (sortedTeams.length - N + 1)
-        Click 1 => rank 6 (ultimo)  ← appare in basso
-        Click 2 => rank 5
-        Click 3 => rank 4
-        Click 4 => rank 3
-        Click 5 => rank 2
-        Click 6 => rank 1 (primo) ← appare in cima
+
+        ORDINE DI REVEAL PERSONALIZZATO: 6 → 5 → 4 → 3 → 1 → 2
+        Il SECONDO posto viene rivelato PER ULTIMO come colpo di scena finale!
+
+        revealOrder[0] = 6  (primo click)
+        revealOrder[1] = 5
+        revealOrder[2] = 4
+        revealOrder[3] = 3
+        revealOrder[4] = 1  (penultimo: il vincitore!)
+        revealOrder[5] = 2  (ULTIMO: sorpresa, il secondo posto è il gran finale)
       */
       revealedCount: 0,
       shakingCards: new Set(),
@@ -273,32 +273,33 @@ export default {
         .map((t, i) => ({ ...t, rank: i + 1 }));
     },
     /*
+      ORDINE DI REVEAL: 6 → 5 → 4 → 3 → 1 → 2
+      Per N squadre generiamo l'array: [N, N-1, ..., 3, 1, 2]
+      Esempio con 6: [6, 5, 4, 3, 1, 2]
+      Il 2° posto è sempre l'ultimo colpo di scena!
+    */
+    revealOrder() {
+      const N = this.sortedTeams.length;
+      if (N <= 2) {
+        // Con 1 o 2 squadre: ordine normale dal basso
+        return Array.from({ length: N }, (_, i) => N - i);
+      }
+      // Dal 6° al 3°, poi 1°, poi 2° come gran finale
+      const order = [];
+      for (let r = N; r >= 3; r--) order.push(r);
+      order.push(1); // penultimo: il vincitore
+      order.push(2); // ULTIMO: il secondo posto, colpo di scena!
+      return order;
+    },
+    /*
       displayedTeams contiene le squadre GIA' rivelate.
-
-      RIVELAZIONE DAL BASSO:
-        Al click 1: mostriamo la squadra con rank = N (il peggiore, in basso)
-        Al click 2: aggiungiamo rank = N-1
-        ...
-        Al click N: aggiungiamo rank = 1 (il migliore, in cima)
-
-      displayedTeams = sortedTeams filtrati per rank >= (N - revealedCount + 1)
-        dove N = sortedTeams.length
-
-      Esempio con 6 squadre:
-        revealedCount=1 => rank >= 6  => solo il 6°
-        revealedCount=2 => rank >= 5  => 5° e 6°
-        revealedCount=3 => rank >= 4  => 4°, 5°, 6°
-        ...
-        revealedCount=6 => rank >= 1  => tutti
-
-      Con flex-direction:column-reverse il 6° (rank più alto) finisce in fondo
-      e il 1° (rank=1) finisce in cima visivamente.
+      Usiamo revealOrder per sapere quale rank è stato rivelato ad ogni step.
+      Mostriamo tutte le squadre con rank incluso nei primi revealedCount elementi di revealOrder.
     */
     displayedTeams() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
-      const N = this.sortedTeams.length;
-      const minRank = N - this.revealedCount + 1;
-      return this.sortedTeams.filter(t => t.rank >= minRank);
+      const revealedRanks = new Set(this.revealOrder.slice(0, this.revealedCount));
+      return this.sortedTeams.filter(t => revealedRanks.has(t.rank));
     },
     maxPoints() {
       return Math.max(...this.teams.map(t => t.points), 1);
@@ -367,20 +368,22 @@ export default {
 
       this.isRevealing = true;
       this.revealStarted = true;
+
+      // Il rank da rivelare ora è il prossimo nella sequenza personalizzata
+      const rank = this.revealOrder[this.revealedCount];
       this.revealedCount++;
 
-      /*
-        Al click revealedCount-esimo stiamo rivelando
-        la squadra con rank = N - revealedCount + 1
-        (primo click => rank N = ultimo; ultimo click => rank 1 = primo)
-      */
-      const N    = this.sortedTeams.length;
-      const rank = N - this.revealedCount + 1;
       const team = this.sortedTeams.find(t => t.rank === rank);
       if (!team) { this.isRevealing = false; return; }
 
-      const isFirst  = rank === 1;
-      const shakeDur = isFirst ? CRAZY_MS : SHAKE_MS;
+      /*
+        Shake durata:
+        - rank 2 (l'ultimo rivelato, il gran finale) → CRAZY_MS, effetto esplosivo
+        - rank 1 (il vincitore, penultimo) → SHAKE_MS normale
+        - tutti gli altri → SHAKE_MS
+      */
+      const isGrandFinale = rank === 2;
+      const shakeDur = isGrandFinale ? CRAZY_MS : SHAKE_MS;
 
       this.shakingCards = new Set([...this.shakingCards, team.id]);
 
@@ -388,7 +391,7 @@ export default {
         const next = new Set(this.shakingCards);
         next.delete(team.id);
         this.shakingCards = next;
-        if (isFirst) {
+        if (isGrandFinale) {
           this.crazyActive = true;
           setTimeout(() => { this.crazyActive = false; }, POST_CRAZY);
         }
@@ -559,10 +562,10 @@ export default {
 
 /*
   flex-direction: column-reverse
-  => L'ultimo elemento dell'array (rank alto = posizione bassa) va VISIVAMENTE in basso
-  => Il primo elemento dell'array (rank 1 = primo posto) va VISIVAMENTE in cima
-  displayedTeams è ordinato [rank1, rank2, ..., rankN]
-  Con column-reverse: rankN appare in basso, rank1 in cima ✓
+  => displayedTeams è ordinato per rank (1°, 2°, ..., N°)
+  => Con column-reverse: rankN appare in basso visivamente, rank1 in cima ✓
+  => Ma siccome il 2° viene rivelato per ULTIMO, apparirà in CIMA (subito sotto il 1°)
+     che è la posizione corretta nella classifica finale!
 */
 .cp-cards-list{
   display:flex;
@@ -619,15 +622,14 @@ export default {
 .cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.1);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
 @keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.25)}}
 
-/* CRAZY 1° posto */
-.cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 70px rgba(255,215,0,.7),0 0 140px rgba(255,215,0,.3),inset 0 0 30px rgba(255,215,0,.15) !important;background:#1a1200 !important;z-index:20;}
+/* CRAZY 2° posto (l'ultimo colpo di scena!) */
+.cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(192,192,255,.95) !important;box-shadow:0 0 70px rgba(180,180,255,.7),0 0 140px rgba(180,180,255,.3),inset 0 0 30px rgba(180,180,255,.15) !important;background:#0a0a20 !important;z-index:20;}
 @keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
 
-/* Winner card */
+/* Winner card (1° posto) */
 .cp-card--winner{border-color:rgba(255,215,0,.7) !important;box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.08);transform:scale(1.018);}
 
 /* ─── BADGE COLORE SQUADRA ──────────────────────── */
-/* Il badge è nascosto su desktop e visibile come pill subito dopo il rank */
 .cp-team-badge{
   display:flex;align-items:center;gap:.35rem;
   padding:.2rem .65rem .2rem .4rem;
@@ -649,7 +651,6 @@ export default {
   text-transform:uppercase;
   white-space:nowrap;
 }
-/* Colori badge per squadra */
 .cp-badge--rossi    { background:rgba(220,53,69,.2);  border-color:rgba(220,53,69,.5); }
 .cp-badge--rossi    .cp-badge-dot  { background:#ff4d4d; box-shadow:0 0 8px rgba(255,77,77,.8); }
 .cp-badge--rossi    .cp-badge-name { color:#ff8080; }
@@ -679,7 +680,7 @@ export default {
   flex-shrink:0;
   width:clamp(44px,5vw,68px);
   text-align:center;
-  margin-left:clamp(6px,1vw,14px); /* compensa la strip laterale */
+  margin-left:clamp(6px,1vw,14px);
 }
 .cp-rank-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.2vw,2.6rem);color:rgba(255,255,255,.2);letter-spacing:.05em;}
 .cp-medal{font-size:clamp(1.7rem,3.5vw,2.8rem);}
