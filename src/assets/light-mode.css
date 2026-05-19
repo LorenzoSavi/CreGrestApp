@@ -1,0 +1,18 @@
+/*
+  light-mode.css — variabili globali light mode
+  Importato in main.js o App.vue se serve override globale
+*/
+@media (prefers-color-scheme: light) {
+  :root {
+    --lm-bg:           #f4f6fb;
+    --lm-surface:      #ffffff;
+    --lm-surface2:     #f0f2f8;
+    --lm-border:       rgba(0,0,0,0.09);
+    --lm-text:         #1a1a2e;
+    --lm-text-muted:   #5a5f7a;
+    --lm-text-faint:   #9399b2;
+    --lm-accent:       #667eea;
+    --lm-accent-hover: #4f6dd8;
+    --lm-header-bg:    linear-gradient(135deg, #2d2d6e 0%, #1a4a8a 100%);
+  }
+}

@@ -1,8 +1,8 @@
 <template>
   <div class="login-root">
     <div class="login-bg">
-      <div class="cloud cloud--1">☁️</div>
-      <div class="cloud cloud--2">⛅</div>
+      <div class="cloud cloud--1">⛅</div>
+      <div class="cloud cloud--2">🌤️</div>
     </div>
 
     <div class="login-wrap">
@@ -77,7 +77,6 @@
       </div>
 
       <p class="login-footer">Cre Grest {{ currentYear }} &nbsp;·&nbsp; Fatto da Savi🦞</p>
-
       <img class="login-cre-logo" src="/img/zanica-logo.png" alt="Logo Oratorio San Giovanni Bosco Zanica" />
     </div>
   </div>
@@ -154,7 +153,7 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 * { box-sizing: border-box; }
 
-/* ROOT */
+/* ── ROOT ── */
 .login-root {
   flex: 1;
   min-height: 0;
@@ -170,14 +169,14 @@ export default {
   font-family: 'Nunito', sans-serif;
 }
 
-/* BACKGROUND: solo nuvole */
+/* ── BACKGROUND ── */
 .login-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .cloud { position: absolute; font-size: 2rem; opacity: 0.15; animation: cloudFloat 8s ease-in-out infinite; }
 .cloud--1 { top: 18%; left: 8%; animation-delay: 0s; }
 .cloud--2 { top: 10%; right: 15%; animation-delay: -3s; font-size: 1.4rem; }
 @keyframes cloudFloat { 0%,100%{transform:translateX(0)} 50%{transform:translateX(12px)} }
 
-/* WRAP */
+/* ── WRAP ── */
 .login-wrap {
   position: relative; z-index: 1;
   width: 100%; max-width: 400px;
@@ -186,9 +185,8 @@ export default {
   gap: 0.7rem;
 }
 
-/* BRAND */
+/* ── BRAND ── */
 .login-brand { text-align: center; }
-
 .login-logo {
   font-size: 2.5rem; line-height: 1; margin-bottom: 0.2rem;
   filter: drop-shadow(0 0 8px rgba(255,200,0,0.65));
@@ -206,7 +204,7 @@ export default {
 }
 .login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.82rem; margin-top: 0.1rem; font-weight: 600; }
 
-/* CARD */
+/* ── CARD ── */
 .login-card {
   width: 100%;
   background: rgba(255,255,255,0.07);
@@ -217,7 +215,7 @@ export default {
   box-shadow: 0 20px 56px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
-/* FORM GROUP */
+/* ── FORM GROUP ── */
 .lf-group { margin-bottom: 0.7rem; }
 .lf-label {
   display: block; font-size: 0.72rem; font-weight: 800;
@@ -257,7 +255,7 @@ export default {
 }
 .lf-eye:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
 
-/* REMEMBER */
+/* ── REMEMBER ── */
 .lf-remember {
   display: flex; align-items: center; gap: 0.6rem;
   cursor: pointer; color: rgba(255,255,255,0.55);
@@ -281,7 +279,7 @@ export default {
   transform: rotate(45deg);
 }
 
-/* SUBMIT */
+/* ── SUBMIT ── */
 .lf-submit {
   width: 100%; min-height: 50px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -300,7 +298,7 @@ export default {
 .lf-submit:active:not(:disabled) { transform: scale(0.97); }
 .lf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* ERROR */
+/* ── ERROR ── */
 .lf-error {
   display: flex; align-items: center; gap: 0.6rem;
   background: rgba(220,53,69,0.15);
@@ -319,10 +317,10 @@ export default {
 .err-enter-active, .err-leave-active { transition: opacity 0.25s, transform 0.25s; }
 .err-enter-from, .err-leave-to { opacity: 0; transform: translateY(-8px); }
 
-/* FOOTER */
+/* ── FOOTER ── */
 .login-footer { color: rgba(255,255,255,0.25); font-size: 0.75rem; font-weight: 600; text-align: center; }
 
-/* LOGO ORATORIO IN FONDO */
+/* ── LOGO ORATORIO ── */
 .login-cre-logo {
   display: block;
   margin: 0.2rem auto 0;
@@ -333,7 +331,7 @@ export default {
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
 }
 
-/* SCHERMI PICCOLI */
+/* ── SCHERMI PICCOLI ── */
 @media (max-height: 600px) {
   .login-logo { font-size: 1.8rem; }
   .login-title { font-size: 1.4rem; }
@@ -343,5 +341,71 @@ export default {
   .lf-remember { margin-bottom: 0.6rem; }
   .lf-submit { min-height: 44px; }
   .login-cre-logo { height: 32px; }
+}
+
+/* ══════════════════════════════════════════
+   LIGHT MODE
+══════════════════════════════════════════ */
+@media (prefers-color-scheme: light) {
+  /* sfondo pagina */
+  .login-root { background: linear-gradient(160deg, #e8ecff 0%, #f5f7ff 60%, #eef0ff 100%); }
+
+  /* nuvole più visibili su sfondo chiaro */
+  .cloud { opacity: 0.35; }
+
+  /* titolo e subtitle */
+  .login-title { color: #1a1a2e; text-shadow: 0 2px 12px rgba(102,126,234,0.2); }
+  .login-subtitle { color: #5a5f7a; }
+
+  /* card */
+  .login-card {
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(102,126,234,0.18);
+    box-shadow: 0 12px 48px rgba(102,126,234,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  /* labels */
+  .lf-label { color: #5a5f7a; }
+
+  /* icona input */
+  .lf-icon { color: #9399b2; }
+
+  /* input */
+  .lf-input {
+    background: #f4f6ff;
+    border-color: rgba(102,126,234,0.25);
+    color: #1a1a2e;
+  }
+  .lf-input::placeholder { color: #b0b5cc; }
+  .lf-input:focus {
+    background: #eef0ff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+  }
+
+  /* toggle password */
+  .lf-eye { color: #9399b2; }
+  .lf-eye:hover { color: #667eea; background: rgba(102,126,234,0.08); }
+
+  /* remember */
+  .lf-remember { color: #5a5f7a; }
+  .lf-check { border-color: rgba(102,126,234,0.3); background: #f4f6ff; }
+
+  /* error field */
+  .lf-field-err { color: #c0392b; }
+
+  /* error banner */
+  .lf-error {
+    background: rgba(220,53,69,0.08);
+    border-color: rgba(220,53,69,0.25);
+    color: #c0392b;
+  }
+  .lf-error-close { color: #c0392b; }
+
+  /* footer */
+  .login-footer { color: #9399b2; }
+
+  /* logo */
+  .login-cre-logo { opacity: 0.75; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
 }
 </style>
