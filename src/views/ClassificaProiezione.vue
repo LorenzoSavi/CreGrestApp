@@ -55,6 +55,17 @@
           </transition>
 
           <div class="cp-cards-wrap">
+            <!--
+              LOGICA VISIVA:
+              - displayedTeams: array ordinato [1°, 2°, 3°, 4°, 5°, 6°]
+              - flex-direction: column-reverse  =>  il 6° (index 5) finisce in BASSO, il 1° (index 0) in CIMA
+              - RIVELAZIONE: prima il 6° (rank=6), poi 5°, 4°, 3°, 2°, infine 1°
+                Ogni click aggiunge la squadra con rank = (sortedTeams.length - revealedCount)
+                Dopo click 1: revealedCount=1, mostriamo rank >= 6  (solo il 6°)
+                Dopo click 2: revealedCount=2, mostriamo rank >= 5  (6° e 5°)
+                ...
+                Dopo click 6: revealedCount=6, mostriamo tutti
+            -->
             <transition-group tag="div" class="cp-cards-list" name="card-enter">
               <div
                 v-for="team in displayedTeams" :key="team.id"
@@ -64,39 +75,56 @@
                   {
                     'cp-card--shaking': shakingCards.has(team.id),
                     'cp-card--crazy':   crazyActive && team.rank === 1,
-                    'cp-card--winner':  team.rank === 1 && revealedCount === sortedTeams.length && !shakingCards.has(team.id),
-                    'cp-card--podium':  team.rank <= 3 && revealedCount === sortedTeams.length && phase === 'finale' && !shakingCards.has(team.id),
+                    'cp-card--winner':  team.rank === 1 && allRevealed && !shakingCards.has(team.id),
                   }
                 ]"
               >
+                <!-- Copertura bianca durante shake -->
                 <div v-if="shakingCards.has(team.id)" class="cp-card-cover">
                   <span class="cp-cover-q">?</span>
                 </div>
+
                 <template v-else>
+                  <!-- Strip colorata laterale sinistra -->
+                  <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
+
+                  <!-- Rank -->
                   <div class="cp-card-rank">
-                    <span v-if="revealedCount === sortedTeams.length && team.rank === 1" class="cp-medal">🥇</span>
-                    <span v-else-if="revealedCount === sortedTeams.length && team.rank === 2" class="cp-medal">🥈</span>
-                    <span v-else-if="revealedCount === sortedTeams.length && team.rank === 3" class="cp-medal">🥉</span>
+                    <span v-if="allRevealed && team.rank === 1" class="cp-medal">🥇</span>
+                    <span v-else-if="allRevealed && team.rank === 2" class="cp-medal">🥈</span>
+                    <span v-else-if="allRevealed && team.rank === 3" class="cp-medal">🥉</span>
                     <span v-else class="cp-rank-num">#{{ team.rank }}</span>
                   </div>
+
+                  <!-- Badge colore squadra -->
+                  <div class="cp-team-badge" :class="'cp-badge--' + team.id">
+                    <span class="cp-badge-dot"></span>
+                    <span class="cp-badge-name">{{ team.name }}</span>
+                  </div>
+
+                  <!-- Bar + nome grande -->
                   <div class="cp-card-info">
                     <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
                     <div class="cp-card-bar-wrap">
                       <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
                     </div>
                   </div>
+
+                  <!-- Score -->
                   <div class="cp-card-score">
                     <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
                     <span class="cp-score-unit">pt</span>
                   </div>
-                  <div v-if="phase==='finale' && team.rank===1 && revealedCount===sortedTeams.length" class="cp-sparks">
-                    <span v-for="n in 14" :key="n" class="cp-spark" :style="sparkStyle(n)"></span>
+
+                  <!-- Effetti 1° posto -->
+                  <div v-if="phase==='finale' && team.rank===1 && allRevealed" class="cp-sparks">
+                    <span v-for="n in 16" :key="n" class="cp-spark" :style="sparkStyle(n)"></span>
                   </div>
-                  <div v-if="phase!=='finale' && team.rank===1 && revealedCount===sortedTeams.length" class="cp-stars">
-                    <span v-for="n in 5" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
+                  <div v-if="phase!=='finale' && team.rank===1 && allRevealed" class="cp-stars">
+                    <span v-for="n in 6" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
                   </div>
                   <div v-if="crazyActive && team.rank===1" class="cp-crazy-burst">
-                    <span v-for="n in 20" :key="n" class="cp-burst-particle" :style="burstStyle(n)"></span>
+                    <span v-for="n in 24" :key="n" class="cp-burst-particle" :style="burstStyle(n)"></span>
                   </div>
                 </template>
               </div>
@@ -106,80 +134,47 @@
       </div>
     </transition>
 
-    <!-- ═══════════════════════════════════════════════════════
-         WINNER BANNER ULTRA (finale)
-    ═══════════════════════════════════════════════════════ -->
+    <!-- WINNER BANNER ULTRA (finale) -->
     <transition name="winner-fade">
       <div v-if="showWinnerBanner" class="cp-winner-overlay" @click.stop>
-
-        <!-- 1. Sfondo + vignetta radiale -->
         <div class="cp-win-bg"></div>
-
-        <!-- 2. Laser beams ruotanti -->
         <div class="cp-lasers">
           <div v-for="n in 12" :key="n" class="cp-laser" :style="laserStyle(n)"></div>
         </div>
-
-        <!-- 3. Shockwave cerchi espansivi -->
         <div class="cp-shockwaves">
           <div v-for="n in 4" :key="n" class="cp-shockwave" :style="{ animationDelay: ((n-1)*0.55)+'s' }"></div>
         </div>
-
-        <!-- 4. Pioggia oro (stelle + cerchi) -->
         <div class="cp-gold-rain">
           <span v-for="n in 60" :key="n" class="cp-gold-drop" :style="goldDropStyle(n)"></span>
         </div>
-
-        <!-- 5. Fuochi d'artificio -->
         <canvas ref="fireworksCanvas" class="cp-fireworks-canvas"></canvas>
-
-        <!-- 6. Confetti colorati -->
         <div class="cp-confetti-wrap">
           <span v-for="n in 80" :key="n" class="cp-confetto" :style="confettiStyle(n)"></span>
         </div>
-
-        <!-- 7. Contenuto centrale -->
         <div class="cp-win-center">
-          <!-- Halo dorato dietro -->
           <div class="cp-win-halo"></div>
-
-          <!-- Corona animata -->
           <div class="cp-win-crown">👑</div>
-
-          <!-- Scritta CAMPIONE con glitch -->
           <div class="cp-win-pre">CAMPIONE</div>
           <div class="cp-win-year">CREGREST {{ currentYear }}</div>
-
-          <!-- Nome con typewriter + glow pulsante -->
           <div class="cp-win-name" :class="'cp-name--' + sortedTeams[0].id">
-            <span v-for="(ch, i) in winnerNameChars" :key="i"
-              class="cp-win-char"
-              :style="{ animationDelay: (i * 0.07) + 's' }">
+            <span v-for="(ch, i) in winnerNameChars" :key="i" class="cp-win-char" :style="{ animationDelay: (i * 0.07) + 's' }">
               {{ ch === ' ' ? '\u00a0' : ch }}
             </span>
           </div>
-
-          <!-- Punti con count-up -->
           <div class="cp-win-pts">
             <span class="cp-win-pts-num">{{ displayedPoints }}</span>
             <span class="cp-win-pts-label">PUNTI</span>
           </div>
-
-          <!-- Stelle decorative -->
           <div class="cp-win-stars">
             <span v-for="n in 7" :key="n" class="cp-win-star" :style="winStarStyle(n)">★</span>
           </div>
-
-          <!-- Trofei laterali -->
           <div class="cp-win-trophies">
             <span class="cp-win-trophy-l">🏆</span>
             <span class="cp-win-trophy-r">🏆</span>
           </div>
-
           <div class="cp-win-sub">Congratulazioni! 🎉🎊🎉</div>
           <button class="cp-winner-close" @click="winnerClosed = true">Chiudi</button>
         </div>
-
       </div>
     </transition>
 
@@ -226,6 +221,16 @@ export default {
       phase: null,
       isLoading: false,
       revealStarted: false,
+      /*
+        revealedCount = quante squadre sono state rivelate finora.
+        La squadra rivelata al click N ha rank = (sortedTeams.length - N + 1)
+        Click 1 => rank 6 (ultimo)  ← appare in basso
+        Click 2 => rank 5
+        Click 3 => rank 4
+        Click 4 => rank 3
+        Click 5 => rank 2
+        Click 6 => rank 1 (primo) ← appare in cima
+      */
       revealedCount: 0,
       shakingCards: new Set(),
       crazyActive: false,
@@ -242,12 +247,12 @@ export default {
         { id: 'finale',    label: 'Classifica Finale', icon: '🏆' },
       ],
       allTeams: [
-        { id: 'rossi',     name: 'Rossi' },
-        { id: 'verdi',     name: 'Verdi' },
-        { id: 'arancioni', name: 'Arancioni' },
-        { id: 'blu',       name: 'Blu' },
-        { id: 'fucsia',    name: 'Fucsia' },
-        { id: 'gialli',    name: 'Gialli' },
+        { id: 'rossi',     name: 'Rossi',     color: '#ff4d4d' },
+        { id: 'verdi',     name: 'Verdi',     color: '#51cf66' },
+        { id: 'arancioni', name: 'Arancioni', color: '#ffa94d' },
+        { id: 'blu',       name: 'Blu',       color: '#74c0fc' },
+        { id: 'fucsia',    name: 'Fucsia',    color: '#f78cc6' },
+        { id: 'gialli',    name: 'Gialli',    color: '#ffd43b' },
       ],
       pointsData: null,
       historyData: [],
@@ -261,13 +266,39 @@ export default {
       if (!this.pointsData) return [];
       return this.allTeams.map(t => ({ ...t, points: this.getPointsForPhase(t.id) }));
     },
+    // sortedTeams: index 0 = 1° posto, index N-1 = ultimo posto
     sortedTeams() {
-      return [...this.teams].sort((a, b) => b.points - a.points).map((t, i) => ({ ...t, rank: i + 1 }));
+      return [...this.teams]
+        .sort((a, b) => b.points - a.points)
+        .map((t, i) => ({ ...t, rank: i + 1 }));
     },
+    /*
+      displayedTeams contiene le squadre GIA' rivelate.
+
+      RIVELAZIONE DAL BASSO:
+        Al click 1: mostriamo la squadra con rank = N (il peggiore, in basso)
+        Al click 2: aggiungiamo rank = N-1
+        ...
+        Al click N: aggiungiamo rank = 1 (il migliore, in cima)
+
+      displayedTeams = sortedTeams filtrati per rank >= (N - revealedCount + 1)
+        dove N = sortedTeams.length
+
+      Esempio con 6 squadre:
+        revealedCount=1 => rank >= 6  => solo il 6°
+        revealedCount=2 => rank >= 5  => 5° e 6°
+        revealedCount=3 => rank >= 4  => 4°, 5°, 6°
+        ...
+        revealedCount=6 => rank >= 1  => tutti
+
+      Con flex-direction:column-reverse il 6° (rank più alto) finisce in fondo
+      e il 1° (rank=1) finisce in cima visivamente.
+    */
     displayedTeams() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
-      const total = this.sortedTeams.length;
-      return this.sortedTeams.slice(total - this.revealedCount);
+      const N = this.sortedTeams.length;
+      const minRank = N - this.revealedCount + 1;
+      return this.sortedTeams.filter(t => t.rank >= minRank);
     },
     maxPoints() {
       return Math.max(...this.teams.map(t => t.points), 1);
@@ -291,14 +322,8 @@ export default {
   },
   watch: {
     showWinnerBanner(val) {
-      if (val) {
-        this.$nextTick(() => {
-          this.startCountUp();
-          this.startFireworks();
-        });
-      } else {
-        this.stopFireworks();
-      }
+      if (val) this.$nextTick(() => { this.startCountUp(); this.startFireworks(); });
+      else this.stopFireworks();
     },
   },
   methods: {
@@ -339,14 +364,26 @@ export default {
     handleClick() {
       if (this.showPhaseSelector || this.isLoading || this.isRevealing) return;
       if (this.revealedCount >= this.sortedTeams.length) return;
+
       this.isRevealing = true;
       this.revealStarted = true;
       this.revealedCount++;
-      const total = this.sortedTeams.length;
-      const team = this.sortedTeams[total - this.revealedCount];
-      const isFirst = team.rank === 1;
+
+      /*
+        Al click revealedCount-esimo stiamo rivelando
+        la squadra con rank = N - revealedCount + 1
+        (primo click => rank N = ultimo; ultimo click => rank 1 = primo)
+      */
+      const N    = this.sortedTeams.length;
+      const rank = N - this.revealedCount + 1;
+      const team = this.sortedTeams.find(t => t.rank === rank);
+      if (!team) { this.isRevealing = false; return; }
+
+      const isFirst  = rank === 1;
       const shakeDur = isFirst ? CRAZY_MS : SHAKE_MS;
+
       this.shakingCards = new Set([...this.shakingCards, team.id]);
+
       setTimeout(() => {
         const next = new Set(this.shakingCards);
         next.delete(team.id);
@@ -378,8 +415,6 @@ export default {
       localStorage.removeItem('loggedInUser');
       this.$router.push('/login');
     },
-
-    /* ── Count-up punti ─────────────────────────── */
     startCountUp() {
       const target = this.sortedTeams[0]?.points || 0;
       const duration = 2200;
@@ -392,8 +427,6 @@ export default {
       };
       requestAnimationFrame(step);
     },
-
-    /* ── Fuochi d'artificio su Canvas ──────────── */
     startFireworks() {
       const canvas = this.$refs.fireworksCanvas;
       if (!canvas) return;
@@ -401,60 +434,35 @@ export default {
       const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
       resize();
       window.addEventListener('resize', resize);
-
       const particles = [];
       const COLORS = ['#ffd43b','#ff6b6b','#51cf66','#74c0fc','#f78cc6','#ffa94d','#fff','#c084fc','#ff9f43'];
-
       const explode = (x, y) => {
         const color = COLORS[Math.floor(Math.random() * COLORS.length)];
         const count = 60 + Math.floor(Math.random() * 40);
         for (let i = 0; i < count; i++) {
           const angle = (i / count) * Math.PI * 2;
           const speed = 2 + Math.random() * 5;
-          particles.push({
-            x, y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            alpha: 1,
-            color,
-            size: 2 + Math.random() * 3,
-            decay: 0.012 + Math.random() * 0.01,
-          });
+          particles.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, alpha:1, color, size: 2+Math.random()*3, decay: 0.012+Math.random()*0.01 });
         }
       };
-
-      // Lancia fuochi a intervalli casuali
       const launch = () => {
         const x = 80 + Math.random() * (window.innerWidth - 160);
         const y = 80 + Math.random() * (window.innerHeight * 0.6);
         explode(x, y);
       };
-
-      // Esplosione iniziale massiccia
       for (let i = 0; i < 6; i++) setTimeout(launch, i * 220);
-
       this.fireworksTimer = setInterval(launch, 700);
-
       const draw = () => {
         if (!this.showWinnerBanner) return;
         ctx.fillStyle = 'rgba(0,0,0,0.18)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let i = particles.length - 1; i >= 0; i--) {
           const p = particles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.07; // gravità
-          p.alpha -= p.decay;
+          p.x += p.vx; p.y += p.vy; p.vy += 0.07; p.alpha -= p.decay;
           if (p.alpha <= 0) { particles.splice(i, 1); continue; }
-          ctx.save();
-          ctx.globalAlpha = p.alpha;
-          ctx.fillStyle = p.color;
-          ctx.shadowColor = p.color;
-          ctx.shadowBlur = 8;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
+          ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
         }
         requestAnimationFrame(draw);
       };
@@ -463,69 +471,34 @@ export default {
     stopFireworks() {
       if (this.fireworksTimer) { clearInterval(this.fireworksTimer); this.fireworksTimer = null; }
     },
-
-    /* ── Stili particelle ───────────────────────── */
     sparkStyle(n) {
-      return { '--angle': ((n / 14) * 360) + 'deg', animationDelay: (n * 0.07) + 's' };
+      return { '--angle': ((n/16)*360)+'deg', animationDelay: (n*0.06)+'s' };
     },
     starStyle(n) {
-      return { '--x': (-70 + n * 35) + 'px', '--y': (-28 - (n % 3) * 20) + 'px', animationDelay: (n * 0.14) + 's', fontSize: (1.1 + (n % 2) * 0.7) + 'rem' };
+      return { '--x': (-80+n*32)+'px', '--y': (-30-(n%3)*18)+'px', animationDelay: (n*0.12)+'s', fontSize: (1.1+(n%2)*0.7)+'rem' };
     },
     burstStyle(n) {
-      const colors = ['#ffd43b','#ff6b6b','#51cf66','#74c0fc','#f78cc6','#ffa94d','#fff','#c0f'];
-      return { '--angle': ((n / 20) * 360) + 'deg', '--color': colors[n % colors.length], animationDelay: (n * 0.04) + 's' };
+      const colors=['#ffd43b','#ff6b6b','#51cf66','#74c0fc','#f78cc6','#ffa94d','#fff','#c0f'];
+      return { '--angle': ((n/24)*360)+'deg', '--color': colors[n%colors.length], animationDelay: (n*0.035)+'s' };
     },
     laserStyle(n) {
-      const angle = (n / 12) * 360;
-      const hue   = (n / 12) * 60; // da oro a arancio
-      return {
-        '--angle': angle + 'deg',
-        '--hue':   hue,
-        animationDelay: (n * 0.18) + 's',
-      };
+      return { '--angle': ((n/12)*360)+'deg', '--hue': (n/12)*60, animationDelay: (n*0.18)+'s' };
     },
     goldDropStyle(n) {
-      const shapes = ['★','✦','◆','●','✸'];
-      return {
-        left:            ((n / 60) * 105) + 'vw',
-        '--duration':    (1.8 + (n % 5) * 0.4) + 's',
-        '--delay':       (n * 0.08) + 's',
-        '--rot':         (n * 53) + 'deg',
-        '--size':        (0.6 + (n % 4) * 0.35) + 'rem',
-        content: shapes[n % shapes.length],
-        animationDelay: 'var(--delay)',
-        animationDuration: 'var(--duration)',
-        fontSize: 'var(--size)',
-      };
+      return { left: ((n/60)*105)+'vw', '--duration': (1.8+(n%5)*0.4)+'s', '--delay': (n*0.08)+'s', '--rot': (n*53)+'deg', '--size': (0.6+(n%4)*0.35)+'rem', animationDelay:'var(--delay)', animationDuration:'var(--duration)', fontSize:'var(--size)' };
     },
     confettiStyle(n) {
-      const shapes = ['square','circle','rect'];
-      return {
-        '--color':    ['#ff6b6b','#ffd43b','#51cf66','#74c0fc','#f78cc6','#ffa94d','#fff','#c084fc'][n % 8],
-        '--duration': (2.0 + (n % 5) * 0.45) + 's',
-        '--delay':    (n * 0.04) + 's',
-        '--rot':      (n * 37) + 'deg',
-        animationDelay: 'var(--delay)',
-        animationDuration: 'var(--duration)',
-        left:  ((n / 80) * 100) + 'vw',
-        borderRadius: shapes[n % 3] === 'circle' ? '50%' : shapes[n % 3] === 'rect' ? '2px' : '3px',
-        width:  shapes[n % 3] === 'rect' ? '5px'  : '10px',
-        height: shapes[n % 3] === 'rect' ? '16px' : '10px',
-      };
+      const shapes=['square','circle','rect'];
+      return { '--color':['#ff6b6b','#ffd43b','#51cf66','#74c0fc','#f78cc6','#ffa94d','#fff','#c084fc'][n%8], '--duration':(2.0+(n%5)*0.45)+'s', '--delay':(n*0.04)+'s', '--rot':(n*37)+'deg', animationDelay:'var(--delay)', animationDuration:'var(--duration)', left:((n/80)*100)+'vw', borderRadius:shapes[n%3]==='circle'?'50%':shapes[n%3]==='rect'?'2px':'3px', width:shapes[n%3]==='rect'?'5px':'10px', height:shapes[n%3]==='rect'?'16px':'10px' };
     },
     winStarStyle(n) {
-      const angles = [0, 51, 102, 153, 204, 255, 306];
-      const r = 160 + (n % 2) * 40;
-      const a = (angles[n - 1] * Math.PI) / 180;
-      return {
-        left: 'calc(50% + ' + Math.cos(a) * r + 'px)',
-        top:  'calc(50% + ' + Math.sin(a) * r + 'px)',
-        animationDelay: ((n - 1) * 0.12) + 's',
-        fontSize: (1.2 + (n % 3) * 0.6) + 'rem',
-      };
+      const angles=[0,51,102,153,204,255,306];
+      const r=160+(n%2)*40;
+      const a=(angles[n-1]*Math.PI)/180;
+      return { left:'calc(50% + '+(Math.cos(a)*r)+'px)', top:'calc(50% + '+(Math.sin(a)*r)+'px)', animationDelay:((n-1)*0.12)+'s', fontSize:(1.2+(n%3)*0.6)+'rem' };
     },
     weekStarStyle(n) {
-      return { left: ((n / 18) * 100) + '%', animationDelay: (n * 0.09) + 's', animationDuration: (2 + (n % 3) * 0.6) + 's', fontSize: (1 + (n % 3) * 0.55) + 'rem' };
+      return { left:((n/18)*100)+'%', animationDelay:(n*0.09)+'s', animationDuration:(2+(n%3)*0.6)+'s', fontSize:(1+(n%3)*0.55)+'rem' };
     },
   },
 };
@@ -537,7 +510,7 @@ export default {
 
 .cp-root{font-family:'Nunito',sans-serif;background:#06060c;color:#fff;height:100dvh;width:100%;overflow:hidden;cursor:pointer;user-select:none;position:relative;display:flex;flex-direction:column;}
 
-/* ─── FASE ───────────────────────────────────────────── */
+/* ─── FASE ───────────────────────────────────────── */
 .cp-phase-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#06060c;z-index:100;cursor:default;}
 .cp-phase-inner{display:flex;flex-direction:column;align-items:center;gap:clamp(1rem,2.5vh,1.8rem);padding:clamp(1.5rem,4vh,3rem) clamp(1.5rem,3vw,3rem);max-width:520px;width:100%;}
 .cp-phase-logo{font-size:clamp(3rem,7vh,5rem);filter:drop-shadow(0 0 28px rgba(255,215,0,.7));animation:floatLogo 3s ease-in-out infinite;}
@@ -554,7 +527,7 @@ export default {
 .cp-logout-btn{display:flex;align-items:center;gap:.5rem;background:none;border:1.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.35);border-radius:99px;padding:.45rem 1.2rem;font-size:clamp(.72rem,1vw,.82rem);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
 .cp-logout-btn:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6);}
 
-/* ─── STAGE / HEADER ──────────────────────────────────── */
+/* ─── STAGE / HEADER ───────────────────────────────── */
 .cp-stage{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
 .cp-header{display:flex;align-items:center;justify-content:space-between;padding:clamp(.6rem,1.5vh,1rem) clamp(1rem,2.5vw,2.5rem);background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
 .cp-header-left{display:flex;align-items:center;gap:.75rem;}
@@ -570,46 +543,159 @@ export default {
 .cp-back-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;width:clamp(32px,4vh,40px);height:clamp(32px,4vh,40px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
 .cp-back-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
 
-/* ─── RANKING AREA ─────────────────────────────────────── */
-.cp-ranking-area{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(.5rem,1.5vh,1.5rem) clamp(1rem,4vw,6rem) clamp(.5rem,1.5vh,1.5rem);position:relative;overflow:hidden;min-height:0;}
+/* ─── RANKING AREA ───────────────────────────────────── */
+.cp-ranking-area{
+  flex:1;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:clamp(.5rem,1.5vh,1rem) clamp(1rem,4vw,5rem) clamp(.5rem,1.5vh,1rem);
+  position:relative;overflow:hidden;min-height:0;
+}
 .cp-tap-invite{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;color:rgba(255,255,255,.2);pointer-events:none;}
 .cp-tap-icon{font-size:clamp(2rem,5vh,3.5rem);animation:tapBounce 1.6s ease-in-out infinite;}
 @keyframes tapBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 .cp-tap-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4rem);letter-spacing:.15em;}
 .cp-tap-sub{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
-.cp-cards-wrap{width:100%;max-width:1100px;margin:0 auto;}
-.cp-cards-list{display:flex;flex-direction:column-reverse;gap:clamp(.4rem,1vh,.8rem);}
 
-/* ─── CARD ─────────────────────────────────────────────── */
-.cp-card{display:flex;align-items:center;gap:clamp(.6rem,1.5vw,1.5rem);background:#0e0e1c;border:2px solid rgba(255,255,255,.08);border-radius:clamp(12px,1.5vw,18px);padding:clamp(.55rem,1.3vh,1rem) clamp(.8rem,2vw,1.8rem);position:relative;overflow:hidden;min-height:clamp(60px,9vh,90px);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,background .3s;}
-.cp-card--rossi    {border-color:rgba(220,53,69,.45);}
-.cp-card--verdi    {border-color:rgba(40,167,69,.45);}
-.cp-card--arancioni{border-color:rgba(253,126,20,.45);}
-.cp-card--blu      {border-color:rgba(0,123,255,.45);}
-.cp-card--fucsia   {border-color:rgba(232,62,140,.45);}
-.cp-card--gialli   {border-color:rgba(200,150,12,.45);}
+.cp-cards-wrap{width:100%;max-width:1200px;margin:0 auto;}
+
+/*
+  flex-direction: column-reverse
+  => L'ultimo elemento dell'array (rank alto = posizione bassa) va VISIVAMENTE in basso
+  => Il primo elemento dell'array (rank 1 = primo posto) va VISIVAMENTE in cima
+  displayedTeams è ordinato [rank1, rank2, ..., rankN]
+  Con column-reverse: rankN appare in basso, rank1 in cima ✓
+*/
+.cp-cards-list{
+  display:flex;
+  flex-direction:column-reverse;
+  gap:clamp(.35rem,.8vh,.7rem);
+}
+
+/* ─── SINGOLA CARD ──────────────────────────────────────── */
+.cp-card{
+  display:flex;align-items:center;
+  gap:clamp(.5rem,1.2vw,1.2rem);
+  background:#0c0c1a;
+  border:2px solid rgba(255,255,255,.06);
+  border-radius:clamp(10px,1.2vw,16px);
+  padding:clamp(.5rem,1.2vh,.9rem) clamp(.7rem,1.5vw,1.4rem);
+  position:relative;overflow:hidden;
+  min-height:clamp(62px,9.5vh,92px);
+  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,background .3s;
+}
+
+/* Bagliore di sfondo con il colore della squadra */
+.cp-card--rossi    { background: linear-gradient(100deg, rgba(220,53,69,.18) 0%, #0c0c1a 40%); border-color: rgba(220,53,69,.35); }
+.cp-card--verdi    { background: linear-gradient(100deg, rgba(40,167,69,.18) 0%, #0c0c1a 40%); border-color: rgba(40,167,69,.35); }
+.cp-card--arancioni{ background: linear-gradient(100deg, rgba(253,126,20,.18) 0%, #0c0c1a 40%); border-color: rgba(253,126,20,.35); }
+.cp-card--blu      { background: linear-gradient(100deg, rgba(0,123,255,.18) 0%, #0c0c1a 40%); border-color: rgba(0,123,255,.35); }
+.cp-card--fucsia   { background: linear-gradient(100deg, rgba(232,62,140,.18) 0%, #0c0c1a 40%); border-color: rgba(232,62,140,.35); }
+.cp-card--gialli   { background: linear-gradient(100deg, rgba(200,160,0,.18) 0%, #0c0c1a 40%); border-color: rgba(200,160,0,.35); }
+
+/* Strip colorata sul bordo sinistro */
+.cp-color-strip{
+  position:absolute;left:0;top:0;bottom:0;
+  width:clamp(6px,.6vw,10px);
+  border-radius:inherit 0 0 inherit;
+  flex-shrink:0;
+}
+.cp-strip--rossi    { background: linear-gradient(180deg, #ff4d4d, #DC3545); box-shadow: 4px 0 20px rgba(220,53,69,.6); }
+.cp-strip--verdi    { background: linear-gradient(180deg, #51cf66, #28A745); box-shadow: 4px 0 20px rgba(40,167,69,.6); }
+.cp-strip--arancioni{ background: linear-gradient(180deg, #ffa94d, #FD7E14); box-shadow: 4px 0 20px rgba(253,126,20,.6); }
+.cp-strip--blu      { background: linear-gradient(180deg, #74c0fc, #007BFF); box-shadow: 4px 0 20px rgba(0,123,255,.6); }
+.cp-strip--fucsia   { background: linear-gradient(180deg, #f78cc6, #E83E8C); box-shadow: 4px 0 20px rgba(232,62,140,.6); }
+.cp-strip--gialli   { background: linear-gradient(180deg, #ffd43b, #c8960c); box-shadow: 4px 0 20px rgba(200,160,0,.6); }
+
+/* Card enter animation */
 .card-enter-enter-active{animation:cardBounceIn .55s cubic-bezier(.16,1,.3,1) both;}
-@keyframes cardBounceIn{0%{opacity:0;transform:translateY(60px) scale(.92);}60%{opacity:1;transform:translateY(-8px) scale(1.02);}80%{transform:translateY(4px) scale(.99);}100%{opacity:1;transform:translateY(0) scale(1);}}
-.cp-card--shaking{animation:cardShake .16s ease-in-out infinite !important;background:#111120 !important;}
-@keyframes cardShake{0%{transform:translateX(0) rotate(0deg);}20%{transform:translateX(-7px) rotate(-.7deg);}40%{transform:translateX(7px) rotate(.7deg);}60%{transform:translateX(-5px) rotate(-.4deg);}80%{transform:translateX(5px) rotate(.4deg);}100%{transform:translateX(0) rotate(0deg);}}
+@keyframes cardBounceIn{0%{opacity:0;transform:translateY(55px) scale(.93);}55%{opacity:1;transform:translateY(-7px) scale(1.02);}80%{transform:translateY(3px) scale(.99);}100%{opacity:1;transform:translateY(0) scale(1);}}
+
+/* SHAKE */
+.cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;background:#111120 !important;}
+@keyframes cardShake{0%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-.6deg);}75%{transform:translateX(8px) rotate(.6deg);}100%{transform:translateX(0);}}
+
+/* Copertura bianca */
 .cp-card-cover{position:absolute;inset:0;border-radius:inherit;background:#fff;display:flex;align-items:center;justify-content:center;z-index:10;animation:coverPulse .5s ease-in-out infinite alternate;}
-@keyframes coverPulse{from{background:#fff}to{background:#e0e0ff}}
-.cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.1);letter-spacing:.3em;animation:qBounce .5s ease-in-out infinite alternate;}
-@keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.2)}}
-.cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 60px rgba(255,215,0,.6),0 0 120px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.12) !important;background:#1a1400 !important;z-index:20;}
-@keyframes crazyShake{0%{transform:translateX(0) rotate(0deg) scale(1);}10%{transform:translateX(-12px) rotate(-1.8deg) scale(1.03);}20%{transform:translateX(12px) rotate(1.8deg) scale(.97);}30%{transform:translateX(-9px) rotate(-1.3deg) scale(1.04);}40%{transform:translateX(9px) rotate(1.3deg) scale(.96);}50%{transform:translateX(-6px) rotate(-.7deg) scale(1.02);}60%{transform:translateX(6px) rotate(.7deg) scale(1);}70%{transform:translateX(-4px) rotate(-.3deg) scale(1.01);}80%{transform:translateX(4px) rotate(.3deg) scale(.99);}100%{transform:translateX(0) rotate(0deg) scale(1);}}
-.cp-card--winner{background:rgba(255,215,0,.09);border-color:rgba(255,215,0,.6) !important;box-shadow:0 0 50px rgba(255,215,0,.18),inset 0 0 24px rgba(255,215,0,.07);transform:scale(1.014);}
-.cp-card--podium{background:rgba(255,255,255,.04);}
-.cp-card-rank{flex-shrink:0;width:clamp(40px,5vw,64px);text-align:center;}
-.cp-rank-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.4rem,3vw,2.4rem);color:rgba(255,255,255,.18);letter-spacing:.05em;}
-.cp-medal{font-size:clamp(1.6rem,3.5vw,2.6rem);}
+@keyframes coverPulse{from{background:#fff}to{background:#dde0ff}}
+.cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.1);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
+@keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.25)}}
+
+/* CRAZY 1° posto */
+.cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 70px rgba(255,215,0,.7),0 0 140px rgba(255,215,0,.3),inset 0 0 30px rgba(255,215,0,.15) !important;background:#1a1200 !important;z-index:20;}
+@keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
+
+/* Winner card */
+.cp-card--winner{border-color:rgba(255,215,0,.7) !important;box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.08);transform:scale(1.018);}
+
+/* ─── BADGE COLORE SQUADRA ──────────────────────── */
+/* Il badge è nascosto su desktop e visibile come pill subito dopo il rank */
+.cp-team-badge{
+  display:flex;align-items:center;gap:.35rem;
+  padding:.2rem .65rem .2rem .4rem;
+  border-radius:99px;
+  border:1.5px solid transparent;
+  flex-shrink:0;
+  margin-left:clamp(.1rem,.3vw,.4rem);
+}
+.cp-badge-dot{
+  width:clamp(10px,1.2vw,14px);
+  height:clamp(10px,1.2vw,14px);
+  border-radius:50%;
+  flex-shrink:0;
+}
+.cp-badge-name{
+  font-size:clamp(.6rem,.8vw,.75rem);
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+/* Colori badge per squadra */
+.cp-badge--rossi    { background:rgba(220,53,69,.2);  border-color:rgba(220,53,69,.5); }
+.cp-badge--rossi    .cp-badge-dot  { background:#ff4d4d; box-shadow:0 0 8px rgba(255,77,77,.8); }
+.cp-badge--rossi    .cp-badge-name { color:#ff8080; }
+
+.cp-badge--verdi    { background:rgba(40,167,69,.2);  border-color:rgba(40,167,69,.5); }
+.cp-badge--verdi    .cp-badge-dot  { background:#51cf66; box-shadow:0 0 8px rgba(81,207,102,.8); }
+.cp-badge--verdi    .cp-badge-name { color:#69db7c; }
+
+.cp-badge--arancioni{ background:rgba(253,126,20,.2); border-color:rgba(253,126,20,.5); }
+.cp-badge--arancioni .cp-badge-dot { background:#ffa94d; box-shadow:0 0 8px rgba(255,169,77,.8); }
+.cp-badge--arancioni .cp-badge-name{ color:#ffc078; }
+
+.cp-badge--blu      { background:rgba(0,123,255,.2);  border-color:rgba(0,123,255,.5); }
+.cp-badge--blu      .cp-badge-dot  { background:#74c0fc; box-shadow:0 0 8px rgba(116,192,252,.8); }
+.cp-badge--blu      .cp-badge-name { color:#a5d8ff; }
+
+.cp-badge--fucsia   { background:rgba(232,62,140,.2); border-color:rgba(232,62,140,.5); }
+.cp-badge--fucsia   .cp-badge-dot  { background:#f78cc6; box-shadow:0 0 8px rgba(247,140,198,.8); }
+.cp-badge--fucsia   .cp-badge-name { color:#faa2c1; }
+
+.cp-badge--gialli   { background:rgba(200,150,0,.2);  border-color:rgba(200,150,0,.5); }
+.cp-badge--gialli   .cp-badge-dot  { background:#ffd43b; box-shadow:0 0 8px rgba(255,212,59,.8); }
+.cp-badge--gialli   .cp-badge-name { color:#ffe066; }
+
+/* ─── RANK ────────────────────────────────────────────── */
+.cp-card-rank{
+  flex-shrink:0;
+  width:clamp(44px,5vw,68px);
+  text-align:center;
+  margin-left:clamp(6px,1vw,14px); /* compensa la strip laterale */
+}
+.cp-rank-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.2vw,2.6rem);color:rgba(255,255,255,.2);letter-spacing:.05em;}
+.cp-medal{font-size:clamp(1.7rem,3.5vw,2.8rem);}
+
+/* ─── INFO (nome + barra) ─────────────────────────── */
 .cp-card-info{flex:1;min-width:0;}
-.cp-card-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.4rem,3.5vw,2.8rem);letter-spacing:.08em;line-height:1;margin-bottom:clamp(.2rem,.5vh,.4rem);}
-.cp-card-bar-wrap{height:clamp(4px,.6vh,7px);background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;}
+.cp-card-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.8vw,3rem);letter-spacing:.09em;line-height:1;margin-bottom:clamp(.18rem,.4vh,.35rem);}
+.cp-card-bar-wrap{height:clamp(4px,.55vh,7px);background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;}
 .cp-card-bar{height:100%;border-radius:99px;transition:width 1.1s cubic-bezier(.16,1,.3,1);}
+
+/* ─── SCORE ──────────────────────────────────────────── */
 .cp-card-score{flex-shrink:0;text-align:right;}
-.cp-score-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,4.5vw,3.8rem);letter-spacing:.04em;line-height:1;}
-.cp-score-unit{display:block;font-size:clamp(.6rem,.9vw,.75rem);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);}
+.cp-score-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,4rem);letter-spacing:.04em;line-height:1;}
+.cp-score-unit{display:block;font-size:clamp(.6rem,.85vw,.72rem);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.28);}
+
+/* ─── COLORI TESTO + BARRE ───────────────────────────── */
 .cp-name--rossi    {color:#ff6b6b;}
 .cp-name--verdi    {color:#51cf66;}
 .cp-name--arancioni{color:#ffa94d;}
@@ -622,261 +708,72 @@ export default {
 .cp-bar--blu      {background:linear-gradient(90deg,#007BFF,#74c0fc);}
 .cp-bar--fucsia   {background:linear-gradient(90deg,#E83E8C,#f78cc6);}
 .cp-bar--gialli   {background:linear-gradient(90deg,#c8960c,#ffd43b);}
+
+/* Scintille + stelle + burst */
 .cp-sparks{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:visible;}
 .cp-spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#ffd43b;animation:sparkFly 1.3s ease-out infinite;--angle:0deg;}
-@keyframes sparkFly{0%{transform:rotate(var(--angle)) translateX(0) scale(1.5);opacity:1}100%{transform:rotate(var(--angle)) translateX(90px) scale(0);opacity:0}}
+@keyframes sparkFly{0%{transform:rotate(var(--angle)) translateX(0) scale(1.5);opacity:1}100%{transform:rotate(var(--angle)) translateX(95px) scale(0);opacity:0}}
 .cp-stars{position:absolute;right:1rem;top:50%;transform:translateY(-50%);pointer-events:none;}
 .cp-star{position:absolute;color:#ffd43b;animation:starPop .8s cubic-bezier(.16,1,.3,1) both,starFade 1.5s ease-in-out .5s infinite alternate;transform:translate(var(--x,0),var(--y,0));}
 @keyframes starPop{from{transform:translate(var(--x,0),var(--y,0)) scale(0)}to{transform:translate(var(--x,0),var(--y,0)) scale(1)}}
 @keyframes starFade{from{opacity:1}to{opacity:.4}}
 .cp-crazy-burst{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:visible;z-index:5;}
-.cp-burst-particle{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--color,#ffd43b);animation:burstFly 1s cubic-bezier(.16,1,.3,1) var(--delay,0s) both;--angle:0deg;}
-@keyframes burstFly{0%{transform:rotate(var(--angle)) translateX(0) scale(2);opacity:1}60%{opacity:1}100%{transform:rotate(var(--angle)) translateX(160px) scale(0);opacity:0}}
+.cp-burst-particle{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--color,#ffd43b);animation:burstFly 1s cubic-bezier(.16,1,.3,1) var(--delay,0s) both;}
+@keyframes burstFly{0%{transform:rotate(var(--angle,0deg)) translateX(0) scale(2);opacity:1}60%{opacity:1}100%{transform:rotate(var(--angle,0deg)) translateX(170px) scale(0);opacity:0}}
 
-/* ─── LOADING ─────────────────────────────────────────── */
+/* ─── LOADING ─────────────────────────────────────── */
 .cp-loading{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#06060c;color:rgba(255,255,255,.4);font-size:1rem;font-weight:700;}
 .cp-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:rgba(255,215,0,.65);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ══════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════
    WINNER OVERLAY ULTRA
-══════════════════════════════════════════════════════════ */
-.cp-winner-overlay{
-  position:fixed;inset:0;z-index:300;
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;
-}
-
-/* 1. Sfondo profondo con gradiente radiale dorato al centro */
-.cp-win-bg{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255,180,0,.18) 0%, transparent 70%),
-    radial-gradient(ellipse 120% 120% at 50% 100%, rgba(30,10,60,.9) 0%, transparent 60%),
-    #000;
-  animation:bgPulse 3s ease-in-out infinite alternate;
-}
+══════════════════════════════════════════════════════ */
+.cp-winner-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(255,180,0,.18) 0%,transparent 70%),radial-gradient(ellipse 120% 120% at 50% 100%,rgba(30,10,60,.9) 0%,transparent 60%),#000;animation:bgPulse 3s ease-in-out infinite alternate;}
 @keyframes bgPulse{from{opacity:.9}to{opacity:1}}
-
-/* 2. Laser beams */
 .cp-lasers{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.cp-laser{
-  position:absolute;
-  width:3px;
-  height:55vh;
-  border-radius:99px;
-  background:linear-gradient(to bottom, transparent 0%, hsla(calc(45 + var(--hue,0)),100%,70%,.9) 50%, transparent 100%);
-  transform-origin:center bottom;
-  transform:rotate(var(--angle,0deg)) translateY(-50%);
-  animation:laserSweep 6s ease-in-out var(--delay,0s) infinite alternate;
-  filter:blur(1.5px);
-  mix-blend-mode:screen;
-}
-@keyframes laserSweep{
-  0%  {opacity:0;transform:rotate(calc(var(--angle,0deg) - 15deg)) translateY(-50%) scaleX(.5);}
-  30% {opacity:.9;}
-  70% {opacity:.7;}
-  100%{opacity:0;transform:rotate(calc(var(--angle,0deg) + 15deg)) translateY(-50%) scaleX(1.5);}
-}
-
-/* 3. Shockwave */
+.cp-laser{position:absolute;width:3px;height:55vh;border-radius:99px;background:linear-gradient(to bottom,transparent 0%,hsla(calc(45 + var(--hue,0)),100%,70%,.9) 50%,transparent 100%);transform-origin:center bottom;transform:rotate(var(--angle,0deg)) translateY(-50%);animation:laserSweep 6s ease-in-out var(--delay,0s) infinite alternate;filter:blur(1.5px);mix-blend-mode:screen;}
+@keyframes laserSweep{0%{opacity:0;transform:rotate(calc(var(--angle,0deg) - 15deg)) translateY(-50%) scaleX(.5);}30%{opacity:.9;}70%{opacity:.7;}100%{opacity:0;transform:rotate(calc(var(--angle,0deg) + 15deg)) translateY(-50%) scaleX(1.5);}}
 .cp-shockwaves{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.cp-shockwave{
-  position:absolute;
-  width:20px;height:20px;
-  border-radius:50%;
-  border:4px solid rgba(255,215,0,.9);
-  animation:shockExpand 2.8s cubic-bezier(.2,.8,.4,1) infinite;
-}
-@keyframes shockExpand{
-  0%  {transform:scale(0);opacity:1;border-width:4px;}
-  60% {opacity:.4;}
-  100%{transform:scale(50);opacity:0;border-width:1px;}
-}
-
-/* 4. Pioggia d'oro */
+.cp-shockwave{position:absolute;width:20px;height:20px;border-radius:50%;border:4px solid rgba(255,215,0,.9);animation:shockExpand 2.8s cubic-bezier(.2,.8,.4,1) infinite;}
+@keyframes shockExpand{0%{transform:scale(0);opacity:1;border-width:4px;}60%{opacity:.4;}100%{transform:scale(50);opacity:0;border-width:1px;}}
 .cp-gold-rain{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
-.cp-gold-drop{
-  position:absolute;
-  top:-2rem;
-  color:#ffd43b;
-  text-shadow:0 0 8px rgba(255,200,0,.8);
-  animation:goldFall var(--duration,2s) ease-in var(--delay,0s) infinite;
-  transform-origin:center;
-  opacity:0;
-}
-@keyframes goldFall{
-  0%  {transform:translateY(0) rotate(var(--rot,0deg));opacity:0;}
-  8%  {opacity:1;}
-  90% {opacity:.8;}
-  100%{transform:translateY(110vh) rotate(calc(var(--rot,0deg) + 540deg));opacity:0;}
-}
-
-/* 5. Canvas fuochi */
-.cp-fireworks-canvas{
-  position:absolute;inset:0;
-  width:100%;height:100%;
-  pointer-events:none;
-  z-index:1;
-}
-
-/* 6. Confetti */
+.cp-gold-drop{position:absolute;top:-2rem;color:#ffd43b;text-shadow:0 0 8px rgba(255,200,0,.8);animation:goldFall var(--duration,2s) ease-in var(--delay,0s) infinite;opacity:0;}
+@keyframes goldFall{0%{transform:translateY(0) rotate(var(--rot,0deg));opacity:0;}8%{opacity:1;}90%{opacity:.8;}100%{transform:translateY(110vh) rotate(calc(var(--rot,0deg) + 540deg));opacity:0;}}
+.cp-fireworks-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 .cp-confetti-wrap{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2;}
-.cp-confetto{
-  position:absolute;top:-16px;
-  background:var(--color);
-  animation:confettiFall var(--duration,3s) ease-in var(--delay,0s) infinite;
-  transform-origin:center;
-}
-@keyframes confettiFall{
-  0%  {transform:translateY(0) rotate(var(--rot,0deg));opacity:1;}
-  85% {opacity:1;}
-  100%{transform:translateY(106vh) rotate(calc(var(--rot,0deg)+720deg));opacity:0;}
-}
-
-/* 7. Contenuto centrale */
-.cp-win-center{
-  position:relative;z-index:10;
-  display:flex;flex-direction:column;
-  align-items:center;text-align:center;
-  padding:clamp(2rem,5vh,4rem) clamp(2rem,5vw,5rem);
-  animation:winnerPop 1s cubic-bezier(.16,1,.3,1) both;
-}
+.cp-confetto{position:absolute;top:-16px;background:var(--color);animation:confettiFall var(--duration,3s) ease-in var(--delay,0s) infinite;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(var(--rot,0deg));opacity:1;}85%{opacity:1;}100%{transform:translateY(106vh) rotate(calc(var(--rot,0deg)+720deg));opacity:0;}}
+.cp-win-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(2rem,5vh,4rem) clamp(2rem,5vw,5rem);animation:winnerPop 1s cubic-bezier(.16,1,.3,1) both;}
 @keyframes winnerPop{0%{transform:scale(.3) translateY(80px);opacity:0}55%{transform:scale(1.1) translateY(-14px);opacity:1}75%{transform:scale(.97) translateY(6px);}100%{transform:scale(1) translateY(0);opacity:1}}
-
-/* Halo dorato */
-.cp-win-halo{
-  position:absolute;
-  width:clamp(300px,55vw,700px);
-  height:clamp(300px,55vw,700px);
-  border-radius:50%;
-  background:radial-gradient(circle, rgba(255,200,0,.22) 0%, rgba(255,150,0,.06) 50%, transparent 70%);
-  animation:haloPulse 2s ease-in-out infinite alternate;
-  pointer-events:none;
-  top:50%;left:50%;transform:translate(-50%,-50%);
-}
+.cp-win-halo{position:absolute;width:clamp(300px,55vw,700px);height:clamp(300px,55vw,700px);border-radius:50%;background:radial-gradient(circle,rgba(255,200,0,.22) 0%,rgba(255,150,0,.06) 50%,transparent 70%);animation:haloPulse 2s ease-in-out infinite alternate;pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%);}
 @keyframes haloPulse{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.25)}}
-
-/* Corona */
-.cp-win-crown{
-  font-size:clamp(5rem,14vh,10rem);
-  filter:drop-shadow(0 0 40px rgba(255,215,0,1)) drop-shadow(0 0 80px rgba(255,150,0,.8));
-  animation:crownFloat 2s ease-in-out infinite, crownSpin .4s ease-in-out 1;
-  position:relative;z-index:2;
-  margin-bottom:.2rem;
-}
+.cp-win-crown{font-size:clamp(5rem,14vh,10rem);filter:drop-shadow(0 0 40px rgba(255,215,0,1)) drop-shadow(0 0 80px rgba(255,150,0,.8));animation:crownFloat 2s ease-in-out infinite,crownSpin .4s ease-in-out 1;position:relative;z-index:2;margin-bottom:.2rem;}
 @keyframes crownFloat{0%,100%{transform:translateY(0) rotate(-4deg) scale(1)}50%{transform:translateY(-18px) rotate(4deg) scale(1.06)}}
 @keyframes crownSpin{0%{transform:rotateY(0deg) scale(.2)}60%{transform:rotateY(360deg) scale(1.2)}100%{transform:rotateY(360deg) scale(1)}}
-
-/* Pre-label CAMPIONE */
-.cp-win-pre{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(.9rem,2.2vw,1.6rem);
-  letter-spacing:.55em;
-  color:rgba(255,215,0,.7);
-  text-shadow:0 0 20px rgba(255,200,0,.5);
-  margin-bottom:.1rem;
-  animation:labelFadeIn .5s .3s both;
-}
-.cp-win-year{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(.75rem,1.5vw,1.1rem);
-  letter-spacing:.35em;
-  color:rgba(255,255,255,.35);
-  margin-bottom:clamp(.6rem,1.5vh,1.2rem);
-  animation:labelFadeIn .5s .5s both;
-}
+.cp-win-pre{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2.2vw,1.6rem);letter-spacing:.55em;color:rgba(255,215,0,.7);text-shadow:0 0 20px rgba(255,200,0,.5);margin-bottom:.1rem;animation:labelFadeIn .5s .3s both;}
+.cp-win-year{font-family:'Bebas Neue',sans-serif;font-size:clamp(.75rem,1.5vw,1.1rem);letter-spacing:.35em;color:rgba(255,255,255,.35);margin-bottom:clamp(.6rem,1.5vh,1.2rem);animation:labelFadeIn .5s .5s both;}
 @keyframes labelFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-/* Nome con typewriter lettera per lettera */
-.cp-win-name{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(5rem,16vw,14rem);
-  letter-spacing:.12em;
-  line-height:.9;
-  text-shadow:0 0 120px currentColor, 0 0 60px currentColor, 0 0 20px currentColor;
-  animation:namePulse 1.8s ease-in-out infinite alternate;
-  display:flex;flex-wrap:wrap;justify-content:center;
-  margin-bottom:clamp(.5rem,1.5vh,1.2rem);
-}
-@keyframes namePulse{
-  from{text-shadow:0 0 60px currentColor,  0 0 30px currentColor;  filter:brightness(1);}
-  to  {text-shadow:0 0 160px currentColor, 0 0 80px currentColor, 0 0 30px #fff;filter:brightness(1.25);}
-}
-.cp-win-char{
-  display:inline-block;
-  animation:charDrop .4s cubic-bezier(.16,1,.3,1) both;
-}
-@keyframes charDrop{
-  0%  {transform:translateY(-60px) scale(1.4) rotate(-8deg);opacity:0;}
-  60% {transform:translateY(6px) scale(.96);opacity:1;}
-  100%{transform:translateY(0) scale(1) rotate(0deg);opacity:1;}
-}
-
-/* Count-up punti */
-.cp-win-pts{
-  display:flex;align-items:baseline;gap:.5rem;
-  animation:labelFadeIn .5s 1.2s both;
-  margin-bottom:clamp(.5rem,1.5vh,1rem);
-}
-.cp-win-pts-num{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(2.5rem,7vw,6rem);
-  color:#ffd43b;
-  text-shadow:0 0 40px rgba(255,200,0,.8);
-  letter-spacing:.05em;
-  line-height:1;
-}
-.cp-win-pts-label{
-  font-size:clamp(.7rem,1.5vw,1.1rem);font-weight:900;
-  letter-spacing:.3em;text-transform:uppercase;
-  color:rgba(255,215,0,.5);
-}
-
-/* Stelle orbitanti */
+.cp-win-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(5rem,16vw,14rem);letter-spacing:.12em;line-height:.9;text-shadow:0 0 120px currentColor,0 0 60px currentColor,0 0 20px currentColor;animation:namePulse 1.8s ease-in-out infinite alternate;display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:clamp(.5rem,1.5vh,1.2rem);}
+@keyframes namePulse{from{text-shadow:0 0 60px currentColor,0 0 30px currentColor;filter:brightness(1);}to{text-shadow:0 0 160px currentColor,0 0 80px currentColor,0 0 30px #fff;filter:brightness(1.25);}}
+.cp-win-char{display:inline-block;animation:charDrop .4s cubic-bezier(.16,1,.3,1) both;}
+@keyframes charDrop{0%{transform:translateY(-60px) scale(1.4) rotate(-8deg);opacity:0;}60%{transform:translateY(6px) scale(.96);opacity:1;}100%{transform:translateY(0) scale(1) rotate(0deg);opacity:1;}}
+.cp-win-pts{display:flex;align-items:baseline;gap:.5rem;animation:labelFadeIn .5s 1.2s both;margin-bottom:clamp(.5rem,1.5vh,1rem);}
+.cp-win-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,7vw,6rem);color:#ffd43b;text-shadow:0 0 40px rgba(255,200,0,.8);letter-spacing:.05em;line-height:1;}
+.cp-win-pts-label{font-size:clamp(.7rem,1.5vw,1.1rem);font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,215,0,.5);}
 .cp-win-stars{position:absolute;inset:0;pointer-events:none;}
-.cp-win-star{
-  position:absolute;
-  color:#ffd43b;
-  text-shadow:0 0 12px rgba(255,200,0,.9);
-  transform:translate(-50%,-50%);
-  animation:starOrbit 3s ease-in-out infinite alternate;
-  font-size:1.5rem;
-}
-@keyframes starOrbit{
-  0%  {opacity:0;transform:translate(-50%,-50%) scale(0);}
-  20% {opacity:1;transform:translate(-50%,-50%) scale(1.3);}
-  80% {opacity:.9;transform:translate(-50%,-50%) scale(.8);}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(0);}
-}
-
-/* Trofei laterali */
+.cp-win-star{position:absolute;color:#ffd43b;text-shadow:0 0 12px rgba(255,200,0,.9);transform:translate(-50%,-50%);animation:starOrbit 3s ease-in-out infinite alternate;}
+@keyframes starOrbit{0%{opacity:0;transform:translate(-50%,-50%) scale(0);}20%{opacity:1;transform:translate(-50%,-50%) scale(1.3);}80%{opacity:.9;transform:translate(-50%,-50%) scale(.8);}100%{opacity:0;transform:translate(-50%,-50%) scale(0);}}
 .cp-win-trophies{display:flex;gap:clamp(6rem,20vw,18rem);position:absolute;top:50%;transform:translateY(-50%);pointer-events:none;}
-.cp-win-trophy-l,.cp-win-trophy-r{
-  font-size:clamp(2rem,5vw,4rem);
-  filter:drop-shadow(0 0 16px rgba(255,200,0,.7));
-  animation:trophyBob 2.2s ease-in-out infinite;
-}
+.cp-win-trophy-l,.cp-win-trophy-r{font-size:clamp(2rem,5vw,4rem);filter:drop-shadow(0 0 16px rgba(255,200,0,.7));animation:trophyBob 2.2s ease-in-out infinite;}
 .cp-win-trophy-r{animation-delay:.6s;}
 @keyframes trophyBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.08)}}
-
-/* Sub e chiudi */
-.cp-win-sub{
-  font-size:clamp(.9rem,1.8vw,1.3rem);font-weight:700;
-  color:rgba(255,255,255,.5);letter-spacing:.06em;
-  margin-bottom:.8rem;
-  animation:labelFadeIn .5s 1.6s both;
-}
-.cp-winner-close{
-  background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);
-  color:rgba(255,255,255,.55);border-radius:99px;
-  padding:.55rem 2rem;font-size:clamp(.8rem,1.2vw,.9rem);font-weight:800;
-  cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;letter-spacing:.05em;
-  animation:labelFadeIn .5s 2s both;
-}
+.cp-win-sub{font-size:clamp(.9rem,1.8vw,1.3rem);font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.06em;margin-bottom:.8rem;animation:labelFadeIn .5s 1.6s both;}
+.cp-winner-close{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.55);border-radius:99px;padding:.55rem 2rem;font-size:clamp(.8rem,1.2vw,.9rem);font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;letter-spacing:.05em;animation:labelFadeIn .5s 2s both;}
 .cp-winner-close:hover{background:rgba(255,255,255,.18);color:#fff;transform:scale(1.04);}
 
-/* ─── WEEK BANNER ─────────────────────────────────────── */
+/* ─── WEEK BANNER ───────────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.87);backdrop-filter:blur(14px);}
 .cp-week-content{text-align:center;animation:winnerPop .7s cubic-bezier(.16,1,.3,1) both;}
 .cp-week-icon{font-size:clamp(3rem,8vh,6rem);animation:floatLogo 3s ease-in-out infinite;}
@@ -887,7 +784,7 @@ export default {
 .cp-week-star{position:absolute;top:-10%;color:#ffd43b;animation:weekStarFall linear infinite;opacity:0;}
 @keyframes weekStarFall{0%{transform:translateY(0) rotate(0deg);opacity:0}10%{opacity:1}90%{opacity:.7}100%{transform:translateY(110vh) rotate(360deg);opacity:0}}
 
-/* ─── TRANSIZIONI ─────────────────────────────────────── */
+/* ─── TRANSIZIONI ───────────────────────────────────── */
 .phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s ease,transform .4s cubic-bezier(.16,1,.3,1);}
 .phase-fade-enter-from{opacity:0;transform:scale(1.03);}
 .phase-fade-leave-to{opacity:0;transform:scale(.97);position:absolute;inset:0;}
