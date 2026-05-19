@@ -20,10 +20,10 @@
     </div>
   </transition>
 
-  <!-- WRAPPER -->
+  <!-- WRAPPER: occupa tutto lo spazio flex lasciato da #app, scorre internamente -->
   <div class="tp-root">
 
-    <!-- HEADER -->
+    <!-- HEADER sticky -->
     <header class="tp-header">
       <div class="tp-header-inner">
         <div class="tp-brand">
@@ -45,7 +45,7 @@
       </div>
     </header>
 
-    <!-- TABS -->
+    <!-- TABS sticky -->
     <nav class="tp-tabs" role="tablist">
       <button class="tp-tab" role="tab" :class="{ 'tp-tab--active': activeTab === 'classifica' }" @click="activeTab = 'classifica'" :aria-selected="activeTab === 'classifica'">
         <i class="fas fa-trophy"></i><span>Classifica</span>
@@ -58,7 +58,7 @@
       </button>
     </nav>
 
-    <!-- CONTENT -->
+    <!-- CONTENT: questo è l'unico elemento che scorre -->
     <div class="tp-content">
 
       <!-- TAB: CLASSIFICA -->
@@ -154,7 +154,6 @@
                 @click="pointsToAdd = q"
               >{{ q }}</button>
             </div>
-            <!-- Barra +/- con input: flex con shrink 0 sui bottoni garantisce che + non esca mai -->
             <div class="pts-wrap">
               <button type="button" class="pts-btn" @click="pointsToAdd = Math.max(0, pointsToAdd - 1)" aria-label="Diminuisci">−</button>
               <input class="pts-input" type="number" v-model.number="pointsToAdd" min="0" inputmode="numeric" placeholder="0" />
@@ -411,14 +410,16 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 * { box-sizing: border-box; }
 
-/* ── ROOT ── */
+/* ── ROOT: flex colonna, occupa tutto lo spazio lasciato da #app ── */
 .tp-root {
   font-family: 'Nunito', sans-serif;
   background: #0f0f1a;
-  min-height: 100vh;
   color: #e8e8f0;
   display: flex;
   flex-direction: column;
+  flex: 1;           /* prende tutto lo spazio disponibile */
+  min-height: 0;     /* indispensabile perché il flex-child scorra */
+  overflow: hidden;  /* header e tabs restano fuori dallo scroll */
 }
 
 /* ── HEADER ── */
@@ -426,6 +427,7 @@ export default {
   background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
   position: sticky; top: 0; z-index: 50;
   box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  flex-shrink: 0;
 }
 .tp-header-inner {
   display: flex; align-items: center; justify-content: space-between;
@@ -453,11 +455,12 @@ export default {
 }
 .tp-logout:active { background: rgba(220,53,69,0.4); }
 
-/* ── TABS ── */
+/* ── TABS sticky (si blocca sotto l'header) ── */
 .tp-tabs {
   display: flex;
   background: #131326;
   border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
   position: sticky; top: 62px; z-index: 40;
 }
 .tp-tab {
@@ -470,9 +473,10 @@ export default {
 .tp-tab i { font-size: 0.9rem; }
 .tp-tab--active { color: #667eea; border-bottom-color: #667eea; }
 
-/* ── CONTENT: scrollabile, non overflow hidden ── */
+/* ── CONTENT: l'UNICO elemento che scorre ── */
 .tp-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 0.75rem 1rem 2rem;
@@ -635,57 +639,28 @@ export default {
 }
 .pts-q--active { background: #667eea; color: #fff; border-color: #667eea; box-shadow: 0 3px 12px rgba(102,126,234,0.35); }
 
-/* ── BARRA +/- PUNTI: fix mobile overflow ── */
+/* ── BARRA +/- ── */
 .pts-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  box-sizing: border-box;
+  display: flex; align-items: center; gap: 0.5rem;
+  width: 100%; box-sizing: border-box;
 }
 .pts-btn {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 12px;
-  background: rgba(102,126,234,0.15);
-  color: #667eea;
-  font-size: 1.4rem;
-  font-weight: 900;
-  border: 1.5px solid rgba(102,126,234,0.25);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0; width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  border-radius: 12px; background: rgba(102,126,234,0.15); color: #667eea;
+  font-size: 1.4rem; font-weight: 900; border: 1.5px solid rgba(102,126,234,0.25);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: background 0.15s, transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
-  font-family: 'Nunito', sans-serif;
-  line-height: 1;
+  -webkit-tap-highlight-color: transparent; font-family: 'Nunito', sans-serif; line-height: 1;
 }
 .pts-btn:active { transform: scale(0.93); background: rgba(102,126,234,0.3); }
 .pts-input {
-  flex: 1;
-  min-width: 0;
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 900;
-  font-family: 'Nunito', sans-serif;
-  border: 1.5px solid rgba(102,126,234,0.2);
-  border-radius: 12px;
-  padding: 0.5rem 0.25rem;
-  background: rgba(255,255,255,0.06);
-  color: #e8e8f0;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-  box-sizing: border-box;
+  flex: 1; min-width: 0; text-align: center;
+  font-size: 1.3rem; font-weight: 900; font-family: 'Nunito', sans-serif;
+  border: 1.5px solid rgba(102,126,234,0.2); border-radius: 12px;
+  padding: 0.5rem 0.25rem; background: rgba(255,255,255,0.06); color: #e8e8f0;
+  outline: none; -webkit-appearance: none; appearance: none; box-sizing: border-box;
 }
-.pts-input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-}
+.pts-input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.2); }
 
 /* ── PREVIEW ── */
 .pts-preview {
@@ -702,10 +677,9 @@ export default {
 .tp-submit {
   width: 100%; min-height: 52px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none; border-radius: 14px;
-  color: #fff; font-size: 1rem; font-weight: 900;
-  font-family: 'Nunito', sans-serif; cursor: pointer;
-  box-shadow: 0 4px 18px rgba(102,126,234,0.38);
+  border: none; border-radius: 14px; color: #fff;
+  font-size: 1rem; font-weight: 900; font-family: 'Nunito', sans-serif;
+  cursor: pointer; box-shadow: 0 4px 18px rgba(102,126,234,0.38);
   transition: transform 0.12s, opacity 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -736,7 +710,6 @@ export default {
   -webkit-tap-highlight-color: transparent;
 }
 .h-filter-btn--active { background: #667eea; color: #fff; border-color: #667eea; }
-
 .rossi-filter.h-filter-btn--active     { background: #DC3545; border-color: #DC3545; }
 .verdi-filter.h-filter-btn--active     { background: #28A745; border-color: #28A745; }
 .arancioni-filter.h-filter-btn--active { background: #FD7E14; border-color: #FD7E14; }

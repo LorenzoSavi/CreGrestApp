@@ -9,7 +9,7 @@
 
 html, body {
   height: 100%;
-  overflow: hidden;
+  /* NO overflow:hidden qui — lasciamo che ogni view gestisca il proprio scroll */
   background: #12122a;
 }
 
@@ -24,7 +24,7 @@ html, body {
   max-height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden;   /* il contenitore radice rimane locked */
   background: #12122a;
 }
 
@@ -36,6 +36,16 @@ html, body {
   display: block;
   flex-shrink: 0;
   background: #12122a;
+}
+
+/* router-view occupa tutto lo spazio restante e fa scorrere il suo contenuto */
+#app > .router-view,
+#app > div:not(#img) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {
