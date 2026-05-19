@@ -35,7 +35,6 @@ html, body {
   margin: 0;
   display: block;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
   background: #12122a;
 }
 
