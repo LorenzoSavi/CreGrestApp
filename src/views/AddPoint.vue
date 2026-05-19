@@ -13,12 +13,11 @@
         <i class="fas fa-sign-out-alt"></i>
       </button>
     </div>
+    <!-- PROGRESS BAR: incollata in fondo all'header, sempre visibile anche scrollando -->
+    <div class="ap-progress-bar">
+      <div class="ap-progress-fill" :style="{ width: progressPct + '%' }"></div>
+    </div>
   </header>
-
-  <!-- PROGRESS BAR -->
-  <div class="ap-progress-bar">
-    <div class="ap-progress-fill" :style="{ width: progressPct + '%' }"></div>
-  </div>
 
   <!-- SCROLLABILE -->
   <main class="ap-main">
@@ -334,11 +333,11 @@ export default {
 }
 .ap-logout:active { background: rgba(220,53,69,0.4); }
 
-/* ── PROGRESS BAR (sticky sotto header) ── */
+/* ── PROGRESS BAR: filo 2px dentro l'header sticky ── */
 .ap-progress-bar {
-  height: 3px; background: rgba(102,126,234,0.15);
-  position: sticky; top: 62px; z-index: 49;
-  flex-shrink: 0;
+  height: 2px;
+  background: rgba(102,126,234,0.15);
+  /* nessun position sticky separato: è già dentro .ap-header che è sticky */
 }
 .ap-progress-fill {
   height: 100%;
