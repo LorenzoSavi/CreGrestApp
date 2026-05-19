@@ -1,7 +1,6 @@
 <template>
   <div class="login-root">
     <div class="login-bg">
-      <div class="sun"></div>
       <div class="cloud cloud--1">☁️</div>
       <div class="cloud cloud--2">⛅</div>
     </div>
@@ -153,7 +152,7 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 * { box-sizing: border-box; }
 
-/* ROOT: riempie lo spazio rimasto sotto il logo in App.vue */
+/* ROOT */
 .login-root {
   flex: 1;
   min-height: 0;
@@ -169,20 +168,11 @@ export default {
   font-family: 'Nunito', sans-serif;
 }
 
-/* BACKGROUND */
+/* BACKGROUND: solo nuvole, niente sole/glow */
 .login-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.sun {
-  position: absolute;
-  width: 160px; height: 160px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,220,50,0.4) 0%, transparent 70%);
-  top: -30px; right: 10%;
-  animation: sunPulse 4s ease-in-out infinite;
-}
-.cloud { position: absolute; font-size: 2rem; opacity: 0.15; animation: cloudFloat 8s ease-in-out infinite; }
+.cloud { position: absolute; font-size: 2rem; opacity: 0.12; animation: cloudFloat 8s ease-in-out infinite; }
 .cloud--1 { top: 18%; left: 8%; animation-delay: 0s; }
 .cloud--2 { top: 10%; right: 15%; animation-delay: -3s; font-size: 1.4rem; }
-@keyframes sunPulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.7;transform:scale(1.1)} }
 @keyframes cloudFloat { 0%,100%{transform:translateX(0)} 50%{transform:translateX(12px)} }
 
 /* WRAP */
@@ -198,7 +188,6 @@ export default {
 .login-brand { text-align: center; }
 .login-logo {
   font-size: 2.5rem; line-height: 1; margin-bottom: 0.2rem;
-  filter: drop-shadow(0 0 18px rgba(255,200,0,0.7));
   animation: logoFloat 3s ease-in-out infinite;
   display: block;
 }
@@ -209,7 +198,6 @@ export default {
 .login-title {
   font-size: 1.8rem; font-weight: 900;
   color: #fff; letter-spacing: 0.03em; margin: 0;
-  text-shadow: 0 2px 20px rgba(102,126,234,0.6);
 }
 .login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.82rem; margin-top: 0.1rem; font-weight: 600; }
 
