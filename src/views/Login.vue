@@ -3,6 +3,11 @@
     <div class="login-bg">
       <div class="cloud cloud--1">☁️</div>
       <div class="cloud cloud--2">⛅</div>
+      <!-- Sole con il suo sfondo naturale, ancorato in basso -->
+      <div class="sun-wrap">
+        <div class="sun-glow"></div>
+        <div class="sun">☀️</div>
+      </div>
     </div>
 
     <div class="login-wrap">
@@ -168,12 +173,68 @@ export default {
   font-family: 'Nunito', sans-serif;
 }
 
-/* BACKGROUND: solo nuvole */
+/* BACKGROUND */
 .login-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+/* NUVOLE */
 .cloud { position: absolute; font-size: 2rem; opacity: 0.15; animation: cloudFloat 8s ease-in-out infinite; }
 .cloud--1 { top: 18%; left: 8%; animation-delay: 0s; }
 .cloud--2 { top: 10%; right: 15%; animation-delay: -3s; font-size: 1.4rem; }
 @keyframes cloudFloat { 0%,100%{transform:translateX(0)} 50%{transform:translateX(12px)} }
+
+/* SOLE — ancorato in basso al centro, come se sorgesse dall'orizzonte */
+.sun-wrap {
+  position: absolute;
+  bottom: -28px;          /* metà sole sotto il bordo = effetto orizzonte */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Alone solare — sfondo caldo che si espande dal sole verso l'alto */
+.sun-glow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 100%,
+    rgba(255, 200, 60, 0.30) 0%,
+    rgba(255, 160, 30, 0.18) 35%,
+    rgba(255, 120, 20, 0.08) 60%,
+    transparent 75%
+  );
+  pointer-events: none;
+}
+
+/* Emoji sole con animazione */
+.sun {
+  position: relative;
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 18px rgba(255, 200, 0, 0.9))
+          drop-shadow(0 0 40px rgba(255, 160, 0, 0.5));
+  animation: sunPulse 4s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes sunPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 18px rgba(255, 200, 0, 0.9))
+            drop-shadow(0 0 40px rgba(255, 160, 0, 0.5));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 26px rgba(255, 220, 0, 1.0))
+            drop-shadow(0 0 60px rgba(255, 180, 0, 0.7));
+    transform: scale(1.06);
+  }
+}
 
 /* WRAP */
 .login-wrap {
@@ -330,5 +391,7 @@ export default {
   .lf-group { margin-bottom: 0.5rem; }
   .lf-remember { margin-bottom: 0.6rem; }
   .lf-submit { min-height: 44px; }
+  .sun { font-size: 2.5rem; }
+  .sun-glow { width: 180px; height: 180px; }
 }
 </style>
