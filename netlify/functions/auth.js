@@ -6,7 +6,7 @@ exports.handler = async (event, context) => {
   const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
 
   const headers = {
-    'Access-Control-Allow-Origin': allowedOrigin,
+     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json'
@@ -21,6 +21,8 @@ exports.handler = async (event, context) => {
 
     // Admin users
     const adminUsers = ['Savi', 'Leidi', 'Brambo', 'DonGio'];
+    // Proiezione classifica
+    const classificaUsers = ['Classifica'];
 
     // All credentials from Netlify env vars
     const credentials = {
@@ -29,6 +31,8 @@ exports.handler = async (event, context) => {
       'Leidi': process.env.LEIDI_PASSWORD,
       'Brambo': process.env.BRAMBO_PASSWORD,
       'DonGio': process.env.DONGIO_PASSWORD,
+      // Proiezione classifica
+      'Classifica': process.env.CLASSIFICA_PASSWORD,
       // Regular users
       'Locatelli': process.env.LOCATELLI_PASSWORD,
       'Cornolti': process.env.CORNOLTI_PASSWORD,
@@ -83,6 +87,7 @@ exports.handler = async (event, context) => {
     }
 
     const isAdmin = adminUsers.includes(username);
+    const isClassifica = classificaUsers.includes(username);
 
     return {
       statusCode: 200,
@@ -91,7 +96,8 @@ exports.handler = async (event, context) => {
         success: true,
         user: {
           username,
-          isAdmin
+          isAdmin,
+          isClassifica
         }
       })
     };

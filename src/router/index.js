@@ -11,13 +11,19 @@ const routes = [
     path: '/add-point',
     name: 'AddPoint',
     component: () => import('@/views/AddPoint.vue'),
-    meta: { requiresAuth: true, requiresNonAdmin: false }
+    meta: { requiresAuth: true }
   },
   {
     path: '/total-point',
     name: 'TotalPoint',
     component: () => import('@/views/TotalPoint.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/classifica-proiezione',
+    name: 'ClassificaProiezione',
+    component: () => import('@/views/ClassificaProiezione.vue'),
+    meta: { requiresAuth: true, requiresClassifica: true }
   },
   {
     path: '/',
@@ -46,16 +52,18 @@ router.beforeEach((to, from, next) => {
   const loggedInUser = getCurrentUser()
   const isAuthenticated = !!loggedInUser
   const isAdmin = loggedInUser?.isAdmin === true
+  const isClassifica = loggedInUser?.isClassifica === true
 
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // Non loggato → login
     next('/login')
   } else if (to.meta.requiresAdmin && isAuthenticated && !isAdmin) {
-    // Tenta di accedere a una rotta admin senza essere admin → rimanda ad add-point
+    next(isClassifica ? '/classifica-proiezione' : '/add-point')
+  } else if (to.meta.requiresClassifica && isAuthenticated && !isClassifica && !isAdmin) {
     next('/add-point')
   } else if (to.meta.requiresGuest && isAuthenticated) {
-    // Già loggato → redirige alla pagina giusta
-    next(isAdmin ? '/total-point' : '/add-point')
+    if (isAdmin) next('/total-point')
+    else if (isClassifica) next('/classifica-proiezione')
+    else next('/add-point')
   } else {
     next()
   }
