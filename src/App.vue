@@ -9,7 +9,6 @@
 
 html, body {
   height: 100%;
-  /* NO overflow:hidden qui — lasciamo che ogni view gestisca il proprio scroll */
   background: #12122a;
 }
 
@@ -24,7 +23,7 @@ html, body {
   max-height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;   /* il contenitore radice rimane locked */
+  overflow: hidden;
   background: #12122a;
 }
 
@@ -38,7 +37,7 @@ html, body {
   background: #12122a;
 }
 
-/* router-view occupa tutto lo spazio restante e fa scorrere il suo contenuto */
+/* router-view occupa tutto lo spazio restante */
 #app > .router-view,
 #app > div:not(#img) {
   flex: 1;
@@ -51,12 +50,30 @@ html, body {
 @media (max-width: 768px) {
   #img { height: 110px; }
 }
-
 @media (max-width: 480px) {
   #img { height: 95px; }
 }
-
 @media (max-height: 650px) {
   #img { height: 75px; }
+}
+
+/* ══════════════════════════════════════════
+   LIGHT MODE — tutto parte da qui
+══════════════════════════════════════════ */
+@media (prefers-color-scheme: light) {
+  html, body {
+    background: #e8ecff;
+  }
+
+  #app {
+    background: linear-gradient(160deg, #e8ecff 0%, #f5f7ff 60%, #eef0ff 100%);
+    color: #1a1a2e;
+  }
+
+  /* fascia logo: sfondo chiaro con lieve gradiente e ombra morbida */
+  #img {
+    background: linear-gradient(180deg, #dde3ff 0%, #eef0ff 100%);
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.12);
+  }
 }
 </style>
