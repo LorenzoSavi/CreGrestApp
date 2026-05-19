@@ -10,7 +10,6 @@
         <div class="login-logo">🏆</div>
         <h1 class="login-title">Cre Grest</h1>
         <p class="login-subtitle">Bentornato! Accedi per continuare</p>
-        <img class="login-cre-logo" src="@/assets/image.png" alt="Logo Cre Grest Zanica" />
       </div>
 
       <div class="login-card">
@@ -78,6 +77,8 @@
       </div>
 
       <p class="login-footer">Cre Grest {{ currentYear }} &nbsp;·&nbsp; Fatto da Savi🦞</p>
+
+      <img class="login-cre-logo" src="@/assets/image.png" alt="Logo Oratorio San Giovanni Bosco Zanica" />
     </div>
   </div>
 </template>
@@ -205,17 +206,6 @@ export default {
 }
 .login-subtitle { color: rgba(255,255,255,0.5); font-size: 0.82rem; margin-top: 0.1rem; font-weight: 600; }
 
-/* LOGO CRE ZANICA in piccolo */
-.login-cre-logo {
-  display: block;
-  margin: 0.55rem auto 0;
-  height: 48px;
-  width: auto;
-  object-fit: contain;
-  opacity: 0.75;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
-}
-
 /* CARD */
 .login-card {
   width: 100%;
@@ -332,6 +322,17 @@ export default {
 /* FOOTER */
 .login-footer { color: rgba(255,255,255,0.25); font-size: 0.75rem; font-weight: 600; text-align: center; }
 
+/* LOGO ORATORIO IN FONDO */
+.login-cre-logo {
+  display: block;
+  margin: 0.2rem auto 0;
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.6;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+
 /* SCHERMI PICCOLI */
 @media (max-height: 600px) {
   .login-logo { font-size: 1.8rem; }
@@ -341,6 +342,6 @@ export default {
   .lf-group { margin-bottom: 0.5rem; }
   .lf-remember { margin-bottom: 0.6rem; }
   .lf-submit { min-height: 44px; }
-  .login-cre-logo { height: 36px; }
+  .login-cre-logo { height: 32px; }
 }
 </style>
