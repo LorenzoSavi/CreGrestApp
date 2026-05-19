@@ -104,6 +104,11 @@ export default {
     validatePassword() {
       this.fieldErrors.password = this.password.length === 0 ? 'Inserisci la tua password' : '';
     },
+    getRedirectPath(user) {
+      if (user.isAdmin) return '/total-point';
+      if (user.isClassifica) return '/classifica-proiezione';
+      return '/add-point';
+    },
     async login() {
       this.validateUsername();
       this.validatePassword();
@@ -119,7 +124,13 @@ export default {
         const result = await res.json().catch(() => ({}));
         if (!res.ok) { this.error = result.message || result.error || 'Credenziali non valide'; return; }
         if (result.success) {
-          const session = { username: result.user.username, isAdmin: result.user.isAdmin, rememberMe: this.rememberMe, loginTime: Date.now() };
+          const session = {
+            username: result.user.username,
+            isAdmin: result.user.isAdmin,
+            isClassifica: result.user.isClassifica || false,
+            rememberMe: this.rememberMe,
+            loginTime: Date.now()
+          };
           if (this.rememberMe) {
             localStorage.setItem('loggedInUser', JSON.stringify(session));
             sessionStorage.removeItem('loggedInUser');
@@ -127,7 +138,7 @@ export default {
             sessionStorage.setItem('loggedInUser', JSON.stringify(session));
             localStorage.removeItem('loggedInUser');
           }
-          this.$router.push(result.user.isAdmin ? '/total-point' : '/add-point');
+          this.$router.push(this.getRedirectPath(result.user));
         } else {
           this.error = result.message || 'Credenziali non valide';
         }
@@ -140,7 +151,7 @@ export default {
     checkExistingSession() {
       try {
         const u = JSON.parse(localStorage.getItem('loggedInUser')) || JSON.parse(sessionStorage.getItem('loggedInUser'));
-        if (u) this.$router.push(u.isAdmin ? '/total-point' : '/add-point');
+        if (u) this.$router.push(this.getRedirectPath(u));
       // eslint-disable-next-line no-empty
       } catch {}
     }
@@ -347,30 +358,17 @@ export default {
    LIGHT MODE
 ══════════════════════════════════════════ */
 @media (prefers-color-scheme: light) {
-  /* sfondo pagina */
   .login-root { background: linear-gradient(160deg, #e8ecff 0%, #f5f7ff 60%, #eef0ff 100%); }
-
-  /* nuvole più visibili su sfondo chiaro */
   .cloud { opacity: 0.35; }
-
-  /* titolo e subtitle */
   .login-title { color: #1a1a2e; text-shadow: 0 2px 12px rgba(102,126,234,0.2); }
   .login-subtitle { color: #5a5f7a; }
-
-  /* card */
   .login-card {
     background: rgba(255,255,255,0.85);
     border: 1px solid rgba(102,126,234,0.18);
     box-shadow: 0 12px 48px rgba(102,126,234,0.12), 0 2px 8px rgba(0,0,0,0.06);
   }
-
-  /* labels */
   .lf-label { color: #5a5f7a; }
-
-  /* icona input */
   .lf-icon { color: #9399b2; }
-
-  /* input */
   .lf-input {
     background: #f4f6ff;
     border-color: rgba(102,126,234,0.25);
@@ -382,30 +380,18 @@ export default {
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
   }
-
-  /* toggle password */
   .lf-eye { color: #9399b2; }
   .lf-eye:hover { color: #667eea; background: rgba(102,126,234,0.08); }
-
-  /* remember */
   .lf-remember { color: #5a5f7a; }
   .lf-check { border-color: rgba(102,126,234,0.3); background: #f4f6ff; }
-
-  /* error field */
   .lf-field-err { color: #c0392b; }
-
-  /* error banner */
   .lf-error {
     background: rgba(220,53,69,0.08);
     border-color: rgba(220,53,69,0.25);
     color: #c0392b;
   }
   .lf-error-close { color: #c0392b; }
-
-  /* footer */
   .login-footer { color: #9399b2; }
-
-  /* logo */
   .login-cre-logo { opacity: 0.75; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
 }
 </style>
