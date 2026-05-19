@@ -78,7 +78,7 @@
 
       <p class="login-footer">Cre Grest {{ currentYear }} &nbsp;·&nbsp; Fatto da Savi🦞</p>
 
-      <img class="login-cre-logo" src="@/assets/image.png" alt="Logo Oratorio San Giovanni Bosco Zanica" />
+      <img class="login-cre-logo" src="/img/zanica-logo.png" alt="Logo Oratorio San Giovanni Bosco Zanica" />
     </div>
   </div>
 </template>
