@@ -31,8 +31,8 @@
           <div class="cp-header-left">
             <span class="cp-trophy">🏆</span>
             <div>
-              <div class="cp-header-title">Cre Grest {{ currentYear }}</div>
-              <div class="cp-header-phase">{{ currentPhaseLabel }}</div>
+              <div class="cp-header-title">{{ currentPhaseLabel }}</div>
+              <div class="cp-header-phase">Cre Grest {{ currentYear }}</div>
             </div>
           </div>
           <div class="cp-header-right">
@@ -58,15 +58,7 @@
           <div class="cp-cards-wrap">
             <div class="cp-cards-list">
 
-              <!--
-                NUOVO FLOW:
-                ────────────────────────────────────────────────────────────────
-                Click 1-4 → rivela dal 6° al 3° (shake breve + reveal)
-                Dopo il 3°: mystery card 1°/2° appaiono con shake giallo persistente
-                Click 5 (top-two-shake) → SUBITO banner/fuochi, le card 1°/2° restano coperte
-                Chiusura banner (manuale o auto) → ALLORA si rivelano 1° e 2°
-                ────────────────────────────────────────────────────────────────
-              -->
+              <!-- MYSTERY CARD TOP 2 (1° e 2°) -->
               <template v-if="showTopTwoMystery">
                 <div
                   v-for="team in topTwoByRank" :key="'mystery-' + team.id"
@@ -78,7 +70,6 @@
                     ['cp-card--' + team.id]:  isTopTwoRevealed,
                   }"
                 >
-                  <!-- Copertura: mostrata finché non rivelato -->
                   <template v-if="!isTopTwoRevealed">
                     <div class="cp-card-cover" :class="{ 'cp-card-cover--gold': revealPhase === 'top-two-shake' || revealPhase === 'final-reveal' }">
                       <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': revealPhase === 'top-two-shake' || revealPhase === 'final-reveal' }">?</span>
@@ -87,29 +78,24 @@
 
                   <template v-else>
                     <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
-
                     <div class="cp-card-rank">
                       <span v-if="team.rank === 1" class="cp-medal">🥇</span>
                       <span v-else-if="team.rank === 2" class="cp-medal">🥈</span>
                     </div>
-
                     <div class="cp-team-badge" :class="'cp-badge--' + team.id">
                       <span class="cp-badge-dot"></span>
                       <span class="cp-badge-name">{{ team.name }}</span>
                     </div>
-
                     <div class="cp-card-info">
                       <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
                       <div class="cp-card-bar-wrap">
                         <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
                       </div>
                     </div>
-
                     <div class="cp-card-score">
                       <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
                       <span class="cp-score-unit">pt</span>
                     </div>
-
                     <div v-if="phase==='finale' && team.rank===1 && allRevealed" class="cp-sparks">
                       <span v-for="n in 16" :key="n" class="cp-spark" :style="sparkStyle(n)"></span>
                     </div>
@@ -123,34 +109,43 @@
                 </div>
               </template>
 
-              <!-- REVEALED CARDS dal 3° al 6° posto — ordine top→bottom: 3°, 4°, 5°, 6° -->
+              <!-- PENDING CARDS (3°–6°) — mostrano il rettangolo bianco ? finché non rivelate -->
+              <template v-if="revealStarted">
+                <div
+                  v-for="rank in pendingRanks" :key="'pending-' + rank"
+                  class="cp-card cp-card-mystery"
+                  :class="{
+                    'cp-card--shaking': shakingRank === rank,
+                  }"
+                >
+                  <div class="cp-card-cover">
+                    <span class="cp-cover-q">?</span>
+                  </div>
+                </div>
+              </template>
+
+              <!-- REVEALED CARDS dal 3° al 6° posto -->
               <transition-group tag="div" class="cp-revealed-list" name="card-enter">
                 <div
                   v-for="team in revealedTeamsTopFirst" :key="team.id"
                   class="cp-card"
-                  :class="[
-                    'cp-card--' + team.id,
-                  ]"
+                  :class="['cp-card--' + team.id]"
                 >
                   <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
-
                   <div class="cp-card-rank">
                     <span v-if="team.rank === 3" class="cp-medal">🥉</span>
                     <span v-else class="cp-rank-num">#{{ team.rank }}</span>
                   </div>
-
                   <div class="cp-team-badge" :class="'cp-badge--' + team.id">
                     <span class="cp-badge-dot"></span>
                     <span class="cp-badge-name">{{ team.name }}</span>
                   </div>
-
                   <div class="cp-card-info">
                     <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
                     <div class="cp-card-bar-wrap">
                       <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
                     </div>
                   </div>
-
                   <div class="cp-card-score">
                     <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
                     <span class="cp-score-unit">pt</span>
@@ -203,7 +198,6 @@
             <span class="cp-win-trophy-r">🏆</span>
           </div>
           <div class="cp-win-sub">Congratulazioni! 🎉🎊🎉</div>
-          <!-- Countdown bar -->
           <div class="cp-banner-countdown">
             <div class="cp-banner-countdown-bar" :style="{ width: bannerCountdownPct + '%' }"></div>
           </div>
@@ -212,22 +206,56 @@
       </div>
     </transition>
 
-    <!-- WEEK BANNER -->
+    <!-- WEEK BANNER (1ª 2ª 3ª settimana) — versione migliorata -->
     <transition name="winner-fade">
       <div v-if="showWeekBanner" class="cp-week-banner" @click.stop>
+        <!-- sfondo con colore squadra vincitrice -->
+        <div class="cp-week-bg" :class="'cp-week-bg--' + sortedTeams[0].id"></div>
+        <!-- particelle stellari -->
         <div class="cp-week-stars-wrap">
-          <span v-for="n in 18" :key="n" class="cp-week-star" :style="weekStarStyle(n)">★</span>
+          <span v-for="n in 30" :key="n" class="cp-week-star" :style="weekStarStyle(n)">★</span>
+        </div>
+        <!-- fuochi artificiali week -->
+        <div class="cp-week-fireworks">
+          <span v-for="n in 20" :key="n" class="cp-week-spark" :style="weekSparkStyle(n)"></span>
         </div>
         <div class="cp-week-content">
-          <div class="cp-week-icon">🌟</div>
-          <div class="cp-week-label">{{ currentPhaseLabel }}</div>
-          <div class="cp-week-winner" :class="'cp-name--' + sortedTeams[0].id">{{ sortedTeams[0].name }}</div>
-          <div class="cp-week-pts">{{ sortedTeams[0].points }} punti</div>
-          <!-- Countdown bar -->
+          <!-- icona settimana -->
+          <div class="cp-week-phase-icon">{{ currentPhaseIcon }}</div>
+          <!-- etichetta settimana -->
+          <div class="cp-week-label">Vincitore</div>
+          <div class="cp-week-phase-name">{{ currentPhaseLabel }}</div>
+          <!-- medaglia -->
+          <div class="cp-week-medal">🥇</div>
+          <!-- nome squadra grande -->
+          <div class="cp-week-winner" :class="'cp-name--' + sortedTeams[0].id">
+            <span v-for="(ch, i) in weekWinnerChars" :key="i" class="cp-week-char" :style="{ animationDelay: (i * 0.06) + 's' }">
+              {{ ch === ' ' ? '\u00a0' : ch }}
+            </span>
+          </div>
+          <!-- punti -->
+          <div class="cp-week-score-row">
+            <span class="cp-week-pts-num" :class="'cp-name--' + sortedTeams[0].id">{{ displayedWeekPoints }}</span>
+            <span class="cp-week-pts-label">punti</span>
+          </div>
+          <!-- podio mini (2° e 3°) -->
+          <div class="cp-week-podium">
+            <div v-if="sortedTeams[1]" class="cp-week-podium-item cp-week-podium-item--2">
+              <span class="cp-podium-medal">🥈</span>
+              <span class="cp-podium-name" :class="'cp-name--' + sortedTeams[1].id">{{ sortedTeams[1].name }}</span>
+              <span class="cp-podium-pts">{{ sortedTeams[1].points }}pt</span>
+            </div>
+            <div v-if="sortedTeams[2]" class="cp-week-podium-item cp-week-podium-item--3">
+              <span class="cp-podium-medal">🥉</span>
+              <span class="cp-podium-name" :class="'cp-name--' + sortedTeams[2].id">{{ sortedTeams[2].name }}</span>
+              <span class="cp-podium-pts">{{ sortedTeams[2].points }}pt</span>
+            </div>
+          </div>
+          <!-- countdown + bottone -->
           <div class="cp-banner-countdown">
             <div class="cp-banner-countdown-bar" :style="{ width: bannerCountdownPct + '%' }"></div>
           </div>
-          <button class="cp-winner-close" @click="closeWeekShowRanking">Mostra Classifica</button>
+          <button class="cp-winner-close cp-week-close-btn" @click="closeWeekShowRanking">Mostra Classifica</button>
         </div>
       </div>
     </transition>
@@ -247,18 +275,6 @@
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-/*
-  FLOW CORRETTO:
-  ─────────────────────────────────────────────────────────────────────────────
-  Click 1 → appare il 6° (shake breve poi si rivela)
-  Click 2 → appare il 5°
-  Click 3 → appare il 4°
-  Click 4 → appare il 3° → le mystery card 1°/2° appaiono con shake giallo persistente
-  Click 5 → (durante top-two-shake) → PRIMA appare il banner/fuochi (card 1°/2° restano coperte)
-  Chiusura banner (manuale o auto) → SOLO ALLORA si rivelano 1° e 2° con animazione crazy
-  ─────────────────────────────────────────────────────────────────────────────
-*/
-
 const SHAKE_MS       = 2400;
 const CRAZY_MS       = 2500;
 const POST_CRAZY     = 2500;
@@ -272,33 +288,23 @@ export default {
       phase: null,
       isLoading: false,
       revealStarted: false,
-
-      /*
-        revealPhase:
-        'normal'        → reveal dal 6° al 3° (click per click)
-        'top-two-shake' → 3° rivelato, mystery card 1°/2° visibili con shake giallo persistente
-        'final-reveal'  → banner in corso (card 1°/2° ancora coperte)
-        'done'          → banner chiuso, 1° e 2° rivelati
-      */
       revealPhase: 'normal',
-
       revealedCount: 0,
       isTopTwoRevealed: false,
-
       shakingCards: new Set(),
+      shakingRank: null,
       crazyActive: false,
       isRevealing: false,
-
       winnerClosed: false,
       weekBannerClosed: false,
       currentYear: new Date().getFullYear(),
       displayedPoints: 0,
+      displayedWeekPoints: 0,
       fireworksTimer: null,
       bannerReady: false,
       bannerCountdownPct: 100,
       bannerCountdownTimer: null,
       bannerAutoCloseTimer: null,
-
       phases: [
         { id: 'settimana1', label: '1ª Settimana',     icon: '1️⃣' },
         { id: 'settimana2', label: '2ª Settimana',     icon: '2️⃣' },
@@ -321,6 +327,9 @@ export default {
     currentPhaseLabel() {
       return this.phases.find(p => p.id === this.phase)?.label || '';
     },
+    currentPhaseIcon() {
+      return this.phases.find(p => p.id === this.phase)?.icon || '🌟';
+    },
     teams() {
       if (!this.pointsData) return [];
       return this.allTeams.map(t => ({ ...t, points: this.getPointsForPhase(t.id) }));
@@ -341,6 +350,12 @@ export default {
     },
     showTopTwoMystery() {
       return this.revealStarted && this.revealedCount >= this.revealOrder.length;
+    },
+    // Rank delle card ancora da rivelare (mostrano rettangolo bianco ?)
+    pendingRanks() {
+      if (!this.revealStarted) return [];
+      const revealed = new Set(this.revealOrder.slice(0, this.revealedCount));
+      return this.revealOrder.filter(r => !revealed.has(r));
     },
     revealedTeamsTopFirst() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
@@ -365,6 +380,10 @@ export default {
       if (!this.sortedTeams.length) return [];
       return this.sortedTeams[0].name.split('');
     },
+    weekWinnerChars() {
+      if (!this.sortedTeams.length) return [];
+      return this.sortedTeams[0].name.split('');
+    },
   },
   watch: {
     showWinnerBanner(val) {
@@ -377,8 +396,12 @@ export default {
       }
     },
     showWeekBanner(val) {
-      if (val) this.startBannerAutoClose();
-      else this.stopBannerAutoClose();
+      if (val) {
+        this.$nextTick(() => { this.startWeekCountUp(); });
+        this.startBannerAutoClose();
+      } else {
+        this.stopBannerAutoClose();
+      }
     },
   },
   methods: {
@@ -402,12 +425,14 @@ export default {
       this.revealedCount = 0;
       this.revealPhase = 'normal';
       this.shakingCards = new Set();
+      this.shakingRank = null;
       this.crazyActive = false;
       this.isRevealing = false;
       this.isTopTwoRevealed = false;
       this.winnerClosed = false;
       this.weekBannerClosed = false;
       this.displayedPoints = 0;
+      this.displayedWeekPoints = 0;
       this.bannerReady = false;
       this.bannerCountdownPct = 100;
       this.stopBannerAutoClose();
@@ -431,7 +456,6 @@ export default {
         return;
       }
 
-      // Click durante shake giallo → SUBITO banner, card 1°/2° ancora coperte
       if (this.revealPhase === 'top-two-shake') {
         this._triggerBannerFirst();
         return;
@@ -448,9 +472,11 @@ export default {
 
       this.isRevealing = true;
       const rank = this.revealOrder[this.revealedCount];
+      // Segna quale rank sta facendo shake (mostra il ? con shake)
+      this.shakingRank = rank;
       this.revealedCount++;
       const team = this.sortedTeams.find(t => t.rank === rank);
-      if (!team) { this.isRevealing = false; return; }
+      if (!team) { this.isRevealing = false; this.shakingRank = null; return; }
 
       this.shakingCards = new Set([...this.shakingCards, team.id]);
 
@@ -458,6 +484,7 @@ export default {
         const next = new Set(this.shakingCards);
         next.delete(team.id);
         this.shakingCards = next;
+        this.shakingRank = null;
         this.isRevealing = false;
 
         if (this.revealedCount >= this.revealOrder.length) {
@@ -466,28 +493,15 @@ export default {
       }, SHAKE_MS);
     },
 
-    /*
-      NUOVO: click durante top-two-shake
-      → mette revealPhase = 'final-reveal' (le card restano coperte ma smettono lo shake)
-      → SUBITO mostra il banner (fuochi/celebrazione)
-      → il reveal delle card 1°/2° avviene DOPO la chiusura del banner
-    */
     _triggerBannerFirst() {
       if (this.revealPhase !== 'top-two-shake') return;
       this.revealPhase = 'final-reveal';
-
-      // Banner appare subito (0ms)
       this.bannerReady = true;
     },
 
-    /*
-      Chiamato dalla chiusura del banner (manuale o auto)
-      → ALLORA si rivelano 1° e 2° con animazione crazy
-    */
     _revealTopTwoAfterBanner() {
       this.isTopTwoRevealed = true;
       this.revealPhase = 'done';
-
       this.crazyActive = true;
       setTimeout(() => { this.crazyActive = false; }, CRAZY_MS + POST_CRAZY);
     },
@@ -518,13 +532,11 @@ export default {
       this.stopFireworks();
       this.stopBannerAutoClose();
       this.winnerClosed = true;
-      // Dopo la chiusura del banner → rivela 1° e 2°
       this.$nextTick(() => { this._revealTopTwoAfterBanner(); });
     },
     closeWeekShowRanking() {
       this.stopBannerAutoClose();
       this.weekBannerClosed = true;
-      // Dopo la chiusura del banner → rivela 1° e 2°
       this.$nextTick(() => { this._revealTopTwoAfterBanner(); });
     },
 
@@ -537,6 +549,7 @@ export default {
       this.revealedCount = 0;
       this.revealPhase = 'normal';
       this.shakingCards = new Set();
+      this.shakingRank = null;
       this.crazyActive = false;
       this.isRevealing = false;
       this.isTopTwoRevealed = false;
@@ -545,6 +558,7 @@ export default {
       this.winnerClosed = false;
       this.weekBannerClosed = false;
       this.displayedPoints = 0;
+      this.displayedWeekPoints = 0;
       this.bannerReady = false;
       this.bannerCountdownPct = 100;
     },
@@ -561,6 +575,18 @@ export default {
         const p = Math.min((now - start) / duration, 1);
         const ease = 1 - Math.pow(1 - p, 3);
         this.displayedPoints = Math.round(ease * target);
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    },
+    startWeekCountUp() {
+      const target = this.sortedTeams[0]?.points || 0;
+      const duration = 1800;
+      const start = performance.now();
+      const step = (now) => {
+        const p = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        this.displayedWeekPoints = Math.round(ease * target);
         if (p < 1) requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
@@ -636,7 +662,23 @@ export default {
       return { left:'calc(50% + '+(Math.cos(a)*r)+'px)', top:'calc(50% + '+(Math.sin(a)*r)+'px)', animationDelay:((n-1)*0.12)+'s', fontSize:(1.2+(n%3)*0.6)+'rem' };
     },
     weekStarStyle(n) {
-      return { left:((n/18)*100)+'%', animationDelay:(n*0.09)+'s', animationDuration:(2+(n%3)*0.6)+'s', fontSize:(1+(n%3)*0.55)+'rem' };
+      return {
+        left: ((n / 30) * 110 - 5) + '%',
+        '--delay': (n * 0.15) + 's',
+        '--duration': (2.5 + (n % 4) * 0.5) + 's',
+        '--size': (0.8 + (n % 3) * 0.4) + 'rem',
+        animationDelay: 'var(--delay)',
+        animationDuration: 'var(--duration)',
+        fontSize: 'var(--size)',
+      };
+    },
+    weekSparkStyle(n) {
+      return {
+        '--angle': ((n / 20) * 360) + 'deg',
+        '--delay': (n * 0.12) + 's',
+        '--color': ['#ffd43b','#fff','#51cf66','#74c0fc','#f78cc6','#ffa94d'][n % 6],
+        animationDelay: 'var(--delay)',
+      };
     },
   },
   beforeUnmount() {
@@ -669,13 +711,13 @@ export default {
 .cp-logout-btn{display:flex;align-items:center;gap:.5rem;background:none;border:1.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.35);border-radius:99px;padding:.45rem 1.2rem;font-size:clamp(.72rem,1vw,.82rem);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
 .cp-logout-btn:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6);}
 
-/* ─── STAGE / HEADER ───────────────────────────────── */
+/* ─── STAGE / HEADER (compatto, senza logo Cre) ─── */
 .cp-stage{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
-.cp-header{display:flex;align-items:center;justify-content:space-between;padding:clamp(.6rem,1.5vh,1rem) clamp(1rem,2.5vw,2.5rem);background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
-.cp-header-left{display:flex;align-items:center;gap:.75rem;}
-.cp-trophy{font-size:clamp(1.4rem,3vh,2rem);filter:drop-shadow(0 0 8px rgba(255,200,0,.55));}
-.cp-header-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,2.5vw,1.8rem);letter-spacing:.1em;line-height:1.1;}
-.cp-header-phase{font-size:clamp(.6rem,1vw,.75rem);font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+.cp-header{display:flex;align-items:center;justify-content:space-between;padding:clamp(.4rem,1vh,.7rem) clamp(1rem,2.5vw,2.5rem);background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
+.cp-header-left{display:flex;align-items:center;gap:.6rem;}
+.cp-trophy{font-size:clamp(1.2rem,2.5vh,1.6rem);filter:drop-shadow(0 0 8px rgba(255,200,0,.55));}
+.cp-header-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,2.8vw,2rem);letter-spacing:.1em;line-height:1.1;}
+.cp-header-phase{font-size:clamp(.6rem,1vw,.72rem);font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35);}
 .cp-header-right{display:flex;align-items:center;gap:.9rem;}
 .cp-hint{font-size:clamp(.62rem,.9vw,.75rem);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.3);}
 .cp-hint--pulse{animation:pulse 2s ease-in-out infinite;}
@@ -684,10 +726,10 @@ export default {
 .cp-hint--suspense{color:#ff6b6b;animation:suspensePulse .6s ease-in-out infinite;}
 @keyframes suspensePulse{0%,100%{opacity:.5;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
 @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.9}}
-.cp-back-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;width:clamp(32px,4vh,40px);height:clamp(32px,4vh,40px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
+.cp-back-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;width:clamp(30px,3.5vh,38px);height:clamp(30px,3.5vh,38px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
 .cp-back-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
 
-/* ─── RANKING AREA ───────────────────────────────────── */
+/* ─── RANKING AREA ─────────────────────────────── */
 .cp-ranking-area{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(.5rem,1.5vh,1rem) clamp(1rem,4vw,5rem) clamp(.5rem,1.5vh,1rem);position:relative;overflow:hidden;min-height:0;}
 .cp-tap-invite{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;color:rgba(255,255,255,.2);pointer-events:none;}
 .cp-tap-icon{font-size:clamp(2rem,5vh,3.5rem);animation:tapBounce 1.6s ease-in-out infinite;}
@@ -699,10 +741,10 @@ export default {
 .cp-cards-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);}
 .cp-revealed-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);margin-top:clamp(.35rem,.8vh,.7rem);}
 
-/* ─── MYSTERY CARD (1° e 2°) ── */
+/* ─── MYSTERY CARD (1° e 2° e pending 3°–6°) ── */
 .cp-card-mystery{background:#111120 !important;border:2px solid rgba(255,255,255,.1) !important;}
 
-/* ─── SINGOLA CARD ──────────────────────────────────────── */
+/* ─── SINGOLA CARD ──────────────────────────────── */
 .cp-card{display:flex;align-items:center;gap:clamp(.5rem,1.2vw,1.2rem);background:#0c0c1a;border:2px solid rgba(255,255,255,.06);border-radius:clamp(10px,1.2vw,16px);padding:clamp(.5rem,1.2vh,.9rem) clamp(.7rem,1.5vw,1.4rem);position:relative;overflow:hidden;min-height:clamp(62px,9.5vh,92px);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,background .3s;}
 
 .cp-card--rossi    {background:linear-gradient(100deg,rgba(220,53,69,.18) 0%,#0c0c1a 40%);border-color:rgba(220,53,69,.35);}
@@ -724,11 +766,11 @@ export default {
 .card-enter-enter-active{animation:cardSlideDown .55s cubic-bezier(.16,1,.3,1) both;}
 @keyframes cardSlideDown{0%{opacity:0;transform:translateY(-60px) scale(.93);}55%{opacity:1;transform:translateY(8px) scale(1.02);}80%{transform:translateY(-3px) scale(.99);}100%{opacity:1;transform:translateY(0) scale(1);}}
 
-/* SHAKE normale (card 3°–6° durante il reveal) */
-.cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;background:#111120 !important;}
+/* SHAKE normale card che sta per essere rivelata */
+.cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;}
 @keyframes cardShake{0%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-.6deg);}75%{transform:translateX(8px) rotate(.6deg);}100%{transform:translateX(0);}}
 
-/* ─── TOP-TWO SHAKE GIALLO PERSISTENTE (1° e 2° in attesa) ─── */
+/* ─── TOP-TWO SHAKE GIALLO PERSISTENTE ─── */
 .cp-card--top-two-shake{
   animation:topTwoShake .13s ease-in-out infinite !important;
   background:#0a0900 !important;
@@ -749,15 +791,14 @@ export default {
 @keyframes coverPulse{from{background:#fff}to{background:#dde0ff}}
 .cp-card-cover--gold{animation:coverPulseGold .4s ease-in-out infinite alternate !important;}
 @keyframes coverPulseGold{from{background:#fffbe0}to{background:#ffe066}}
-.cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.1);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
+.cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.18);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
 @keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.25)}}
-.cp-cover-q--gold{color:rgba(180,120,0,.2);}
+.cp-cover-q--gold{color:rgba(180,120,0,.25);}
 
 /* CRAZY sul 1° posto */
 .cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 70px rgba(255,200,0,.7),0 0 140px rgba(255,200,0,.3),inset 0 0 30px rgba(255,200,0,.15) !important;background:#0a0a00 !important;z-index:20;}
 @keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
 
-/* Winner card */
 .cp-card--winner{border-color:rgba(255,215,0,.7) !important;box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.08);transform:scale(1.018);}
 
 /* ─── BADGE COLORE SQUADRA ──────────────────────── */
@@ -783,23 +824,23 @@ export default {
 .cp-badge--gialli   .cp-badge-dot {background:#ffd43b;box-shadow:0 0 8px rgba(255,212,59,.8);}
 .cp-badge--gialli   .cp-badge-name{color:#ffe066;}
 
-/* ─── RANK ────────────────────────────────────────────── */
+/* ─── RANK ──────────────────────────────────────── */
 .cp-card-rank{flex-shrink:0;width:clamp(44px,5vw,68px);text-align:center;margin-left:clamp(6px,1vw,14px);}
 .cp-rank-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.2vw,2.6rem);color:rgba(255,255,255,.2);letter-spacing:.05em;}
 .cp-medal{font-size:clamp(1.7rem,3.5vw,2.8rem);}
 
-/* ─── INFO ─────────────────────────── */
+/* ─── INFO ──────────────────────────────────────── */
 .cp-card-info{flex:1;min-width:0;}
 .cp-card-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.8vw,3rem);letter-spacing:.09em;line-height:1;margin-bottom:clamp(.18rem,.4vh,.35rem);}
 .cp-card-bar-wrap{height:clamp(4px,.55vh,7px);background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;}
 .cp-card-bar{height:100%;border-radius:99px;transition:width 1.1s cubic-bezier(.16,1,.3,1);}
 
-/* ─── SCORE ──────────────────────────────────────────── */
+/* ─── SCORE ─────────────────────────────────────── */
 .cp-card-score{flex-shrink:0;text-align:right;}
 .cp-score-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,4rem);letter-spacing:.04em;line-height:1;}
 .cp-score-unit{display:block;font-size:clamp(.6rem,.85vw,.72rem);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.28);}
 
-/* ─── COLORI ───────────────────────────── */
+/* ─── COLORI ─────────────────────────────────────── */
 .cp-name--rossi    {color:#ff6b6b;}
 .cp-name--verdi    {color:#51cf66;}
 .cp-name--arancioni{color:#ffa94d;}
@@ -813,7 +854,7 @@ export default {
 .cp-bar--fucsia   {background:linear-gradient(90deg,#E83E8C,#f78cc6);}
 .cp-bar--gialli   {background:linear-gradient(90deg,#c8960c,#ffd43b);}
 
-/* Scintille + stelle + burst */
+/* ─── SCINTILLE + STELLE + BURST ─────────────────── */
 .cp-sparks{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:visible;}
 .cp-spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#ffd43b;animation:sparkFly 1.3s ease-out infinite;--angle:0deg;}
 @keyframes sparkFly{0%{transform:rotate(var(--angle)) translateX(0) scale(1.5);opacity:1}100%{transform:rotate(var(--angle)) translateX(95px) scale(0);opacity:0}}
@@ -824,11 +865,11 @@ export default {
 .cp-burst-particle{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--color,#ffd43b);animation:burstFly .8s ease-out forwards;--angle:0deg;}
 @keyframes burstFly{0%{transform:rotate(var(--angle)) translateX(0);opacity:1}100%{transform:rotate(var(--angle)) translateX(120px);opacity:0}}
 
-/* ─── COUNTDOWN BAR ──────────────────────────────────── */
+/* ─── COUNTDOWN BAR ─────────────────────────────── */
 .cp-banner-countdown{width:100%;height:4px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;margin-top:.25rem;}
 .cp-banner-countdown-bar{height:100%;background:linear-gradient(90deg,rgba(255,215,0,.9),rgba(255,180,0,.6));border-radius:99px;transition:width .1s linear;}
 
-/* ─── WINNER OVERLAY ─────────────────────────────────── */
+/* ─── WINNER OVERLAY (finale) ───────────────────── */
 .cp-winner-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a0a00 0%,#000 70%);animation:winBgPulse 2s ease-in-out infinite alternate;}
 @keyframes winBgPulse{from{background:radial-gradient(ellipse at center,#1a0a00 0%,#000 70%)}to{background:radial-gradient(ellipse at center,#2a1500 0%,#050000 70%)}}
@@ -867,31 +908,77 @@ export default {
 .cp-winner-close{margin-top:.25rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.5);color:#ffd43b;border-radius:99px;padding:.5rem 2rem;font-size:clamp(.75rem,1vw,.9rem);font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
 .cp-winner-close:hover{background:rgba(255,215,0,.3);color:#fff;}
 
-/* ─── WEEK BANNER ───────────────────────────────────── */
-.cp-week-banner{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#001a0a 0%,#000 70%);overflow:hidden;}
-.cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;}
-.cp-week-star{position:absolute;top:-1rem;color:#51cf66;animation:weekStarFall var(--duration,2s) var(--delay,0s) linear infinite;}
-@keyframes weekStarFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
-.cp-week-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.5rem,1.5vh,1.2rem);padding:clamp(2rem,5vh,4rem) clamp(2.5rem,6vw,5rem);background:rgba(0,0,0,.6);border:2px solid rgba(80,200,120,.3);border-radius:28px;backdrop-filter:blur(12px);text-align:center;}
-.cp-week-icon{font-size:clamp(3rem,7vh,5rem);filter:drop-shadow(0 0 20px rgba(80,200,80,.8));animation:weekIconBounce 1.5s ease-in-out infinite;}
-@keyframes weekIconBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-.cp-week-label{font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2.2vw,1.6rem);letter-spacing:.25em;color:rgba(255,255,255,.4);text-transform:uppercase;}
-.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,9vw,7rem);letter-spacing:.08em;line-height:1;}
-.cp-week-pts{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3vw,2.5rem);color:rgba(255,255,255,.35);letter-spacing:.1em;}
+/* ─── WEEK BANNER — VERSIONE MIGLIORATA ─────────── */
+.cp-week-banner{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 
-/* ─── TRANSIZIONI ───────────────────────────────────── */
-.phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s,transform .4s cubic-bezier(.16,1,.3,1);}
-.phase-fade-enter-from,.phase-fade-leave-to{opacity:0;transform:scale(.97);}
-.fade-enter-active,.fade-leave-active{transition:opacity .35s;}
-.fade-enter-from,.fade-leave-to{opacity:0;}
-.winner-fade-enter-active{animation:winnerIn .6s cubic-bezier(.16,1,.3,1) both;}
-.winner-fade-leave-active{animation:winnerOut .35s ease-in both;}
-@keyframes winnerIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
-@keyframes winnerOut{0%{opacity:1}100%{opacity:0}}
+/* sfondo dinamico per colore squadra */
+.cp-week-bg{position:absolute;inset:0;background:#010a03;}
+.cp-week-bg--rossi    {background:radial-gradient(ellipse at center,#1a0205 0%,#040000 70%);}
+.cp-week-bg--verdi    {background:radial-gradient(ellipse at center,#011a06 0%,#000402 70%);}
+.cp-week-bg--arancioni{background:radial-gradient(ellipse at center,#1a0800 0%,#040200 70%);}
+.cp-week-bg--blu      {background:radial-gradient(ellipse at center,#00071a 0%,#000104 70%);}
+.cp-week-bg--fucsia   {background:radial-gradient(ellipse at center,#1a0010 0%,#040002 70%);}
+.cp-week-bg--gialli   {background:radial-gradient(ellipse at center,#1a1400 0%,#040300 70%);}
 
-/* ─── LOADING ────────────────────────────────────────── */
-.cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#06060c;z-index:300;}
-.cp-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:rgba(255,215,0,.8);border-radius:50%;animation:spin .8s linear infinite;}
+/* stelle cadenti */
+.cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.cp-week-star{position:absolute;top:-2rem;color:rgba(255,255,255,.6);animation:weekStarFall var(--duration,2.5s) var(--delay,0s) linear infinite;}
+@keyframes weekStarFall{0%{transform:translateY(0) rotate(0) scale(1);opacity:.8}100%{transform:translateY(110vh) rotate(540deg) scale(.3);opacity:0}}
+
+/* fuochi artificiali week */
+.cp-week-fireworks{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.cp-week-spark{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--color,#fff);animation:weekSparkFly 2s ease-out infinite;--angle:0deg;}
+@keyframes weekSparkFly{0%{transform:rotate(var(--angle)) translateX(0) scale(2);opacity:1}100%{transform:rotate(var(--angle)) translateX(200px) scale(0);opacity:0}}
+
+/* contenuto centrale */
+.cp-week-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.4rem,1.2vh,1rem);padding:clamp(1.8rem,4vh,3.5rem) clamp(2.5rem,5vw,5rem);background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.12);border-radius:28px;backdrop-filter:blur(14px);text-align:center;box-shadow:0 0 60px rgba(255,255,255,.05),inset 0 0 30px rgba(255,255,255,.02);}
+
+/* icona della fase (emoji settimana) */
+.cp-week-phase-icon{font-size:clamp(2.5rem,6vh,4.5rem);animation:weekIconBounce 1.4s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(255,255,255,.5));}
+@keyframes weekIconBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.1)}}
+
+/* etichetta "Vincitore" */
+.cp-week-label{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:900;letter-spacing:.35em;text-transform:uppercase;color:rgba(255,255,255,.35);}
+
+/* nome della settimana */
+.cp-week-phase-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,2.5vw,1.8rem);letter-spacing:.2em;color:rgba(255,255,255,.5);}
+
+/* medaglia grande */
+.cp-week-medal{font-size:clamp(2.5rem,7vh,5rem);animation:medalSpin 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,215,0,.8));}
+@keyframes medalSpin{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.12)}}
+
+/* nome squadra con lettera per lettera */
+.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,11vw,9rem);letter-spacing:.08em;line-height:1;display:flex;justify-content:center;flex-wrap:wrap;}
+.cp-week-char{display:inline-block;animation:weekCharPop .45s cubic-bezier(.16,1,.3,1) both;}
+@keyframes weekCharPop{0%{transform:scale(0) translateY(40px) rotate(-15deg);opacity:0}70%{transform:scale(1.2) translateY(-5px) rotate(3deg)}100%{transform:scale(1) translateY(0) rotate(0);opacity:1}}
+
+/* riga punteggio */
+.cp-week-score-row{display:flex;align-items:baseline;gap:.5rem;}
+.cp-week-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);letter-spacing:.04em;text-shadow:0 0 20px currentColor;}
+.cp-week-pts-label{font-size:clamp(.7rem,1vw,.85rem);font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);}
+
+/* mini podio 2° e 3° */
+.cp-week-podium{display:flex;gap:clamp(.8rem,2vw,2rem);margin-top:.2rem;}
+.cp-week-podium-item{display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.4rem .9rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;}
+.cp-podium-medal{font-size:clamp(1.1rem,2.5vh,1.6rem);}
+.cp-podium-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,1.8vw,1.3rem);letter-spacing:.06em;}
+.cp-podium-pts{font-size:clamp(.55rem,.8vw,.68rem);font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.3);text-transform:uppercase;}
+
+/* bottone chiusura week */
+.cp-week-close-btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;}
+.cp-week-close-btn:hover{background:rgba(255,255,255,.2);color:#fff;}
+
+/* ─── LOADING ──────────────────────────────────── */
+.cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;color:rgba(255,255,255,.5);font-size:clamp(.8rem,1.2vw,.95rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;z-index:200;}
+.cp-spinner{width:42px;height:42px;border:3px solid rgba(255,255,255,.1);border-top-color:rgba(255,255,255,.6);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.cp-loading p{font-size:clamp(.75rem,1.1vw,.9rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);}
+
+/* ─── TRANSIZIONI ──────────────────────────────── */
+.phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s ease,transform .4s cubic-bezier(.16,1,.3,1);}
+.phase-fade-enter-from{opacity:0;transform:scale(.97);}
+.phase-fade-leave-to{opacity:0;transform:scale(1.02);}
+.winner-fade-enter-active,.winner-fade-leave-active{transition:opacity .5s ease;}
+.winner-fade-enter-from,.winner-fade-leave-to{opacity:0;}
+.fade-enter-active,.fade-leave-active{transition:opacity .3s ease;}
+.fade-enter-from,.fade-leave-to{opacity:0;}
 </style>
