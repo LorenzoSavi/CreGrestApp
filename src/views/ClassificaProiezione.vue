@@ -27,7 +27,7 @@
     <!-- CLASSIFICA STAGE -->
     <transition name="phase-fade">
       <div v-if="!showPhaseSelector && !isLoading && teams.length" class="cp-stage">
-        <div class="cp-header">
+        <div v-if="!showWeekBanner && !showWinnerBanner" class="cp-header">
           <div class="cp-header-left">
             <span class="cp-trophy">🏆</span>
             <div>
@@ -109,7 +109,7 @@
                 </div>
               </template>
 
-              <!-- PENDING CARDS (3°–6°) — mostrano il rettangolo bianco ? finché non rivelate -->
+              <!-- PENDING CARDS (3°–6°) -->
               <template v-if="revealStarted">
                 <div
                   v-for="rank in pendingRanks" :key="'pending-' + rank"
@@ -209,8 +209,8 @@
     <!-- WEEK BANNER (1ª 2ª 3ª settimana) -->
     <transition name="winner-fade">
       <div v-if="showWeekBanner" class="cp-week-banner" @click.stop>
-        <!-- sfondo con colore squadra vincitrice -->
-        <div class="cp-week-bg" :class="'cp-week-bg--' + sortedTeams[0].id"></div>
+        <!-- sfondo completamente nero -->
+        <div class="cp-week-bg"></div>
         <!-- particelle stellari -->
         <div class="cp-week-stars-wrap">
           <span v-for="n in 30" :key="n" class="cp-week-star" :style="weekStarStyle(n)">★</span>
@@ -219,41 +219,38 @@
         <div class="cp-week-fireworks">
           <span v-for="n in 20" :key="n" class="cp-week-spark" :style="weekSparkStyle(n)"></span>
         </div>
-        <div class="cp-week-content">
-          <!-- etichetta settimana -->
-          <div class="cp-week-label">Vincitore</div>
-          <div class="cp-week-phase-name">{{ currentPhaseLabel }}</div>
-          <!-- medaglia 🥇 sotto il titolo, sopra il nome -->
-          <div class="cp-week-medal">🥇</div>
-          <!-- nome squadra grande -->
-          <div class="cp-week-winner" :class="'cp-name--' + sortedTeams[0].id">
-            <span v-for="(ch, i) in weekWinnerChars" :key="i" class="cp-week-char" :style="{ animationDelay: (i * 0.06) + 's' }">
-              {{ ch === ' ' ? '\u00a0' : ch }}
-            </span>
-          </div>
-          <!-- punti -->
-          <div class="cp-week-score-row">
-            <span class="cp-week-pts-num" :class="'cp-name--' + sortedTeams[0].id">{{ displayedWeekPoints }}</span>
-            <span class="cp-week-pts-label">punti</span>
-          </div>
-          <!-- podio mini (2° e 3°) -->
-          <div class="cp-week-podium">
-            <div v-if="sortedTeams[1]" class="cp-week-podium-item cp-week-podium-item--2">
-              <span class="cp-podium-medal">🥈</span>
-              <span class="cp-podium-name" :class="'cp-name--' + sortedTeams[1].id">{{ sortedTeams[1].name }}</span>
-              <span class="cp-podium-pts">{{ sortedTeams[1].points }}pt</span>
+        <!-- card nera centrale -->
+        <div class="cp-week-card">
+          <div class="cp-week-content">
+            <div class="cp-week-label">Vincitore</div>
+            <div class="cp-week-phase-name">{{ currentPhaseLabel }}</div>
+            <div class="cp-week-medal">🥇</div>
+            <div class="cp-week-winner" :class="'cp-name--' + sortedTeams[0].id">
+              <span v-for="(ch, i) in weekWinnerChars" :key="i" class="cp-week-char" :style="{ animationDelay: (i * 0.06) + 's' }">
+                {{ ch === ' ' ? '\u00a0' : ch }}
+              </span>
             </div>
-            <div v-if="sortedTeams[2]" class="cp-week-podium-item cp-week-podium-item--3">
-              <span class="cp-podium-medal">🥉</span>
-              <span class="cp-podium-name" :class="'cp-name--' + sortedTeams[2].id">{{ sortedTeams[2].name }}</span>
-              <span class="cp-podium-pts">{{ sortedTeams[2].points }}pt</span>
+            <div class="cp-week-score-row">
+              <span class="cp-week-pts-num" :class="'cp-name--' + sortedTeams[0].id">{{ displayedWeekPoints }}</span>
+              <span class="cp-week-pts-label">punti</span>
             </div>
+            <div class="cp-week-podium">
+              <div v-if="sortedTeams[1]" class="cp-week-podium-item cp-week-podium-item--2">
+                <span class="cp-podium-medal">🥈</span>
+                <span class="cp-podium-name" :class="'cp-name--' + sortedTeams[1].id">{{ sortedTeams[1].name }}</span>
+                <span class="cp-podium-pts">{{ sortedTeams[1].points }}pt</span>
+              </div>
+              <div v-if="sortedTeams[2]" class="cp-week-podium-item cp-week-podium-item--3">
+                <span class="cp-podium-medal">🥉</span>
+                <span class="cp-podium-name" :class="'cp-name--' + sortedTeams[2].id">{{ sortedTeams[2].name }}</span>
+                <span class="cp-podium-pts">{{ sortedTeams[2].points }}pt</span>
+              </div>
+            </div>
+            <div class="cp-banner-countdown">
+              <div class="cp-banner-countdown-bar" :style="{ width: bannerCountdownPct + '%' }"></div>
+            </div>
+            <button class="cp-winner-close cp-week-close-btn" @click="closeWeekShowRanking">Mostra Classifica</button>
           </div>
-          <!-- countdown + bottone -->
-          <div class="cp-banner-countdown">
-            <div class="cp-banner-countdown-bar" :style="{ width: bannerCountdownPct + '%' }"></div>
-          </div>
-          <button class="cp-winner-close cp-week-close-btn" @click="closeWeekShowRanking">Mostra Classifica</button>
         </div>
       </div>
     </transition>
@@ -779,10 +776,8 @@ export default {
   100%{transform:translateX(0) rotate(0deg) scale(1);}
 }
 
-/* card-cover base: sfondo scuro per le card ? non ancora rivelate */
 .cp-card-cover{position:absolute;inset:0;border-radius:inherit;background:#1a1a2e;display:flex;align-items:center;justify-content:center;z-index:10;animation:coverPulse .5s ease-in-out infinite alternate;}
 @keyframes coverPulse{from{background:#1a1a2e}to{background:#22223a}}
-/* cover gold: quando le top-2 stanno per essere rivelate — rimane scura con bordatura dorata */
 .cp-card-cover--gold{background:#1a1400 !important;animation:coverPulseGold .4s ease-in-out infinite alternate !important;border:2px solid rgba(255,200,0,.5);}
 @keyframes coverPulseGold{from{background:#1a1400}to{background:#2a2000}}
 .cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(255,255,255,.25);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
@@ -903,21 +898,28 @@ export default {
 
 /* ─── WEEK BANNER ───────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-/* sfondo base quasi nero — tinta squadra appena percettibile al centro */
-.cp-week-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,#0a0a0a 0%,#000 100%);}
-.cp-week-bg--rossi    {background:radial-gradient(ellipse at 50% 35%,rgba(220,53,69,.08) 0%,#020000 40%,#000 100%);}
-.cp-week-bg--verdi    {background:radial-gradient(ellipse at 50% 35%,rgba(40,167,69,.08) 0%,#000200 40%,#000 100%);}
-.cp-week-bg--arancioni{background:radial-gradient(ellipse at 50% 35%,rgba(253,126,20,.08) 0%,#040100 40%,#000 100%);}
-.cp-week-bg--blu      {background:radial-gradient(ellipse at 50% 35%,rgba(0,123,255,.08) 0%,#000100 40%,#000 100%);}
-.cp-week-bg--fucsia   {background:radial-gradient(ellipse at 50% 35%,rgba(232,62,140,.08) 0%,#040000 40%,#000 100%);}
-.cp-week-bg--gialli   {background:radial-gradient(ellipse at 50% 35%,rgba(200,160,0,.08) 0%,#030200 40%,#000 100%);}
+/* sfondo completamente nero */
+.cp-week-bg{position:absolute;inset:0;background:#000;}
 .cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
 .cp-week-star{position:absolute;top:-5%;color:#ffd43b;animation:weekStarFall var(--duration,3s) linear infinite;animation-delay:var(--delay,0s);font-size:var(--size,1rem);opacity:.7;text-shadow:0 0 8px #ffd43b;}
 @keyframes weekStarFall{0%{transform:translateY(0) rotate(0);opacity:.8;}100%{transform:translateY(110vh) rotate(360deg);opacity:0;}}
 .cp-week-fireworks{position:absolute;inset:0;pointer-events:none;overflow:visible;}
 .cp-week-spark{position:absolute;top:50%;left:50%;width:clamp(4px,.5vw,8px);height:clamp(4px,.5vw,8px);border-radius:50%;background:var(--color,#ffd43b);box-shadow:0 0 8px var(--color,#ffd43b);animation:weekSparkBurst 1.5s ease-out infinite;animation-delay:var(--delay,0s);transform-origin:0 0;}
 @keyframes weekSparkBurst{0%{opacity:1;transform:rotate(var(--angle)) translateX(0) scale(1);}100%{opacity:0;transform:rotate(var(--angle)) translateX(clamp(60px,8vw,140px)) scale(0);}}
-.cp-week-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.3rem,.7vh,.6rem);text-align:center;padding:clamp(1.5rem,4vh,3rem) clamp(2rem,5vw,5rem);}
+
+/* card nera centrale con bordo sottile */
+.cp-week-card{
+  position:relative;
+  z-index:10;
+  background:#0d0d0d;
+  border:1.5px solid rgba(255,255,255,.12);
+  border-radius:clamp(16px,2vw,28px);
+  padding:clamp(2rem,5vh,4rem) clamp(2.5rem,6vw,6rem);
+  box-shadow:0 0 80px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04);
+  max-width:min(90vw,640px);
+  width:100%;
+}
+.cp-week-content{display:flex;flex-direction:column;align-items:center;gap:clamp(.3rem,.7vh,.6rem);text-align:center;}
 .cp-week-label{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.4);}
 .cp-week-phase-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,3vw,2rem);letter-spacing:.2em;color:rgba(255,255,255,.75);}
 .cp-week-medal{font-size:clamp(2.5rem,7vh,5rem);animation:medalBounce 1s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,215,0,.8));}
