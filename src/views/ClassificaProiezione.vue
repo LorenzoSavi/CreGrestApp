@@ -779,13 +779,15 @@ export default {
   100%{transform:translateX(0) rotate(0deg) scale(1);}
 }
 
-.cp-card-cover{position:absolute;inset:0;border-radius:inherit;background:#fff;display:flex;align-items:center;justify-content:center;z-index:10;animation:coverPulse .5s ease-in-out infinite alternate;}
-@keyframes coverPulse{from{background:#fff}to{background:#dde0ff}}
-.cp-card-cover--gold{animation:coverPulseGold .4s ease-in-out infinite alternate !important;}
-@keyframes coverPulseGold{from{background:#fffbe0}to{background:#ffe066}}
-.cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.18);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
+/* card-cover base: sfondo scuro per le card ? non ancora rivelate */
+.cp-card-cover{position:absolute;inset:0;border-radius:inherit;background:#1a1a2e;display:flex;align-items:center;justify-content:center;z-index:10;animation:coverPulse .5s ease-in-out infinite alternate;}
+@keyframes coverPulse{from{background:#1a1a2e}to{background:#22223a}}
+/* cover gold: quando le top-2 stanno per essere rivelate — rimane scura con bordatura dorata */
+.cp-card-cover--gold{background:#1a1400 !important;animation:coverPulseGold .4s ease-in-out infinite alternate !important;border:2px solid rgba(255,200,0,.5);}
+@keyframes coverPulseGold{from{background:#1a1400}to{background:#2a2000}}
+.cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(255,255,255,.25);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
 @keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.25)}}
-.cp-cover-q--gold{color:rgba(180,120,0,.25);}
+.cp-cover-q--gold{color:rgba(255,215,0,.55);}
 
 .cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 70px rgba(255,200,0,.7),0 0 140px rgba(255,200,0,.3),inset 0 0 30px rgba(255,200,0,.15) !important;background:#0a0a00 !important;z-index:20;}
 @keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
@@ -901,14 +903,14 @@ export default {
 
 /* ─── WEEK BANNER ───────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-/* sfondo base quasi nero — il colore squadra è un soffio di tinta, non un pannello colorato */
+/* sfondo base quasi nero — tinta squadra appena percettibile al centro */
 .cp-week-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,#0a0a0a 0%,#000 100%);}
-.cp-week-bg--rossi    {background:radial-gradient(ellipse at 50% 35%,rgba(220,53,69,.12) 0%,#02000a 45%,#000 100%);}
-.cp-week-bg--verdi    {background:radial-gradient(ellipse at 50% 35%,rgba(40,167,69,.12) 0%,#00020a 45%,#000 100%);}
-.cp-week-bg--arancioni{background:radial-gradient(ellipse at 50% 35%,rgba(253,126,20,.12) 0%,#04010a 45%,#000 100%);}
-.cp-week-bg--blu      {background:radial-gradient(ellipse at 50% 35%,rgba(0,123,255,.12) 0%,#00010a 45%,#000 100%);}
-.cp-week-bg--fucsia   {background:radial-gradient(ellipse at 50% 35%,rgba(232,62,140,.12) 0%,#04000a 45%,#000 100%);}
-.cp-week-bg--gialli   {background:radial-gradient(ellipse at 50% 35%,rgba(200,160,0,.12) 0%,#030200 45%,#000 100%);}
+.cp-week-bg--rossi    {background:radial-gradient(ellipse at 50% 35%,rgba(220,53,69,.08) 0%,#020000 40%,#000 100%);}
+.cp-week-bg--verdi    {background:radial-gradient(ellipse at 50% 35%,rgba(40,167,69,.08) 0%,#000200 40%,#000 100%);}
+.cp-week-bg--arancioni{background:radial-gradient(ellipse at 50% 35%,rgba(253,126,20,.08) 0%,#040100 40%,#000 100%);}
+.cp-week-bg--blu      {background:radial-gradient(ellipse at 50% 35%,rgba(0,123,255,.08) 0%,#000100 40%,#000 100%);}
+.cp-week-bg--fucsia   {background:radial-gradient(ellipse at 50% 35%,rgba(232,62,140,.08) 0%,#040000 40%,#000 100%);}
+.cp-week-bg--gialli   {background:radial-gradient(ellipse at 50% 35%,rgba(200,160,0,.08) 0%,#030200 40%,#000 100%);}
 .cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
 .cp-week-star{position:absolute;top:-5%;color:#ffd43b;animation:weekStarFall var(--duration,3s) linear infinite;animation-delay:var(--delay,0s);font-size:var(--size,1rem);opacity:.7;text-shadow:0 0 8px #ffd43b;}
 @keyframes weekStarFall{0%{transform:translateY(0) rotate(0);opacity:.8;}100%{transform:translateY(110vh) rotate(360deg);opacity:0;}}
