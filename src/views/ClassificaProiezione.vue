@@ -38,7 +38,7 @@
           <div class="cp-header-right">
             <div v-if="!revealStarted" class="cp-hint cp-hint--pulse">Clicca per iniziare</div>
             <div v-else-if="revealPhase === 'double-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?!</div>
-            <div v-else-if="revealedCount < sortedTeams.length" class="cp-hint cp-hint--active">{{ sortedTeams.length - revealedCount }} rimanenti</div>
+            <div v-else-if="revealedCount < revealOrder.length" class="cp-hint cp-hint--active">{{ revealOrder.length - revealedCount }} rimanenti</div>
             <div v-else class="cp-hint cp-hint--done">🎉 Completata!</div>
             <button class="cp-back-btn" @click.stop="resetView">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -56,83 +56,121 @@
           </transition>
 
           <div class="cp-cards-wrap">
-            <transition-group tag="div" class="cp-cards-list" name="card-enter">
-              <div
-                v-for="team in displayedTeamsBottomFirst" :key="team.id"
-                class="cp-card"
-                :class="[
-                  'cp-card--' + team.id,
-                  {
-                    'cp-card--shaking':     shakingCards.has(team.id) && !doubleSuspenseActive,
-                    'cp-card--double-shake': shakingCards.has(team.id) && doubleSuspenseActive,
+            <div class="cp-cards-list">
+
+              <!-- MYSTERY CARDS (1° e 2°) sempre in cima, ordine: 1° sopra, 2° sotto -->
+              <template v-if="revealStarted">
+                <div
+                  v-for="team in topTwoByRank" :key="'mystery-' + team.id"
+                  class="cp-card cp-card-mystery"
+                  :class="{
+                    'cp-card--double-shake': doubleSuspenseActive && shakingCards.has(team.id),
+                    'cp-card--shaking':      !doubleSuspenseActive && shakingCards.has(team.id),
                     'cp-card--crazy':        crazyActive && team.rank === 1,
                     'cp-card--winner':       team.rank === 1 && allRevealed && !shakingCards.has(team.id),
-                  }
-                ]"
-              >
-                <!-- Copertura durante shake -->
-                <div v-if="shakingCards.has(team.id)" class="cp-card-cover" :class="{ 'cp-card-cover--gold': doubleSuspenseActive }">
-                  <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': doubleSuspenseActive }">?</span>
-                </div>
-
-                <template v-else>
-                  <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
-
-                  <div class="cp-card-rank">
-                    <span v-if="allRevealed && team.rank === 1" class="cp-medal">🥇</span>
-                    <span v-else-if="allRevealed && team.rank === 2" class="cp-medal">🥈</span>
-                    <span v-else-if="allRevealed && team.rank === 3" class="cp-medal">🥉</span>
-                    <span v-else class="cp-rank-num">#{{ team.rank }}</span>
-                  </div>
-
-                  <div class="cp-team-badge" :class="'cp-badge--' + team.id">
-                    <span class="cp-badge-dot"></span>
-                    <span class="cp-badge-name">{{ team.name }}</span>
-                  </div>
-
-                  <div class="cp-card-info">
-                    <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
-                    <div class="cp-card-bar-wrap">
-                      <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
+                    ['cp-card--' + team.id]: allRevealed && !shakingCards.has(team.id),
+                  }"
+                >
+                  <!-- Copertura durante shake O non ancora rivelata -->
+                  <template v-if="!isTopTwoRevealed || shakingCards.has(team.id)">
+                    <div class="cp-card-cover" :class="{ 'cp-card-cover--gold': doubleSuspenseActive }">
+                      <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': doubleSuspenseActive }">?</span>
                     </div>
-                  </div>
+                  </template>
 
-                  <div class="cp-card-score">
-                    <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
-                    <span class="cp-score-unit">pt</span>
-                  </div>
+                  <template v-else>
+                    <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
 
-                  <div v-if="phase==='finale' && team.rank===1 && allRevealed" class="cp-sparks">
-                    <span v-for="n in 16" :key="n" class="cp-spark" :style="sparkStyle(n)"></span>
-                  </div>
-                  <div v-if="phase!=='finale' && team.rank===1 && allRevealed" class="cp-stars">
-                    <span v-for="n in 6" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
-                  </div>
-                  <div v-if="crazyActive && team.rank===1" class="cp-crazy-burst">
-                    <span v-for="n in 24" :key="n" class="cp-burst-particle" :style="burstStyle(n)"></span>
-                  </div>
-                </template>
-              </div>
-            </transition-group>
+                    <div class="cp-card-rank">
+                      <span v-if="team.rank === 1" class="cp-medal">🥇</span>
+                      <span v-else-if="team.rank === 2" class="cp-medal">🥈</span>
+                    </div>
 
-            <!-- PLACEHOLDER card coperte (visibili SOLO durante double-shake) -->
-            <div v-if="doubleSuspenseActive" class="cp-hidden-placeholders">
-              <div
-                v-for="team in hiddenTopTwo" :key="'ph-' + team.id"
-                class="cp-card cp-card-placeholder"
-                :class="{ 'cp-card--double-shake': doubleSuspenseActive }"
-              >
-                <div class="cp-card-cover cp-card-cover--gold">
-                  <span class="cp-cover-q cp-cover-q--gold">?</span>
+                    <div class="cp-team-badge" :class="'cp-badge--' + team.id">
+                      <span class="cp-badge-dot"></span>
+                      <span class="cp-badge-name">{{ team.name }}</span>
+                    </div>
+
+                    <div class="cp-card-info">
+                      <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
+                      <div class="cp-card-bar-wrap">
+                        <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
+                      </div>
+                    </div>
+
+                    <div class="cp-card-score">
+                      <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
+                      <span class="cp-score-unit">pt</span>
+                    </div>
+
+                    <div v-if="phase==='finale' && team.rank===1 && allRevealed" class="cp-sparks">
+                      <span v-for="n in 16" :key="n" class="cp-spark" :style="sparkStyle(n)"></span>
+                    </div>
+                    <div v-if="phase!=='finale' && team.rank===1 && allRevealed" class="cp-stars">
+                      <span v-for="n in 6" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
+                    </div>
+                    <div v-if="crazyActive && team.rank===1" class="cp-crazy-burst">
+                      <span v-for="n in 24" :key="n" class="cp-burst-particle" :style="burstStyle(n)"></span>
+                    </div>
+                  </template>
                 </div>
-              </div>
+              </template>
+
+              <!-- REVEALED CARDS dal 3° al 6° posto — ordine top→bottom: 3°, 4°, 5°, 6° -->
+              <transition-group tag="div" class="cp-revealed-list" name="card-enter">
+                <div
+                  v-for="team in revealedTeamsTopFirst" :key="team.id"
+                  class="cp-card"
+                  :class="[
+                    'cp-card--' + team.id,
+                    {
+                      'cp-card--shaking': shakingCards.has(team.id) && !doubleSuspenseActive,
+                    }
+                  ]"
+                >
+                  <div v-if="shakingCards.has(team.id)" class="cp-card-cover">
+                    <span class="cp-cover-q">?</span>
+                  </div>
+
+                  <template v-else>
+                    <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
+
+                    <div class="cp-card-rank">
+                      <span v-if="team.rank === 3" class="cp-medal">🥉</span>
+                      <span v-else class="cp-rank-num">#{{ team.rank }}</span>
+                    </div>
+
+                    <div class="cp-team-badge" :class="'cp-badge--' + team.id">
+                      <span class="cp-badge-dot"></span>
+                      <span class="cp-badge-name">{{ team.name }}</span>
+                    </div>
+
+                    <div class="cp-card-info">
+                      <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
+                      <div class="cp-card-bar-wrap">
+                        <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
+                      </div>
+                    </div>
+
+                    <div class="cp-card-score">
+                      <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
+                      <span class="cp-score-unit">pt</span>
+                    </div>
+
+                    <div v-if="phase!=='finale' && team.rank===1 && allRevealed" class="cp-stars">
+                      <span v-for="n in 6" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
+                    </div>
+                  </template>
+                </div>
+              </transition-group>
+
             </div>
           </div>
         </div>
       </div>
     </transition>
 
-    <!-- WINNER BANNER ULTRA (finale) -->
+    <!-- WINNER BANNER ULTRA (finale) — appare PRIMA della classifica -->
     <transition name="winner-fade">
       <div v-if="showWinnerBanner" class="cp-winner-overlay" @click.stop>
         <div class="cp-win-bg"></div>
@@ -171,7 +209,8 @@
             <span class="cp-win-trophy-r">🏆</span>
           </div>
           <div class="cp-win-sub">Congratulazioni! 🎉🎊🎉</div>
-          <button class="cp-winner-close" @click="winnerClosed = true">Chiudi</button>
+          <!-- Chiudendo il winner → si vede la classifica -->
+          <button class="cp-winner-close" @click="closeWinnerShowRanking">Mostra Classifica</button>
         </div>
       </div>
     </transition>
@@ -187,7 +226,7 @@
           <div class="cp-week-label">{{ currentPhaseLabel }}</div>
           <div class="cp-week-winner" :class="'cp-name--' + sortedTeams[0].id">{{ sortedTeams[0].name }}</div>
           <div class="cp-week-pts">{{ sortedTeams[0].points }} punti</div>
-          <button class="cp-winner-close" @click="weekBannerClosed = true">Chiudi</button>
+          <button class="cp-winner-close" @click="closeWeekShowRanking">Mostra Classifica</button>
         </div>
       </div>
     </transition>
@@ -208,21 +247,25 @@ import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 /*
-  FLOW COMPLETO:
+  FLOW:
   ─────────────────────────────────────────────────────────────────────────────
-  Click 1..N-3  → reveal singolo dal fondo (shake → card appare), N = tot squadre
-  Click N-2     → reveal normale della 3ª posizione (shake → card appare)
-  Click N-1     → DOUBLE SHAKE: shake simultaneo delle ultime 2 card coperte (1° e 2°)
-                  I placeholder compaiono immediatamente, poi scuotono per DOUBLE_SHAKE_MS
-  Dopo DOUBLE_SHAKE_MS → il prossimo click rivela subito 1° e 2° → banner/fuochi
+  Ordine visivo top→bottom: 1°, 2°, 3°, 4°, 5°, 6°
+  Le card del 1° e 2° sono SEMPRE visibili come "?" dall'inizio (in cima)
+  Reveal dal basso verso l'alto:
+    Click 1 → appare il 6° (in fondo)
+    Click 2 → appare il 5° (sopra il 6°)
+    Click 3 → appare il 4°
+    Click 4 → appare il 3°
+    Click 5 → DOUBLE SHAKE sulle due card misteriose (1° e 2°)
+    Click 6 → si rivelano 1° e 2° → banner vincitore → poi classifica
   ─────────────────────────────────────────────────────────────────────────────
 */
 
-const SHAKE_MS        = 2400;  // shake card normale (3° → 6°)
-const DOUBLE_SHAKE_MS = 2200;  // shake più breve/meno violento per le due card finali
-const CRAZY_MS        = 2500;  // effetto "crazy" sul 1° posto
-const POST_CRAZY      = 2500;  // attesa prima del banner dopo crazy
-const BANNER_DELAY    = 600;   // piccolo delay drammatico prima del banner
+const SHAKE_MS        = 2400;
+const DOUBLE_SHAKE_MS = 2200;
+const CRAZY_MS        = 2500;
+const POST_CRAZY      = 2500;
+const BANNER_DELAY    = 600;
 
 export default {
   name: 'ClassificaProiezione',
@@ -235,15 +278,16 @@ export default {
 
       /*
         revealPhase:
-        'normal'       → reveal normale (click per click dal fondo)
-        'double-shake' → le due card coperte stanno scuotendo insieme
-        'wait-final'   → double shake finito, attende click per rivelare 1° e 2°
+        'normal'       → reveal dal 6° al 3° (click per click)
+        'double-shake' → le due card misteriose stanno scuotendo
+        'wait-final'   → double shake finito, attende click per rivelare
         'final-reveal' → reveal in corso
         'done'         → tutto mostrato
       */
       revealPhase: 'normal',
 
       revealedCount: 0,
+      isTopTwoRevealed: false,
 
       shakingCards: new Set(),
       doubleSuspenseActive: false,
@@ -252,6 +296,7 @@ export default {
 
       winnerClosed: false,
       weekBannerClosed: false,
+      rankingVisible: false,  // dopo chiusura del banner, mostra la classifica
       currentYear: new Date().getFullYear(),
       displayedPoints: 0,
       fireworksTimer: null,
@@ -288,31 +333,24 @@ export default {
         .sort((a, b) => b.points - a.points)
         .map((t, i) => ({ ...t, rank: i + 1 }));
     },
-    /*
-      Ordine di reveal singolo: dal fondo (N°) verso il 3° posto.
-      Es. 6 squadre → [6, 5, 4, 3] — il 6° appare per primo, poi il 5°, ecc.
-    */
+    /* Ordine reveal: dal 6° al 3° (bottom-up) */
     revealOrder() {
       const N = this.sortedTeams.length;
       const order = [];
       for (let r = N; r >= 3; r--) order.push(r);
       return order;
     },
-    displayedTeams() {
+    /* Le card del 1° e 2° posto, sempre in cima, ordinate per rank (1° sopra) */
+    topTwoByRank() {
+      return this.sortedTeams.filter(t => t.rank <= 2).sort((a, b) => a.rank - b.rank);
+    },
+    /* Card rivelate (3°→6°), ordinate top→bottom: 3°, 4°, 5°, 6° */
+    revealedTeamsTopFirst() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
       const revealedRanks = new Set(this.revealOrder.slice(0, this.revealedCount));
-      let base = this.sortedTeams.filter(t => revealedRanks.has(t.rank));
-      if (this.revealPhase === 'done') {
-        base = [...this.sortedTeams];
-      }
-      return base;
-    },
-    displayedTeamsBottomFirst() {
-      // Ordine visivo: dal rank più alto (ultimo posto) in cima, il 1° in fondo
-      return [...this.displayedTeams].sort((a, b) => b.rank - a.rank);
-    },
-    hiddenTopTwo() {
-      return this.sortedTeams.filter(t => t.rank <= 2).sort((a, b) => b.rank - a.rank);
+      return this.sortedTeams
+        .filter(t => revealedRanks.has(t.rank))
+        .sort((a, b) => a.rank - b.rank);
     },
     maxPoints() {
       return Math.max(...this.teams.map(t => t.points), 1);
@@ -323,6 +361,7 @@ export default {
     noShaking() {
       return this.shakingCards.size === 0 && !this.doubleSuspenseActive;
     },
+    /* Winner banner appare subito dopo il reveal, prima che winnerClosed sia true */
     showWinnerBanner() {
       return this.allRevealed && this.noShaking && this.bannerReady && this.phase === 'finale' && !this.winnerClosed;
     },
@@ -364,8 +403,10 @@ export default {
       this.doubleSuspenseActive = false;
       this.crazyActive = false;
       this.isRevealing = false;
+      this.isTopTwoRevealed = false;
       this.winnerClosed = false;
       this.weekBannerClosed = false;
+      this.rankingVisible = false;
       this.displayedPoints = 0;
       this.bannerReady = false;
       try {
@@ -381,17 +422,12 @@ export default {
 
     handleClick() {
       if (this.showPhaseSelector || this.isLoading) return;
-
       if (this.revealPhase === 'normal') {
         if (this.isRevealing) return;
         this._revealNext();
         return;
       }
-
-      // Double shake in corso → ignora click
       if (this.revealPhase === 'double-shake') return;
-
-      // Dopo il double shake: click rivela subito il finale
       if (this.revealPhase === 'wait-final') {
         this.triggerFinalReveal();
         return;
@@ -401,14 +437,11 @@ export default {
     _revealNext() {
       this.revealStarted = true;
 
-      // Se abbiamo già rivelato tutte le card singole (3° → 6°),
-      // il prossimo click avvia il double-shake
       if (this.revealedCount >= this.revealOrder.length) {
         this._startDoubleSuspense();
         return;
       }
 
-      // Reveal singolo normale
       this.isRevealing = true;
       const rank = this.revealOrder[this.revealedCount];
       this.revealedCount++;
@@ -425,34 +458,32 @@ export default {
       }, SHAKE_MS);
     },
 
-    /* ── DOUBLE SUSPENSE (più corto, meno violento) ──────────────── */
     _startDoubleSuspense() {
       this.revealPhase = 'double-shake';
       this.doubleSuspenseActive = true;
       this.isRevealing = true;
 
-      const ids = this.hiddenTopTwo.map(t => t.id);
+      const ids = this.topTwoByRank.map(t => t.id);
       this.shakingCards = new Set(ids);
 
       setTimeout(() => {
         this.doubleSuspenseActive = false;
         this.shakingCards = new Set();
         this.isRevealing = false;
-        // Nessun countdown: attendiamo solo il click dell'utente
         this.revealPhase = 'wait-final';
       }, DOUBLE_SHAKE_MS);
     },
 
-    /* ── FINAL REVEAL: appaiono 1° e 2° insieme ──────────────────── */
     triggerFinalReveal() {
       if (this.revealPhase === 'final-reveal' || this.revealPhase === 'done') return;
       this.revealPhase = 'final-reveal';
 
-      const ids = this.hiddenTopTwo.map(t => t.id);
+      const ids = this.topTwoByRank.map(t => t.id);
       this.shakingCards = new Set(ids);
 
       setTimeout(() => {
         this.shakingCards = new Set();
+        this.isTopTwoRevealed = true;
         this.revealPhase = 'done';
 
         this.crazyActive = true;
@@ -462,6 +493,15 @@ export default {
           this.bannerReady = true;
         }, CRAZY_MS + BANNER_DELAY);
       }, SHAKE_MS * 0.6);
+    },
+
+    /* Chiude il banner vincitore → la classifica completa è già visibile sotto */
+    closeWinnerShowRanking() {
+      this.stopFireworks();
+      this.winnerClosed = true;
+    },
+    closeWeekShowRanking() {
+      this.weekBannerClosed = true;
     },
 
     resetView() {
@@ -475,10 +515,12 @@ export default {
       this.doubleSuspenseActive = false;
       this.crazyActive = false;
       this.isRevealing = false;
+      this.isTopTwoRevealed = false;
       this.pointsData = null;
       this.historyData = [];
       this.winnerClosed = false;
       this.weekBannerClosed = false;
+      this.rankingVisible = false;
       this.displayedPoints = 0;
       this.bannerReady = false;
     },
@@ -621,7 +663,7 @@ export default {
 .cp-back-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
 
 /* ─── RANKING AREA ───────────────────────────────────── */
-.cp-ranking-area{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(.5rem,1.5vh,1rem) clamp(1rem,4vw,5rem) clamp(.5rem,1.5vh,1rem);position:relative;overflow:hidden;min-height:0;}
+.cp-ranking-area{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(.5rem,1.5vh,1rem) clamp(1rem,4vw,5rem) clamp(.5rem,1.5vh,1rem);position:relative;overflow:hidden;min-height:0;}
 .cp-tap-invite{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;color:rgba(255,255,255,.2);pointer-events:none;}
 .cp-tap-icon{font-size:clamp(2rem,5vh,3.5rem);animation:tapBounce 1.6s ease-in-out infinite;}
 @keyframes tapBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
@@ -629,11 +671,12 @@ export default {
 .cp-tap-sub{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
 
 .cp-cards-wrap{width:100%;max-width:1200px;margin:0 auto;}
+/* Lista unica: mystery in cima, poi rivelate sotto */
 .cp-cards-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);}
+.cp-revealed-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);margin-top:clamp(.35rem,.8vh,.7rem);}
 
-/* ─── PLACEHOLDER card coperte (1° e 2° durante double-shake) ── */
-.cp-hidden-placeholders{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);margin-top:clamp(.35rem,.8vh,.7rem);}
-.cp-card-placeholder{background:#111120;border:2px solid rgba(255,255,255,.08);}
+/* ─── MYSTERY CARD (1° e 2° sempre visibili come ?) ── */
+.cp-card-mystery{background:#111120 !important;border:2px solid rgba(255,255,255,.1) !important;}
 
 /* ─── SINGOLA CARD ──────────────────────────────────────── */
 .cp-card{display:flex;align-items:center;gap:clamp(.5rem,1.2vw,1.2rem);background:#0c0c1a;border:2px solid rgba(255,255,255,.06);border-radius:clamp(10px,1.2vw,16px);padding:clamp(.5rem,1.2vh,.9rem) clamp(.7rem,1.5vw,1.4rem);position:relative;overflow:hidden;min-height:clamp(62px,9.5vh,92px);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,background .3s;}
@@ -653,6 +696,7 @@ export default {
 .cp-strip--fucsia   {background:linear-gradient(180deg,#f78cc6,#E83E8C);box-shadow:4px 0 20px rgba(232,62,140,.6);}
 .cp-strip--gialli   {background:linear-gradient(180deg,#ffd43b,#c8960c);box-shadow:4px 0 20px rgba(200,160,0,.6);}
 
+/* Nuova card appare dall'alto (scende nella sua posizione) */
 .card-enter-enter-active{animation:cardSlideDown .55s cubic-bezier(.16,1,.3,1) both;}
 @keyframes cardSlideDown{0%{opacity:0;transform:translateY(-60px) scale(.93);}55%{opacity:1;transform:translateY(8px) scale(1.02);}80%{transform:translateY(-3px) scale(.99);}100%{opacity:1;transform:translateY(0) scale(1);}}
 
@@ -660,7 +704,7 @@ export default {
 .cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;background:#111120 !important;}
 @keyframes cardShake{0%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-.6deg);}75%{transform:translateX(8px) rotate(.6deg);}100%{transform:translateX(0);}}
 
-/* DOUBLE SHAKE (ridotto rispetto a prima) */
+/* DOUBLE SHAKE */
 .cp-card--double-shake{
   animation:doubleShake .14s ease-in-out infinite !important;
   background:#0a0900 !important;
@@ -792,8 +836,8 @@ export default {
 .cp-win-trophies{display:flex;gap:3rem;font-size:clamp(1.5rem,4vw,3rem);animation:trophyRock 2s ease-in-out infinite;}
 @keyframes trophyRock{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
 .cp-win-sub{font-size:clamp(.8rem,1.3vw,1.1rem);font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.6);}
-.cp-winner-close{margin-top:.5rem;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);border-radius:99px;padding:.4rem 1.4rem;font-size:clamp(.7rem,.9vw,.8rem);font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
-.cp-winner-close:hover{background:rgba(255,255,255,.15);color:#fff;}
+.cp-winner-close{margin-top:.5rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.5);color:#ffd43b;border-radius:99px;padding:.5rem 2rem;font-size:clamp(.75rem,1vw,.9rem);font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
+.cp-winner-close:hover{background:rgba(255,215,0,.3);color:#fff;}
 
 /* ─── WEEK BANNER ───────────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#001a0a 0%,#000 70%);overflow:hidden;}
