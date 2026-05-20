@@ -901,13 +901,14 @@ export default {
 
 /* ─── WEEK BANNER ───────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.cp-week-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,#1a1200 0%,#06050a 60%,#000 100%);}
-.cp-week-bg--rossi    {background:radial-gradient(ellipse at 50% 40%,rgba(220,53,69,.3) 0%,#06050a 60%,#000 100%);}
-.cp-week-bg--verdi    {background:radial-gradient(ellipse at 50% 40%,rgba(40,167,69,.3) 0%,#06050a 60%,#000 100%);}
-.cp-week-bg--arancioni{background:radial-gradient(ellipse at 50% 40%,rgba(253,126,20,.3) 0%,#06050a 60%,#000 100%);}
-.cp-week-bg--blu      {background:radial-gradient(ellipse at 50% 40%,rgba(0,123,255,.3) 0%,#06050a 60%,#000 100%);}
-.cp-week-bg--fucsia   {background:radial-gradient(ellipse at 50% 40%,rgba(232,62,140,.3) 0%,#06050a 60%,#000 100%);}
-.cp-week-bg--gialli   {background:radial-gradient(ellipse at 50% 40%,rgba(200,160,0,.3) 0%,#06050a 60%,#000 100%);}
+/* sfondo base quasi nero — il colore squadra è un soffio di tinta, non un pannello colorato */
+.cp-week-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,#0a0a0a 0%,#000 100%);}
+.cp-week-bg--rossi    {background:radial-gradient(ellipse at 50% 35%,rgba(220,53,69,.12) 0%,#02000a 45%,#000 100%);}
+.cp-week-bg--verdi    {background:radial-gradient(ellipse at 50% 35%,rgba(40,167,69,.12) 0%,#00020a 45%,#000 100%);}
+.cp-week-bg--arancioni{background:radial-gradient(ellipse at 50% 35%,rgba(253,126,20,.12) 0%,#04010a 45%,#000 100%);}
+.cp-week-bg--blu      {background:radial-gradient(ellipse at 50% 35%,rgba(0,123,255,.12) 0%,#00010a 45%,#000 100%);}
+.cp-week-bg--fucsia   {background:radial-gradient(ellipse at 50% 35%,rgba(232,62,140,.12) 0%,#04000a 45%,#000 100%);}
+.cp-week-bg--gialli   {background:radial-gradient(ellipse at 50% 35%,rgba(200,160,0,.12) 0%,#030200 45%,#000 100%);}
 .cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
 .cp-week-star{position:absolute;top:-5%;color:#ffd43b;animation:weekStarFall var(--duration,3s) linear infinite;animation-delay:var(--delay,0s);font-size:var(--size,1rem);opacity:.7;text-shadow:0 0 8px #ffd43b;}
 @keyframes weekStarFall{0%{transform:translateY(0) rotate(0);opacity:.8;}100%{transform:translateY(110vh) rotate(360deg);opacity:0;}}
