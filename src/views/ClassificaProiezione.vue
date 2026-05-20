@@ -37,7 +37,7 @@
           </div>
           <div class="cp-header-right">
             <div v-if="!revealStarted" class="cp-hint cp-hint--pulse">Clicca per iniziare</div>
-            <div v-else-if="revealPhase === 'double-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?!</div>
+            <div v-else-if="revealPhase === 'top-two-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?!</div>
             <div v-else-if="revealedCount < revealOrder.length" class="cp-hint cp-hint--active">{{ revealOrder.length - revealedCount }} rimanenti</div>
             <div v-else class="cp-hint cp-hint--done">🎉 Completata!</div>
             <button class="cp-back-btn" @click.stop="resetView">
@@ -58,23 +58,26 @@
           <div class="cp-cards-wrap">
             <div class="cp-cards-list">
 
-              <!-- MYSTERY CARDS (1° e 2°) sempre in cima, ordine: 1° sopra, 2° sotto -->
-              <template v-if="revealStarted">
+              <!--
+                1° e 2° posto: visibili come mystery card SOLO dopo che il 3° è stato rivelato
+                (cioè revealedCount >= revealOrder.length)
+                Rimangono in stato shake giallo finché non clicco di nuovo (revealPhase === 'top-two-shake')
+              -->
+              <template v-if="showTopTwoMystery">
                 <div
                   v-for="team in topTwoByRank" :key="'mystery-' + team.id"
                   class="cp-card cp-card-mystery"
                   :class="{
-                    'cp-card--double-shake': doubleSuspenseActive && shakingCards.has(team.id),
-                    'cp-card--shaking':      !doubleSuspenseActive && shakingCards.has(team.id),
-                    'cp-card--crazy':        crazyActive && team.rank === 1,
-                    'cp-card--winner':       team.rank === 1 && allRevealed && !shakingCards.has(team.id),
-                    ['cp-card--' + team.id]: allRevealed && !shakingCards.has(team.id),
+                    'cp-card--top-two-shake': revealPhase === 'top-two-shake',
+                    'cp-card--crazy':         crazyActive && team.rank === 1,
+                    'cp-card--winner':        team.rank === 1 && allRevealed && revealPhase === 'done',
+                    ['cp-card--' + team.id]:  isTopTwoRevealed && revealPhase !== 'top-two-shake',
                   }"
                 >
-                  <!-- Copertura durante shake O non ancora rivelata -->
-                  <template v-if="!isTopTwoRevealed || shakingCards.has(team.id)">
-                    <div class="cp-card-cover" :class="{ 'cp-card-cover--gold': doubleSuspenseActive }">
-                      <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': doubleSuspenseActive }">?</span>
+                  <!-- Copertura: mostrata se non ancora rivelato OPPURE durante lo shake -->
+                  <template v-if="!isTopTwoRevealed || revealPhase === 'top-two-shake'">
+                    <div class="cp-card-cover" :class="{ 'cp-card-cover--gold': revealPhase === 'top-two-shake' }">
+                      <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': revealPhase === 'top-two-shake' }">?</span>
                     </div>
                   </template>
 
@@ -123,44 +126,31 @@
                   class="cp-card"
                   :class="[
                     'cp-card--' + team.id,
-                    {
-                      'cp-card--shaking': shakingCards.has(team.id) && !doubleSuspenseActive,
-                    }
                   ]"
                 >
-                  <div v-if="shakingCards.has(team.id)" class="cp-card-cover">
-                    <span class="cp-cover-q">?</span>
+                  <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
+
+                  <div class="cp-card-rank">
+                    <span v-if="team.rank === 3" class="cp-medal">🥉</span>
+                    <span v-else class="cp-rank-num">#{{ team.rank }}</span>
                   </div>
 
-                  <template v-else>
-                    <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
+                  <div class="cp-team-badge" :class="'cp-badge--' + team.id">
+                    <span class="cp-badge-dot"></span>
+                    <span class="cp-badge-name">{{ team.name }}</span>
+                  </div>
 
-                    <div class="cp-card-rank">
-                      <span v-if="team.rank === 3" class="cp-medal">🥉</span>
-                      <span v-else class="cp-rank-num">#{{ team.rank }}</span>
+                  <div class="cp-card-info">
+                    <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
+                    <div class="cp-card-bar-wrap">
+                      <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
                     </div>
+                  </div>
 
-                    <div class="cp-team-badge" :class="'cp-badge--' + team.id">
-                      <span class="cp-badge-dot"></span>
-                      <span class="cp-badge-name">{{ team.name }}</span>
-                    </div>
-
-                    <div class="cp-card-info">
-                      <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
-                      <div class="cp-card-bar-wrap">
-                        <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
-                      </div>
-                    </div>
-
-                    <div class="cp-card-score">
-                      <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
-                      <span class="cp-score-unit">pt</span>
-                    </div>
-
-                    <div v-if="phase!=='finale' && team.rank===1 && allRevealed" class="cp-stars">
-                      <span v-for="n in 6" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
-                    </div>
-                  </template>
+                  <div class="cp-card-score">
+                    <span class="cp-score-num" :class="'cp-name--' + team.id">{{ team.points }}</span>
+                    <span class="cp-score-unit">pt</span>
+                  </div>
                 </div>
               </transition-group>
 
@@ -170,7 +160,7 @@
       </div>
     </transition>
 
-    <!-- WINNER BANNER ULTRA (finale) — appare PRIMA della classifica -->
+    <!-- WINNER BANNER ULTRA (finale) -->
     <transition name="winner-fade">
       <div v-if="showWinnerBanner" class="cp-winner-overlay" @click.stop>
         <div class="cp-win-bg"></div>
@@ -209,7 +199,10 @@
             <span class="cp-win-trophy-r">🏆</span>
           </div>
           <div class="cp-win-sub">Congratulazioni! 🎉🎊🎉</div>
-          <!-- Chiudendo il winner → si vede la classifica -->
+          <!-- Countdown bar -->
+          <div class="cp-banner-countdown">
+            <div class="cp-banner-countdown-bar" :style="{ width: bannerCountdownPct + '%' }"></div>
+          </div>
           <button class="cp-winner-close" @click="closeWinnerShowRanking">Mostra Classifica</button>
         </div>
       </div>
@@ -226,6 +219,10 @@
           <div class="cp-week-label">{{ currentPhaseLabel }}</div>
           <div class="cp-week-winner" :class="'cp-name--' + sortedTeams[0].id">{{ sortedTeams[0].name }}</div>
           <div class="cp-week-pts">{{ sortedTeams[0].points }} punti</div>
+          <!-- Countdown bar -->
+          <div class="cp-banner-countdown">
+            <div class="cp-banner-countdown-bar" :style="{ width: bannerCountdownPct + '%' }"></div>
+          </div>
           <button class="cp-winner-close" @click="closeWeekShowRanking">Mostra Classifica</button>
         </div>
       </div>
@@ -247,25 +244,26 @@ import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 /*
-  FLOW:
+  FLOW AGGIORNATO:
   ─────────────────────────────────────────────────────────────────────────────
   Ordine visivo top→bottom: 1°, 2°, 3°, 4°, 5°, 6°
-  Le card del 1° e 2° sono SEMPRE visibili come "?" dall'inizio (in cima)
-  Reveal dal basso verso l'alto:
-    Click 1 → appare il 6° (in fondo)
-    Click 2 → appare il 5° (sopra il 6°)
-    Click 3 → appare il 4°
-    Click 4 → appare il 3°
-    Click 5 → DOUBLE SHAKE sulle due card misteriose (1° e 2°)
-    Click 6 → si rivelano 1° e 2° → banner vincitore → poi classifica
+  Le card del 1° e 2° NON sono visibili all'inizio. Appaiono solo dopo che
+  il 3° è stato rivelato (revealedCount >= revealOrder.length).
+
+  Click 1 → appare il 6° (shake breve poi si rivela)
+  Click 2 → appare il 5°
+  Click 3 → appare il 4°
+  Click 4 → appare il 3° → dopo la reveal del 3°, le mystery card 1°/2° appaiono
+             con shake giallo PERSISTENTE (revealPhase = 'top-two-shake')
+  Click 5 → (mentre shake giallo) → trigger reveal 1° e 2° → poi banner 10s auto
   ─────────────────────────────────────────────────────────────────────────────
 */
 
-const SHAKE_MS        = 2400;
-const DOUBLE_SHAKE_MS = 2200;
-const CRAZY_MS        = 2500;
-const POST_CRAZY      = 2500;
-const BANNER_DELAY    = 600;
+const SHAKE_MS       = 2400;
+const CRAZY_MS       = 2500;
+const POST_CRAZY     = 2500;
+const BANNER_DELAY   = 600;
+const BANNER_AUTO_MS = 10000; // banner si chiude da solo dopo 10 secondi
 
 export default {
   name: 'ClassificaProiezione',
@@ -278,29 +276,29 @@ export default {
 
       /*
         revealPhase:
-        'normal'       → reveal dal 6° al 3° (click per click)
-        'double-shake' → le due card misteriose stanno scuotendo
-        'wait-final'   → double shake finito, attende click per rivelare
-        'final-reveal' → reveal in corso
-        'done'         → tutto mostrato
+        'normal'        → reveal dal 6° al 3° (click per click, con shake breve)
+        'top-two-shake' → 3° rivelato, le mystery card 1°/2° sono visibili con shake giallo persistente
+        'final-reveal'  → click durante top-two-shake → reveal in corso
+        'done'          → tutto mostrato
       */
       revealPhase: 'normal',
 
       revealedCount: 0,
       isTopTwoRevealed: false,
 
-      shakingCards: new Set(),
-      doubleSuspenseActive: false,
+      shakingCards: new Set(),   // usato solo per i reveal dal 6° al 3°
       crazyActive: false,
       isRevealing: false,
 
       winnerClosed: false,
       weekBannerClosed: false,
-      rankingVisible: false,  // dopo chiusura del banner, mostra la classifica
       currentYear: new Date().getFullYear(),
       displayedPoints: 0,
       fireworksTimer: null,
       bannerReady: false,
+      bannerCountdownPct: 100,
+      bannerCountdownTimer: null,
+      bannerAutoCloseTimer: null,
 
       phases: [
         { id: 'settimana1', label: '1ª Settimana',     icon: '1️⃣' },
@@ -340,9 +338,13 @@ export default {
       for (let r = N; r >= 3; r--) order.push(r);
       return order;
     },
-    /* Le card del 1° e 2° posto, sempre in cima, ordinate per rank (1° sopra) */
+    /* Le card del 1° e 2° posto, sempre ordinate per rank (1° sopra) */
     topTwoByRank() {
       return this.sortedTeams.filter(t => t.rank <= 2).sort((a, b) => a.rank - b.rank);
+    },
+    /* Le mystery card 1°/2° si mostrano SOLO dopo che il 3° è stato rivelato */
+    showTopTwoMystery() {
+      return this.revealStarted && this.revealedCount >= this.revealOrder.length;
     },
     /* Card rivelate (3°→6°), ordinate top→bottom: 3°, 4°, 5°, 6° */
     revealedTeamsTopFirst() {
@@ -358,15 +360,11 @@ export default {
     allRevealed() {
       return this.revealPhase === 'done';
     },
-    noShaking() {
-      return this.shakingCards.size === 0 && !this.doubleSuspenseActive;
-    },
-    /* Winner banner appare subito dopo il reveal, prima che winnerClosed sia true */
     showWinnerBanner() {
-      return this.allRevealed && this.noShaking && this.bannerReady && this.phase === 'finale' && !this.winnerClosed;
+      return this.allRevealed && this.bannerReady && this.phase === 'finale' && !this.winnerClosed;
     },
     showWeekBanner() {
-      return this.allRevealed && this.noShaking && this.bannerReady && this.phase !== 'finale' && !this.weekBannerClosed;
+      return this.allRevealed && this.bannerReady && this.phase !== 'finale' && !this.weekBannerClosed;
     },
     winnerNameChars() {
       if (!this.sortedTeams.length) return [];
@@ -375,8 +373,17 @@ export default {
   },
   watch: {
     showWinnerBanner(val) {
-      if (val) this.$nextTick(() => { this.startCountUp(); this.startFireworks(); });
-      else this.stopFireworks();
+      if (val) {
+        this.$nextTick(() => { this.startCountUp(); this.startFireworks(); });
+        this.startBannerAutoClose();
+      } else {
+        this.stopFireworks();
+        this.stopBannerAutoClose();
+      }
+    },
+    showWeekBanner(val) {
+      if (val) this.startBannerAutoClose();
+      else this.stopBannerAutoClose();
     },
   },
   methods: {
@@ -400,15 +407,15 @@ export default {
       this.revealedCount = 0;
       this.revealPhase = 'normal';
       this.shakingCards = new Set();
-      this.doubleSuspenseActive = false;
       this.crazyActive = false;
       this.isRevealing = false;
       this.isTopTwoRevealed = false;
       this.winnerClosed = false;
       this.weekBannerClosed = false;
-      this.rankingVisible = false;
       this.displayedPoints = 0;
       this.bannerReady = false;
+      this.bannerCountdownPct = 100;
+      this.stopBannerAutoClose();
       try {
         const [pSnap, hSnap] = await Promise.all([
           getDoc(doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ')),
@@ -422,14 +429,17 @@ export default {
 
     handleClick() {
       if (this.showPhaseSelector || this.isLoading) return;
+
+      // Normale reveal dal 6° al 3°
       if (this.revealPhase === 'normal') {
         if (this.isRevealing) return;
         this._revealNext();
         return;
       }
-      if (this.revealPhase === 'double-shake') return;
-      if (this.revealPhase === 'wait-final') {
-        this.triggerFinalReveal();
+
+      // Shake giallo persistente sulle card 1°/2°: click per rivelare
+      if (this.revealPhase === 'top-two-shake') {
+        this._triggerFinalReveal();
         return;
       }
     },
@@ -438,7 +448,8 @@ export default {
       this.revealStarted = true;
 
       if (this.revealedCount >= this.revealOrder.length) {
-        this._startDoubleSuspense();
+        // Tutti dal 3° al 6° sono stati rivelati → mostra mystery card 1°/2° con shake giallo persistente
+        this.revealPhase = 'top-two-shake';
         return;
       }
 
@@ -448,6 +459,7 @@ export default {
       const team = this.sortedTeams.find(t => t.rank === rank);
       if (!team) { this.isRevealing = false; return; }
 
+      // Shake breve sulla card che sta per apparire, poi si rivela
       this.shakingCards = new Set([...this.shakingCards, team.id]);
 
       setTimeout(() => {
@@ -455,34 +467,19 @@ export default {
         next.delete(team.id);
         this.shakingCards = next;
         this.isRevealing = false;
+
+        // Dopo la reveal del 3°, se non ci sono altri da rivelare → passa allo shake giallo
+        if (this.revealedCount >= this.revealOrder.length) {
+          this.revealPhase = 'top-two-shake';
+        }
       }, SHAKE_MS);
     },
 
-    _startDoubleSuspense() {
-      this.revealPhase = 'double-shake';
-      this.doubleSuspenseActive = true;
-      this.isRevealing = true;
-
-      const ids = this.topTwoByRank.map(t => t.id);
-      this.shakingCards = new Set(ids);
-
-      setTimeout(() => {
-        this.doubleSuspenseActive = false;
-        this.shakingCards = new Set();
-        this.isRevealing = false;
-        this.revealPhase = 'wait-final';
-      }, DOUBLE_SHAKE_MS);
-    },
-
-    triggerFinalReveal() {
+    _triggerFinalReveal() {
       if (this.revealPhase === 'final-reveal' || this.revealPhase === 'done') return;
       this.revealPhase = 'final-reveal';
 
-      const ids = this.topTwoByRank.map(t => t.id);
-      this.shakingCards = new Set(ids);
-
       setTimeout(() => {
-        this.shakingCards = new Set();
         this.isTopTwoRevealed = true;
         this.revealPhase = 'done';
 
@@ -495,24 +492,48 @@ export default {
       }, SHAKE_MS * 0.6);
     },
 
-    /* Chiude il banner vincitore → la classifica completa è già visibile sotto */
+    /* Auto-close banner dopo 10 secondi con countdown */
+    startBannerAutoClose() {
+      this.bannerCountdownPct = 100;
+      const startTime = performance.now();
+      const step = (now) => {
+        const elapsed = now - startTime;
+        const pct = Math.max(0, 100 - (elapsed / BANNER_AUTO_MS) * 100);
+        this.bannerCountdownPct = pct;
+        if (elapsed < BANNER_AUTO_MS) {
+          this.bannerCountdownTimer = requestAnimationFrame(step);
+        }
+      };
+      this.bannerCountdownTimer = requestAnimationFrame(step);
+      this.bannerAutoCloseTimer = setTimeout(() => {
+        if (this.phase === 'finale') this.closeWinnerShowRanking();
+        else this.closeWeekShowRanking();
+      }, BANNER_AUTO_MS);
+    },
+    stopBannerAutoClose() {
+      if (this.bannerCountdownTimer) { cancelAnimationFrame(this.bannerCountdownTimer); this.bannerCountdownTimer = null; }
+      if (this.bannerAutoCloseTimer) { clearTimeout(this.bannerAutoCloseTimer); this.bannerAutoCloseTimer = null; }
+    },
+
     closeWinnerShowRanking() {
       this.stopFireworks();
+      this.stopBannerAutoClose();
       this.winnerClosed = true;
     },
     closeWeekShowRanking() {
+      this.stopBannerAutoClose();
       this.weekBannerClosed = true;
     },
 
     resetView() {
       this.stopFireworks();
+      this.stopBannerAutoClose();
       this.showPhaseSelector = true;
       this.phase = null;
       this.revealStarted = false;
       this.revealedCount = 0;
       this.revealPhase = 'normal';
       this.shakingCards = new Set();
-      this.doubleSuspenseActive = false;
       this.crazyActive = false;
       this.isRevealing = false;
       this.isTopTwoRevealed = false;
@@ -520,9 +541,9 @@ export default {
       this.historyData = [];
       this.winnerClosed = false;
       this.weekBannerClosed = false;
-      this.rankingVisible = false;
       this.displayedPoints = 0;
       this.bannerReady = false;
+      this.bannerCountdownPct = 100;
     },
     handleLogout() {
       sessionStorage.removeItem('loggedInUser');
@@ -617,6 +638,7 @@ export default {
   },
   beforeUnmount() {
     this.stopFireworks();
+    this.stopBannerAutoClose();
   },
 };
 </script>
@@ -671,11 +693,10 @@ export default {
 .cp-tap-sub{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
 
 .cp-cards-wrap{width:100%;max-width:1200px;margin:0 auto;}
-/* Lista unica: mystery in cima, poi rivelate sotto */
 .cp-cards-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);}
 .cp-revealed-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);margin-top:clamp(.35rem,.8vh,.7rem);}
 
-/* ─── MYSTERY CARD (1° e 2° sempre visibili come ?) ── */
+/* ─── MYSTERY CARD (1° e 2°) ── */
 .cp-card-mystery{background:#111120 !important;border:2px solid rgba(255,255,255,.1) !important;}
 
 /* ─── SINGOLA CARD ──────────────────────────────────────── */
@@ -696,31 +717,31 @@ export default {
 .cp-strip--fucsia   {background:linear-gradient(180deg,#f78cc6,#E83E8C);box-shadow:4px 0 20px rgba(232,62,140,.6);}
 .cp-strip--gialli   {background:linear-gradient(180deg,#ffd43b,#c8960c);box-shadow:4px 0 20px rgba(200,160,0,.6);}
 
-/* Nuova card appare dall'alto (scende nella sua posizione) */
+/* Nuova card appare dall'alto */
 .card-enter-enter-active{animation:cardSlideDown .55s cubic-bezier(.16,1,.3,1) both;}
 @keyframes cardSlideDown{0%{opacity:0;transform:translateY(-60px) scale(.93);}55%{opacity:1;transform:translateY(8px) scale(1.02);}80%{transform:translateY(-3px) scale(.99);}100%{opacity:1;transform:translateY(0) scale(1);}}
 
-/* SHAKE normale */
+/* SHAKE normale (card 3°–6° durante il reveal) */
 .cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;background:#111120 !important;}
 @keyframes cardShake{0%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-.6deg);}75%{transform:translateX(8px) rotate(.6deg);}100%{transform:translateX(0);}}
 
-/* DOUBLE SHAKE */
-.cp-card--double-shake{
-  animation:doubleShake .14s ease-in-out infinite !important;
+/* ─── TOP-TWO SHAKE GIALLO PERSISTENTE (1° e 2° in attesa) ─── */
+.cp-card--top-two-shake{
+  animation:topTwoShake .13s ease-in-out infinite !important;
   background:#0a0900 !important;
-  border-color:rgba(255,200,0,.6) !important;
-  box-shadow:0 0 30px rgba(255,200,0,.25),0 0 60px rgba(255,180,0,.1) !important;
+  border-color:rgba(255,210,0,.75) !important;
+  box-shadow:0 0 40px rgba(255,200,0,.35),0 0 80px rgba(255,180,0,.15),inset 0 0 20px rgba(255,210,0,.08) !important;
 }
-@keyframes doubleShake{
+@keyframes topTwoShake{
   0%  {transform:translateX(0) rotate(0deg) scale(1);}
-  20% {transform:translateX(-9px) rotate(-1.5deg) scale(1.015);}
-  40% {transform:translateX(9px)  rotate(1.5deg)  scale(.985);}
-  60% {transform:translateX(-7px) rotate(-1deg) scale(1.01);}
-  80% {transform:translateX(7px)  rotate(1deg)  scale(.99);}
+  20% {transform:translateX(-10px) rotate(-1.8deg) scale(1.018);}
+  40% {transform:translateX(10px)  rotate(1.8deg)  scale(.982);}
+  60% {transform:translateX(-8px)  rotate(-1.2deg) scale(1.012);}
+  80% {transform:translateX(8px)   rotate(1.2deg)  scale(.988);}
   100%{transform:translateX(0) rotate(0deg) scale(1);}
 }
 
-/* Copertura bianca */
+/* Copertura bianca / gold */
 .cp-card-cover{position:absolute;inset:0;border-radius:inherit;background:#fff;display:flex;align-items:center;justify-content:center;z-index:10;animation:coverPulse .5s ease-in-out infinite alternate;}
 @keyframes coverPulse{from{background:#fff}to{background:#dde0ff}}
 .cp-card-cover--gold{animation:coverPulseGold .4s ease-in-out infinite alternate !important;}
@@ -800,6 +821,10 @@ export default {
 .cp-burst-particle{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--color,#ffd43b);animation:burstFly .8s ease-out forwards;--angle:0deg;}
 @keyframes burstFly{0%{transform:rotate(var(--angle)) translateX(0);opacity:1}100%{transform:rotate(var(--angle)) translateX(120px);opacity:0}}
 
+/* ─── COUNTDOWN BAR ──────────────────────────────────── */
+.cp-banner-countdown{width:100%;height:4px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;margin-top:.25rem;}
+.cp-banner-countdown-bar{height:100%;background:linear-gradient(90deg,rgba(255,215,0,.9),rgba(255,180,0,.6));border-radius:99px;transition:width .1s linear;}
+
 /* ─── WINNER OVERLAY ─────────────────────────────────── */
 .cp-winner-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a0a00 0%,#000 70%);animation:winBgPulse 2s ease-in-out infinite alternate;}
@@ -836,7 +861,7 @@ export default {
 .cp-win-trophies{display:flex;gap:3rem;font-size:clamp(1.5rem,4vw,3rem);animation:trophyRock 2s ease-in-out infinite;}
 @keyframes trophyRock{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
 .cp-win-sub{font-size:clamp(.8rem,1.3vw,1.1rem);font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.6);}
-.cp-winner-close{margin-top:.5rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.5);color:#ffd43b;border-radius:99px;padding:.5rem 2rem;font-size:clamp(.75rem,1vw,.9rem);font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
+.cp-winner-close{margin-top:.25rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.5);color:#ffd43b;border-radius:99px;padding:.5rem 2rem;font-size:clamp(.75rem,1vw,.9rem);font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
 .cp-winner-close:hover{background:rgba(255,215,0,.3);color:#fff;}
 
 /* ─── WEEK BANNER ───────────────────────────────────── */
