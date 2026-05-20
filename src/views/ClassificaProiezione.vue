@@ -27,7 +27,9 @@
     <!-- CLASSIFICA STAGE -->
     <transition name="phase-fade">
       <div v-if="!showPhaseSelector && !isLoading && teams.length" class="cp-stage">
-        <div v-if="!showWeekBanner && !showWinnerBanner" class="cp-header">
+
+        <!-- Header solo quando NON si sta rivelando e NON si vedono i banner -->
+        <div v-if="!revealStarted && !showWeekBanner && !showWinnerBanner" class="cp-header">
           <div class="cp-header-left">
             <span class="cp-trophy">🏆</span>
             <div>
@@ -36,14 +38,21 @@
             </div>
           </div>
           <div class="cp-header-right">
-            <div v-if="!revealStarted" class="cp-hint cp-hint--pulse">Clicca per iniziare</div>
-            <div v-else-if="revealPhase === 'top-two-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?!</div>
-            <div v-else-if="revealedCount < revealOrder.length" class="cp-hint cp-hint--active">{{ revealOrder.length - revealedCount }} rimanenti</div>
-            <div v-else class="cp-hint cp-hint--done">🎉 Completata!</div>
+            <div class="cp-hint cp-hint--pulse">Clicca per iniziare</div>
             <button class="cp-back-btn" @click.stop="resetView">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
           </div>
+        </div>
+
+        <!-- Mini overlay hint durante il reveal -->
+        <div v-if="revealStarted && !showWeekBanner && !showWinnerBanner" class="cp-reveal-overlay-hint">
+          <div v-if="revealPhase === 'top-two-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?! — Clicca per scoprire</div>
+          <div v-else-if="revealedCount < revealOrder.length" class="cp-hint cp-hint--active">{{ revealOrder.length - revealedCount }} rimanenti — clicca</div>
+          <div v-else-if="revealPhase === 'done'" class="cp-hint cp-hint--done">🎉 Completata!</div>
+          <button class="cp-back-btn cp-back-btn--sm" @click.stop="resetView">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
         </div>
 
         <div class="cp-ranking-area">
@@ -82,12 +91,14 @@
                       <span v-if="team.rank === 1" class="cp-medal">🥇</span>
                       <span v-else-if="team.rank === 2" class="cp-medal">🥈</span>
                     </div>
-                    <div class="cp-team-badge" :class="'cp-badge--' + team.id">
-                      <span class="cp-badge-dot"></span>
-                      <span class="cp-badge-name">{{ team.name }}</span>
-                    </div>
-                    <div class="cp-card-info">
-                      <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
+                    <div class="cp-card-row">
+                      <div class="cp-card-name-line">
+                        <div class="cp-team-badge" :class="'cp-badge--' + team.id">
+                          <span class="cp-badge-dot"></span>
+                          <span class="cp-badge-name">{{ team.name }}</span>
+                        </div>
+                        <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
+                      </div>
                       <div class="cp-card-bar-wrap">
                         <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
                       </div>
@@ -104,6 +115,12 @@
                     </div>
                     <div v-if="crazyActive && team.rank===1" class="cp-crazy-burst">
                       <span v-for="n in 24" :key="n" class="cp-burst-particle" :style="burstStyle(n)"></span>
+                    </div>
+                    <!-- Effetti extra vincitore -->
+                    <div v-if="team.rank===1 && allRevealed" class="cp-winner-glow-ring"></div>
+                    <div v-if="team.rank===1 && allRevealed" class="cp-winner-crown-float">👑</div>
+                    <div v-if="team.rank===1 && allRevealed" class="cp-winner-sparkline">
+                      <span v-for="n in 10" :key="n" class="cp-sparkline-dot" :style="{ animationDelay: (n*0.08)+'s', left: (n*10-5)+'%' }"></span>
                     </div>
                   </template>
                 </div>
@@ -136,12 +153,14 @@
                     <span v-if="team.rank === 3" class="cp-medal">🥉</span>
                     <span v-else class="cp-rank-num">#{{ team.rank }}</span>
                   </div>
-                  <div class="cp-team-badge" :class="'cp-badge--' + team.id">
-                    <span class="cp-badge-dot"></span>
-                    <span class="cp-badge-name">{{ team.name }}</span>
-                  </div>
-                  <div class="cp-card-info">
-                    <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
+                  <div class="cp-card-row">
+                    <div class="cp-card-name-line">
+                      <div class="cp-team-badge" :class="'cp-badge--' + team.id">
+                        <span class="cp-badge-dot"></span>
+                        <span class="cp-badge-name">{{ team.name }}</span>
+                      </div>
+                      <div class="cp-card-name" :class="'cp-name--' + team.id">{{ team.name }}</div>
+                    </div>
                     <div class="cp-card-bar-wrap">
                       <div class="cp-card-bar" :class="'cp-bar--' + team.id" :style="{ width: barWidth(team.points) + '%' }"></div>
                     </div>
@@ -209,17 +228,13 @@
     <!-- WEEK BANNER (1ª 2ª 3ª settimana) -->
     <transition name="winner-fade">
       <div v-if="showWeekBanner" class="cp-week-banner" @click.stop>
-        <!-- sfondo completamente nero -->
         <div class="cp-week-bg"></div>
-        <!-- particelle stellari -->
         <div class="cp-week-stars-wrap">
           <span v-for="n in 30" :key="n" class="cp-week-star" :style="weekStarStyle(n)">★</span>
         </div>
-        <!-- fuochi artificiali week -->
         <div class="cp-week-fireworks">
           <span v-for="n in 20" :key="n" class="cp-week-spark" :style="weekSparkStyle(n)"></span>
         </div>
-        <!-- card nera centrale -->
         <div class="cp-week-card">
           <div class="cp-week-content">
             <div class="cp-week-label">Vincitore</div>
@@ -722,6 +737,11 @@ export default {
 .cp-back-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;width:clamp(30px,3.5vh,38px);height:clamp(30px,3.5vh,38px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
 .cp-back-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
 
+/* Mini overlay hint durante reveal (senza barra) */
+.cp-reveal-overlay-hint{position:absolute;top:clamp(.4rem,1vh,.8rem);right:clamp(.8rem,2vw,1.8rem);z-index:50;display:flex;align-items:center;gap:.7rem;pointer-events:none;}
+.cp-reveal-overlay-hint .cp-back-btn{pointer-events:all;}
+.cp-back-btn--sm{width:clamp(26px,3vh,32px);height:clamp(26px,3vh,32px);border-radius:8px;}
+
 /* ─── RANKING AREA ─────────────────────────────── */
 .cp-ranking-area{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(.5rem,1.5vh,1rem) clamp(1rem,4vw,5rem) clamp(.5rem,1.5vh,1rem);position:relative;overflow:hidden;min-height:0;}
 .cp-tap-invite{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;color:rgba(255,255,255,.2);pointer-events:none;}
@@ -787,10 +807,26 @@ export default {
 .cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 70px rgba(255,200,0,.7),0 0 140px rgba(255,200,0,.3),inset 0 0 30px rgba(255,200,0,.15) !important;background:#0a0a00 !important;z-index:20;}
 @keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
 
-.cp-card--winner{border-color:rgba(255,215,0,.7) !important;box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.08);transform:scale(1.018);}
+/* Winner card — glow + scale + bordo oro animato */
+.cp-card--winner{
+  border-color:rgba(255,215,0,.8) !important;
+  box-shadow:0 0 60px rgba(255,215,0,.35), 0 0 120px rgba(255,215,0,.15), inset 0 0 30px rgba(255,215,0,.1) !important;
+  transform:scale(1.025) !important;
+  animation:winnerCardPulse 2s ease-in-out infinite !important;
+}
+@keyframes winnerCardPulse{
+  0%,100%{box-shadow:0 0 60px rgba(255,215,0,.35),0 0 120px rgba(255,215,0,.15),inset 0 0 30px rgba(255,215,0,.1);}
+  50%{box-shadow:0 0 90px rgba(255,215,0,.6),0 0 180px rgba(255,215,0,.25),inset 0 0 50px rgba(255,215,0,.18);}
+}
+
+/* ─── CARD ROW — badge + nome su una sola riga ─── */
+.cp-card-row{flex:1;min-width:0;display:flex;flex-direction:column;gap:clamp(.15rem,.35vh,.3rem);}
+.cp-card-name-line{display:flex;align-items:center;gap:clamp(.4rem,.8vw,.8rem);white-space:nowrap;overflow:hidden;}
+/* manteniamo cp-card-info per compatibilità ma non lo usiamo più */
+.cp-card-info{flex:1;min-width:0;}
 
 /* ─── BADGE ──────────────────────────────────────── */
-.cp-team-badge{display:flex;align-items:center;gap:.35rem;padding:.2rem .65rem .2rem .4rem;border-radius:99px;border:1.5px solid transparent;flex-shrink:0;margin-left:clamp(.1rem,.3vw,.4rem);}
+.cp-team-badge{display:flex;align-items:center;gap:.35rem;padding:.2rem .65rem .2rem .4rem;border-radius:99px;border:1.5px solid transparent;flex-shrink:0;}
 .cp-badge-dot{width:clamp(10px,1.2vw,14px);height:clamp(10px,1.2vw,14px);border-radius:50%;flex-shrink:0;}
 .cp-badge-name{font-size:clamp(.6rem,.8vw,.75rem);font-weight:900;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
 .cp-badge--rossi    {background:rgba(220,53,69,.2);border-color:rgba(220,53,69,.5);}
@@ -818,8 +854,7 @@ export default {
 .cp-medal{font-size:clamp(1.7rem,3.5vw,2.8rem);}
 
 /* ─── INFO ──────────────────────────────────────── */
-.cp-card-info{flex:1;min-width:0;}
-.cp-card-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.8vw,3rem);letter-spacing:.09em;line-height:1;margin-bottom:clamp(.18rem,.4vh,.35rem);}
+.cp-card-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.8vw,3rem);letter-spacing:.09em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cp-card-bar-wrap{height:clamp(4px,.55vh,7px);background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;}
 .cp-card-bar{height:100%;border-radius:99px;transition:width 1.1s cubic-bezier(.16,1,.3,1);}
 
@@ -856,104 +891,51 @@ export default {
 .cp-burst-particle{position:absolute;top:50%;left:50%;width:clamp(8px,1vw,14px);height:clamp(8px,1vw,14px);border-radius:50%;background:var(--color,#ffd43b);box-shadow:0 0 10px var(--color,#ffd43b);transform-origin:50% 50%;animation:burstOut .8s ease-out forwards;animation-delay:var(--delay,0s);}
 @keyframes burstOut{0%{opacity:1;transform:rotate(var(--angle)) translateX(0) scale(1);}100%{opacity:0;transform:rotate(var(--angle)) translateX(clamp(80px,10vw,160px)) scale(0);}}
 
+/* ─── WINNER CARD EXTRA EFFECTS ─────────────────── */
+/* Anello di glow dorato che pulsa attorno alla card */
+.cp-winner-glow-ring{
+  position:absolute;inset:-4px;border-radius:inherit;
+  border:2px solid rgba(255,215,0,.6);
+  box-shadow:0 0 20px rgba(255,215,0,.5),inset 0 0 20px rgba(255,215,0,.08);
+  animation:glowRingPulse 1.5s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes glowRingPulse{
+  0%,100%{opacity:.6;transform:scale(1);}
+  50%{opacity:1;transform:scale(1.005);}
+}
+/* Corona fluttuante sopra la card */
+.cp-winner-crown-float{
+  position:absolute;top:-2.2rem;left:50%;transform:translateX(-50%);
+  font-size:clamp(1.4rem,3vh,2rem);
+  filter:drop-shadow(0 0 12px rgba(255,215,0,.9));
+  animation:crownFloat 1.8s ease-in-out infinite;
+  pointer-events:none;
+  z-index:30;
+}
+@keyframes crownFloat{
+  0%,100%{transform:translateX(-50%) translateY(0) rotate(-5deg);}
+  50%{transform:translateX(-50%) translateY(-8px) rotate(5deg);}
+}
+/* Pallini luminosi che scorrono sulla barra in basso */
+.cp-winner-sparkline{
+  position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,rgba(255,215,0,.3),transparent);
+  overflow:visible;pointer-events:none;
+}
+.cp-sparkline-dot{
+  position:absolute;bottom:-1px;width:6px;height:6px;
+  border-radius:50%;background:#ffd43b;
+  box-shadow:0 0 10px #ffd43b,0 0 20px rgba(255,215,0,.5);
+  animation:sparklinePop 1.2s ease-in-out infinite;
+}
+@keyframes sparklinePop{
+  0%,100%{opacity:0;transform:translateY(0) scale(.5);}
+  50%{opacity:1;transform:translateY(-6px) scale(1.3);}
+}
+
 /* ─── WINNER BANNER ─────────────────────────────── */
 .cp-winner-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,#1a1200 0%,#06050a 60%,#000 100%);}
 .cp-fireworks-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
-.cp-lasers{position:absolute;inset:0;pointer-events:none;}
-.cp-laser{position:absolute;top:50%;left:50%;width:1px;height:55vh;transform-origin:50% 100%;background:linear-gradient(to top,transparent,oklch(0.75 0.18 calc(50 + var(--hue))));opacity:.3;animation:laserSpin 8s linear infinite;animation-delay:var(--animationDelay,0s);}
-@keyframes laserSpin{from{transform:rotate(var(--angle)) scaleY(1);}50%{transform:rotate(calc(var(--angle) + 180deg)) scaleY(.6);}to{transform:rotate(calc(var(--angle) + 360deg)) scaleY(1);}}
-.cp-shockwaves{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
-.cp-shockwave{position:absolute;width:200px;height:200px;border-radius:50%;border:2px solid rgba(255,215,0,.5);animation:shockExpand 3s ease-out infinite;}
-@keyframes shockExpand{0%{transform:scale(0);opacity:.8;}100%{transform:scale(10);opacity:0;}}
-.cp-gold-rain{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-.cp-gold-drop{position:absolute;top:-10%;animation:goldFall var(--duration,2s) linear infinite;animation-delay:var(--delay,0s);}
-@keyframes goldFall{0%{transform:translateY(0) rotate(var(--rot));opacity:1;}100%{transform:translateY(110vh) rotate(calc(var(--rot) + 360deg));opacity:.2;}}
-.cp-confetti-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-.cp-confetto{position:absolute;top:-5%;background:var(--color,#ffd43b);animation:confettiFall var(--duration,2.2s) linear infinite;animation-delay:var(--delay,0s);}
-@keyframes confettiFall{0%{transform:translateY(0) rotate(var(--rot));opacity:1;}100%{transform:translateY(110vh) rotate(calc(var(--rot) + 720deg));opacity:0;}}
-.cp-win-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.3rem,.8vh,.7rem);text-align:center;padding:clamp(1.5rem,4vh,3rem) clamp(2rem,5vw,5rem);}
-.cp-win-halo{position:absolute;width:clamp(300px,50vw,600px);height:clamp(300px,50vw,600px);border-radius:50%;background:radial-gradient(ellipse,rgba(255,200,0,.18) 0%,transparent 70%);pointer-events:none;animation:haloPulse 2.5s ease-in-out infinite;}
-@keyframes haloPulse{0%,100%{transform:scale(1);opacity:.7;}50%{transform:scale(1.15);opacity:1;}}
-.cp-win-crown{font-size:clamp(3rem,8vh,6rem);animation:crownBounce 1.2s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,215,0,.9));}
-@keyframes crownBounce{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-16px) rotate(5deg);}}
-.cp-win-pre{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2vw,1.4rem);letter-spacing:.4em;color:rgba(255,215,0,.7);}
-.cp-win-year{font-size:clamp(.65rem,1.1vw,.85rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.3);}
-.cp-win-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,10vw,8rem);letter-spacing:.1em;line-height:1;text-shadow:0 0 60px currentColor;display:flex;flex-wrap:wrap;justify-content:center;}
-.cp-win-char{display:inline-block;animation:charDrop .5s cubic-bezier(.16,1,.3,1) both;}
-@keyframes charDrop{from{opacity:0;transform:translateY(-40px) scale(1.4);}to{opacity:1;transform:none;}}
-.cp-win-pts{display:flex;align-items:baseline;gap:.4rem;}
-.cp-win-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,7vw,5.5rem);color:#ffd43b;text-shadow:0 0 30px rgba(255,215,0,.8);}
-.cp-win-pts-label{font-size:clamp(.7rem,1.2vw,.95rem);font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,215,0,.5);}
-.cp-win-stars{position:absolute;width:100%;height:100%;pointer-events:none;}
-.cp-win-star{position:absolute;color:#ffd43b;animation:winStarPulse 1.5s ease-in-out infinite;text-shadow:0 0 12px #ffd43b;}
-@keyframes winStarPulse{0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(.8);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.3);}}
-.cp-win-trophies{display:flex;gap:clamp(1.5rem,4vw,4rem);}
-.cp-win-trophy-l,.cp-win-trophy-r{font-size:clamp(1.5rem,3.5vh,2.5rem);animation:trophyRock 2s ease-in-out infinite;}
-.cp-win-trophy-r{animation-delay:.5s;}
-@keyframes trophyRock{0%,100%{transform:rotate(-8deg);}50%{transform:rotate(8deg);}}
-.cp-win-sub{font-size:clamp(.75rem,1.3vw,1rem);font-weight:700;letter-spacing:.05em;color:rgba(255,255,255,.5);}
-.cp-winner-close{margin-top:clamp(.3rem,.8vh,.6rem);background:rgba(255,215,0,.15);border:2px solid rgba(255,215,0,.5);color:#ffd43b;border-radius:99px;padding:clamp(.5rem,1.2vh,.8rem) clamp(1.5rem,3vw,2.5rem);font-family:'Nunito',sans-serif;font-size:clamp(.8rem,1.3vw,1rem);font-weight:800;cursor:pointer;letter-spacing:.05em;transition:all .2s;}
-.cp-winner-close:hover{background:rgba(255,215,0,.3);border-color:rgba(255,215,0,.8);}
-
-/* ─── WEEK BANNER ───────────────────────────────── */
-.cp-week-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-/* sfondo completamente nero */
-.cp-week-bg{position:absolute;inset:0;background:#000;}
-.cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-.cp-week-star{position:absolute;top:-5%;color:#ffd43b;animation:weekStarFall var(--duration,3s) linear infinite;animation-delay:var(--delay,0s);font-size:var(--size,1rem);opacity:.7;text-shadow:0 0 8px #ffd43b;}
-@keyframes weekStarFall{0%{transform:translateY(0) rotate(0);opacity:.8;}100%{transform:translateY(110vh) rotate(360deg);opacity:0;}}
-.cp-week-fireworks{position:absolute;inset:0;pointer-events:none;overflow:visible;}
-.cp-week-spark{position:absolute;top:50%;left:50%;width:clamp(4px,.5vw,8px);height:clamp(4px,.5vw,8px);border-radius:50%;background:var(--color,#ffd43b);box-shadow:0 0 8px var(--color,#ffd43b);animation:weekSparkBurst 1.5s ease-out infinite;animation-delay:var(--delay,0s);transform-origin:0 0;}
-@keyframes weekSparkBurst{0%{opacity:1;transform:rotate(var(--angle)) translateX(0) scale(1);}100%{opacity:0;transform:rotate(var(--angle)) translateX(clamp(60px,8vw,140px)) scale(0);}}
-
-/* card nera centrale con bordo sottile */
-.cp-week-card{
-  position:relative;
-  z-index:10;
-  background:#0d0d0d;
-  border:1.5px solid rgba(255,255,255,.12);
-  border-radius:clamp(16px,2vw,28px);
-  padding:clamp(2rem,5vh,4rem) clamp(2.5rem,6vw,6rem);
-  box-shadow:0 0 80px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04);
-  max-width:min(90vw,640px);
-  width:100%;
-}
-.cp-week-content{display:flex;flex-direction:column;align-items:center;gap:clamp(.3rem,.7vh,.6rem);text-align:center;}
-.cp-week-label{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.4);}
-.cp-week-phase-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,3vw,2rem);letter-spacing:.2em;color:rgba(255,255,255,.75);}
-.cp-week-medal{font-size:clamp(2.5rem,7vh,5rem);animation:medalBounce 1s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,215,0,.8));}
-@keyframes medalBounce{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-12px) scale(1.08);}}
-.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,10vw,7rem);letter-spacing:.1em;line-height:1;text-shadow:0 0 50px currentColor;display:flex;flex-wrap:wrap;justify-content:center;}
-.cp-week-char{display:inline-block;animation:charDrop .5s cubic-bezier(.16,1,.3,1) both;}
-.cp-week-score-row{display:flex;align-items:baseline;gap:.4rem;}
-.cp-week-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5.5vw,4.5rem);color:#ffd43b;text-shadow:0 0 25px rgba(255,215,0,.8);}
-.cp-week-pts-label{font-size:clamp(.65rem,1.1vw,.85rem);font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,215,0,.5);}
-.cp-week-podium{display:flex;gap:clamp(.5rem,2vw,1.5rem);margin-top:clamp(.2rem,.5vh,.5rem);}
-.cp-week-podium-item{display:flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:99px;padding:.3rem .9rem .3rem .5rem;}
-.cp-podium-medal{font-size:clamp(.9rem,1.6vh,1.3rem);}
-.cp-podium-name{font-size:clamp(.7rem,1.1vw,.9rem);font-weight:800;}
-.cp-podium-pts{font-size:clamp(.6rem,.9vw,.75rem);color:rgba(255,255,255,.4);font-weight:700;}
-.cp-week-close-btn{background:rgba(255,215,0,.12);border:2px solid rgba(255,215,0,.4);color:#ffd43b;}
-.cp-week-close-btn:hover{background:rgba(255,215,0,.25);border-color:rgba(255,215,0,.7);}
-
-/* ─── COUNTDOWN BAR ─────────────────────────────── */
-.cp-banner-countdown{width:clamp(140px,30vw,280px);height:3px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin-top:clamp(.2rem,.5vh,.4rem);}
-.cp-banner-countdown-bar{height:100%;background:linear-gradient(90deg,rgba(255,215,0,.8),rgba(255,165,0,.5));border-radius:99px;transition:width .1s linear;}
-
-/* ─── LOADING ───────────────────────────────────── */
-.cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#06060c;z-index:50;}
-.cp-spinner{width:clamp(32px,5vw,48px);height:clamp(32px,5vw,48px);border:3px solid rgba(255,255,255,.1);border-top-color:#ffd43b;border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.cp-loading p{font-size:clamp(.8rem,1.3vw,1rem);color:rgba(255,255,255,.4);font-weight:700;letter-spacing:.1em;}
-
-/* ─── TRANSITIONS ───────────────────────────────── */
-.phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s,transform .4s;}
-.phase-fade-enter-from,.phase-fade-leave-to{opacity:0;transform:scale(.97);}
-.winner-fade-enter-active{transition:opacity .5s,transform .5s cubic-bezier(.16,1,.3,1);}
-.winner-fade-leave-active{transition:opacity .35s;}
-.winner-fade-enter-from{opacity:0;transform:scale(.9);}
-.winner-fade-leave-to{opacity:0;}
-.fade-enter-active,.fade-leave-active{transition:opacity .3s;}
-.fade-enter-from,.fade-leave-to{opacity:0;}
-</style>
+.cp-lasers{position
