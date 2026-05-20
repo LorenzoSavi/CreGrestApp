@@ -38,7 +38,6 @@
           <div class="cp-header-right">
             <div v-if="!revealStarted" class="cp-hint cp-hint--pulse">Clicca per iniziare</div>
             <div v-else-if="revealPhase === 'double-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?!</div>
-            <div v-else-if="revealPhase === 'auto-countdown'" class="cp-hint cp-hint--countdown">🎯 {{ autoCountdown }}s</div>
             <div v-else-if="revealedCount < sortedTeams.length" class="cp-hint cp-hint--active">{{ sortedTeams.length - revealedCount }} rimanenti</div>
             <div v-else class="cp-hint cp-hint--done">🎉 Completata!</div>
             <button class="cp-back-btn" @click.stop="resetView">
@@ -116,38 +115,20 @@
               </div>
             </transition-group>
 
-            <!-- PLACEHOLDER card coperte (visibili SOLO durante double-shake e countdown, prima che vengano rivelate) -->
-            <div v-if="doubleSuspenseActive || revealPhase === 'auto-countdown'" class="cp-hidden-placeholders">
+            <!-- PLACEHOLDER card coperte (visibili SOLO durante double-shake) -->
+            <div v-if="doubleSuspenseActive" class="cp-hidden-placeholders">
               <div
                 v-for="team in hiddenTopTwo" :key="'ph-' + team.id"
                 class="cp-card cp-card-placeholder"
-                :class="[
-                  { 'cp-card--double-shake': doubleSuspenseActive },
-                  { 'cp-card-placeholder--countdown': revealPhase === 'auto-countdown' }
-                ]"
+                :class="{ 'cp-card--double-shake': doubleSuspenseActive }"
               >
-                <div class="cp-card-cover" :class="{ 'cp-card-cover--gold': doubleSuspenseActive }">
-                  <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': doubleSuspenseActive }">?</span>
+                <div class="cp-card-cover cp-card-cover--gold">
+                  <span class="cp-cover-q cp-cover-q--gold">?</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </transition>
-
-    <!-- AUTO COUNTDOWN overlay (durante i 10s prima del reveal finale) -->
-    <transition name="fade">
-      <div v-if="revealPhase === 'auto-countdown'" class="cp-countdown-overlay" @click.stop="triggerFinalReveal">
-        <div class="cp-countdown-ring">
-          <svg viewBox="0 0 120 120" class="cp-countdown-svg">
-            <circle cx="60" cy="60" r="52" class="cp-countdown-track"/>
-            <circle cx="60" cy="60" r="52" class="cp-countdown-progress"
-              :style="{ strokeDashoffset: countdownDashOffset }"/>
-          </svg>
-          <div class="cp-countdown-num">{{ autoCountdown }}</div>
-        </div>
-        <p class="cp-countdown-sub">Clicca per svelare ora</p>
       </div>
     </transition>
 
@@ -229,22 +210,19 @@ import { doc, getDoc } from 'firebase/firestore';
 /*
   FLOW COMPLETO:
   ─────────────────────────────────────────────────────────────────────────────
-  Click 1..N-3  → reveal singolo dal fondo (shake → card appare), dove N = tot squadre
+  Click 1..N-3  → reveal singolo dal fondo (shake → card appare), N = tot squadre
   Click N-2     → reveal normale della 3ª posizione (shake → card appare)
   Click N-1     → DOUBLE SHAKE: shake simultaneo delle ultime 2 card coperte (1° e 2°)
                   I placeholder compaiono immediatamente, poi scuotono per DOUBLE_SHAKE_MS
-  Dopo DOUBLE_SHAKE_MS → partono 10 secondi di countdown automatico
-                         Durante il countdown si può cliccare per anticipare
-  Allo scadere (o al click) → FINAL REVEAL: entrambe le card appaiono insieme → banner/fuochi
+  Dopo DOUBLE_SHAKE_MS → il prossimo click rivela subito 1° e 2° → banner/fuochi
   ─────────────────────────────────────────────────────────────────────────────
 */
 
-const SHAKE_MS         = 2400;   // shake card normale (3° → 6°)
-const DOUBLE_SHAKE_MS  = 3800;   // shake delle due card finali insieme
-const AUTO_REVEAL_SECS = 10;     // secondi di countdown prima del reveal automatico
-const CRAZY_MS         = 2500;   // effetto "crazy" sul 1° posto
-const POST_CRAZY       = 2500;   // attesa prima del banner dopo crazy
-const BANNER_DELAY     = 600;    // piccolo delay drammatico prima del banner
+const SHAKE_MS        = 2400;  // shake card normale (3° → 6°)
+const DOUBLE_SHAKE_MS = 2200;  // shake più breve/meno violento per le due card finali
+const CRAZY_MS        = 2500;  // effetto "crazy" sul 1° posto
+const POST_CRAZY      = 2500;  // attesa prima del banner dopo crazy
+const BANNER_DELAY    = 600;   // piccolo delay drammatico prima del banner
 
 export default {
   name: 'ClassificaProiezione',
@@ -256,29 +234,21 @@ export default {
       revealStarted: false,
 
       /*
-        revealPhase descrive lo stadio corrente della classifica:
-        'normal'         → reveal normale (click per click dal fondo)
-        'double-shake'   → le due card coperte stanno scuotendo insieme
-        'auto-countdown' → countdown 10s prima del reveal finale
-        'final-reveal'   → reveal in corso (mostra le 2 card)
-        'done'           → tutto mostrato
+        revealPhase:
+        'normal'       → reveal normale (click per click dal fondo)
+        'double-shake' → le due card coperte stanno scuotendo insieme
+        'wait-final'   → double shake finito, attende click per rivelare 1° e 2°
+        'final-reveal' → reveal in corso
+        'done'         → tutto mostrato
       */
       revealPhase: 'normal',
 
-      /*
-        revealedCount: quante card sono già visibili (escluse le ultime 2 che
-        vengono rivelate tutte insieme come reveal finale)
-      */
       revealedCount: 0,
 
-      shakingCards: new Set(),        // id delle card che stanno scuotendo
-      doubleSuspenseActive: false,    // true = siamo nella fase double-shake
+      shakingCards: new Set(),
+      doubleSuspenseActive: false,
       crazyActive: false,
       isRevealing: false,
-
-      autoCountdown: AUTO_REVEAL_SECS,
-      autoCountdownTimer: null,
-      autoRevealTimer: null,
 
       winnerClosed: false,
       weekBannerClosed: false,
@@ -318,30 +288,29 @@ export default {
         .sort((a, b) => b.points - a.points)
         .map((t, i) => ({ ...t, rank: i + 1 }));
     },
-    /* Ordine di reveal singolo: dal fondo verso il 3° posto (i primi 2 vengono rivelati insieme) */
+    /*
+      Ordine di reveal singolo: dal fondo (N°) verso il 3° posto.
+      Es. 6 squadre → [6, 5, 4, 3] — il 6° appare per primo, poi il 5°, ecc.
+    */
     revealOrder() {
       const N = this.sortedTeams.length;
       const order = [];
       for (let r = N; r >= 3; r--) order.push(r);
-      return order; // [6,5,4,3] per 6 squadre
+      return order;
     },
-    /* Card già visibili (1ª–3ª escluse finché non parte il final reveal) */
     displayedTeams() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
       const revealedRanks = new Set(this.revealOrder.slice(0, this.revealedCount));
       let base = this.sortedTeams.filter(t => revealedRanks.has(t.rank));
-
-      // Dopo il final reveal mostriamo anche 1° e 2°
       if (this.revealPhase === 'done') {
         base = [...this.sortedTeams];
       }
       return base;
     },
     displayedTeamsBottomFirst() {
-      // Ordine per la lista: dal peggior rank al migliore (top in fondo)
+      // Ordine visivo: dal rank più alto (ultimo posto) in cima, il 1° in fondo
       return [...this.displayedTeams].sort((a, b) => b.rank - a.rank);
     },
-    /* Le due card nascoste (1° e 2°) — usate per i placeholder */
     hiddenTopTwo() {
       return this.sortedTeams.filter(t => t.rank <= 2).sort((a, b) => b.rank - a.rank);
     },
@@ -363,12 +332,6 @@ export default {
     winnerNameChars() {
       if (!this.sortedTeams.length) return [];
       return this.sortedTeams[0].name.split('');
-    },
-    /* Per il cerchio SVG del countdown */
-    countdownDashOffset() {
-      const circumference = 2 * Math.PI * 52; // r=52
-      const fraction = this.autoCountdown / AUTO_REVEAL_SECS;
-      return circumference * (1 - fraction);
     },
   },
   watch: {
@@ -405,7 +368,6 @@ export default {
       this.weekBannerClosed = false;
       this.displayedPoints = 0;
       this.bannerReady = false;
-      this._clearAutoTimers();
       try {
         const [pSnap, hSnap] = await Promise.all([
           getDoc(doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ')),
@@ -426,19 +388,20 @@ export default {
         return;
       }
 
-      if (this.revealPhase === 'auto-countdown') {
-        // Click durante il countdown → anticipiamo il reveal finale
+      // Double shake in corso → ignora click
+      if (this.revealPhase === 'double-shake') return;
+
+      // Dopo il double shake: click rivela subito il finale
+      if (this.revealPhase === 'wait-final') {
         this.triggerFinalReveal();
         return;
       }
-
-      // Negli altri stati (double-shake, final-reveal, done) ignoriamo
     },
 
     _revealNext() {
       this.revealStarted = true;
 
-      // Se abbiamo già rivelato tutte le card singole (dal fondo fino al 3°),
+      // Se abbiamo già rivelato tutte le card singole (3° → 6°),
       // il prossimo click avvia il double-shake
       if (this.revealedCount >= this.revealOrder.length) {
         this._startDoubleSuspense();
@@ -462,51 +425,29 @@ export default {
       }, SHAKE_MS);
     },
 
-    /* ── DOUBLE SUSPENSE ──────────────────────────────────────────────── */
+    /* ── DOUBLE SUSPENSE (più corto, meno violento) ──────────────── */
     _startDoubleSuspense() {
       this.revealPhase = 'double-shake';
       this.doubleSuspenseActive = true;
       this.isRevealing = true;
 
-      // Aggiungi le due card nascoste al set di shaking (i placeholder le mostrano)
       const ids = this.hiddenTopTwo.map(t => t.id);
       this.shakingCards = new Set(ids);
 
       setTimeout(() => {
-        // Fine double-shake → avvia countdown automatico
         this.doubleSuspenseActive = false;
         this.shakingCards = new Set();
         this.isRevealing = false;
-        this._startAutoCountdown();
+        // Nessun countdown: attendiamo solo il click dell'utente
+        this.revealPhase = 'wait-final';
       }, DOUBLE_SHAKE_MS);
     },
 
-    /* ── COUNTDOWN 10s ───────────────────────────────────────────────── */
-    _startAutoCountdown() {
-      this.revealPhase = 'auto-countdown';
-      this.autoCountdown = AUTO_REVEAL_SECS;
-
-      this.autoCountdownTimer = setInterval(() => {
-        this.autoCountdown--;
-        if (this.autoCountdown <= 0) {
-          this._clearAutoTimers();
-          this.triggerFinalReveal();
-        }
-      }, 1000);
-    },
-
-    _clearAutoTimers() {
-      if (this.autoCountdownTimer) { clearInterval(this.autoCountdownTimer); this.autoCountdownTimer = null; }
-      if (this.autoRevealTimer)    { clearTimeout(this.autoRevealTimer);     this.autoRevealTimer    = null; }
-    },
-
-    /* ── FINAL REVEAL: appaiono 1° e 2° insieme ──────────────────────── */
+    /* ── FINAL REVEAL: appaiono 1° e 2° insieme ──────────────────── */
     triggerFinalReveal() {
       if (this.revealPhase === 'final-reveal' || this.revealPhase === 'done') return;
-      this._clearAutoTimers();
       this.revealPhase = 'final-reveal';
 
-      // Aggiungi entrambe le card (shake breve poi appaiono)
       const ids = this.hiddenTopTwo.map(t => t.id);
       this.shakingCards = new Set(ids);
 
@@ -514,19 +455,16 @@ export default {
         this.shakingCards = new Set();
         this.revealPhase = 'done';
 
-        // Effetto crazy sul 1°
         this.crazyActive = true;
         setTimeout(() => { this.crazyActive = false; }, CRAZY_MS + POST_CRAZY);
 
-        // Banner dopo delay drammatico
         setTimeout(() => {
           this.bannerReady = true;
         }, CRAZY_MS + BANNER_DELAY);
-      }, SHAKE_MS * 0.8); // shake breve al reveal finale
+      }, SHAKE_MS * 0.6);
     },
 
     resetView() {
-      this._clearAutoTimers();
       this.stopFireworks();
       this.showPhaseSelector = true;
       this.phase = null;
@@ -636,7 +574,6 @@ export default {
     },
   },
   beforeUnmount() {
-    this._clearAutoTimers();
     this.stopFireworks();
   },
 };
@@ -679,7 +616,6 @@ export default {
 .cp-hint--done{color:rgba(80,200,120,.85);}
 .cp-hint--suspense{color:#ff6b6b;animation:suspensePulse .6s ease-in-out infinite;}
 @keyframes suspensePulse{0%,100%{opacity:.5;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
-.cp-hint--countdown{color:#ffd43b;font-size:clamp(.75rem,1.1vw,.9rem);}
 @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.9}}
 .cp-back-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;width:clamp(32px,4vh,40px);height:clamp(32px,4vh,40px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
 .cp-back-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
@@ -695,15 +631,9 @@ export default {
 .cp-cards-wrap{width:100%;max-width:1200px;margin:0 auto;}
 .cp-cards-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);}
 
-/* ─── PLACEHOLDER card coperte (1° e 2° durante double-shake e countdown) ── */
+/* ─── PLACEHOLDER card coperte (1° e 2° durante double-shake) ── */
 .cp-hidden-placeholders{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);margin-top:clamp(.35rem,.8vh,.7rem);}
 .cp-card-placeholder{background:#111120;border:2px solid rgba(255,255,255,.08);}
-.cp-card-placeholder--countdown{
-  border-color:rgba(255,215,0,.25);
-  box-shadow:0 0 20px rgba(255,200,0,.12);
-  animation:countdownGlow 1.2s ease-in-out infinite alternate;
-}
-@keyframes countdownGlow{from{box-shadow:0 0 15px rgba(255,200,0,.1)}to{box-shadow:0 0 40px rgba(255,200,0,.35),inset 0 0 20px rgba(255,200,0,.06)}}
 
 /* ─── SINGOLA CARD ──────────────────────────────────────── */
 .cp-card{display:flex;align-items:center;gap:clamp(.5rem,1.2vw,1.2rem);background:#0c0c1a;border:2px solid rgba(255,255,255,.06);border-radius:clamp(10px,1.2vw,16px);padding:clamp(.5rem,1.2vh,.9rem) clamp(.7rem,1.5vw,1.4rem);position:relative;overflow:hidden;min-height:clamp(62px,9.5vh,92px);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,background .3s;}
@@ -730,19 +660,19 @@ export default {
 .cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;background:#111120 !important;}
 @keyframes cardShake{0%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-.6deg);}75%{transform:translateX(8px) rotate(.6deg);}100%{transform:translateX(0);}}
 
-/* DOUBLE SHAKE (più violento + oro) */
+/* DOUBLE SHAKE (ridotto rispetto a prima) */
 .cp-card--double-shake{
-  animation:doubleShake .1s ease-in-out infinite !important;
+  animation:doubleShake .14s ease-in-out infinite !important;
   background:#0a0900 !important;
   border-color:rgba(255,200,0,.6) !important;
-  box-shadow:0 0 40px rgba(255,200,0,.35),0 0 80px rgba(255,180,0,.15) !important;
+  box-shadow:0 0 30px rgba(255,200,0,.25),0 0 60px rgba(255,180,0,.1) !important;
 }
 @keyframes doubleShake{
   0%  {transform:translateX(0) rotate(0deg) scale(1);}
-  20% {transform:translateX(-14px) rotate(-2.5deg) scale(1.025);}
-  40% {transform:translateX(14px)  rotate(2.5deg)  scale(.975);}
-  60% {transform:translateX(-10px) rotate(-1.5deg) scale(1.015);}
-  80% {transform:translateX(10px)  rotate(1.5deg)  scale(.985);}
+  20% {transform:translateX(-9px) rotate(-1.5deg) scale(1.015);}
+  40% {transform:translateX(9px)  rotate(1.5deg)  scale(.985);}
+  60% {transform:translateX(-7px) rotate(-1deg) scale(1.01);}
+  80% {transform:translateX(7px)  rotate(1deg)  scale(.99);}
   100%{transform:translateX(0) rotate(0deg) scale(1);}
 }
 
@@ -761,32 +691,6 @@ export default {
 
 /* Winner card */
 .cp-card--winner{border-color:rgba(255,215,0,.7) !important;box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.08);transform:scale(1.018);}
-
-/* ─── COUNTDOWN OVERLAY ──────────────────────────────── */
-.cp-countdown-overlay{
-  position:fixed;bottom:clamp(1.5rem,4vh,3rem);right:clamp(1.5rem,3vw,3rem);
-  z-index:200;display:flex;flex-direction:column;align-items:center;gap:.5rem;
-  pointer-events:all;cursor:pointer;
-}
-.cp-countdown-ring{position:relative;width:clamp(64px,8vw,96px);height:clamp(64px,8vw,96px);display:flex;align-items:center;justify-content:center;}
-.cp-countdown-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);}
-.cp-countdown-track{fill:none;stroke:rgba(255,255,255,.1);stroke-width:7;}
-.cp-countdown-progress{
-  fill:none;stroke:#ffd43b;stroke-width:7;
-  stroke-linecap:round;
-  stroke-dasharray:calc(2 * 3.14159 * 52);
-  transition:stroke-dashoffset .95s linear;
-  filter:drop-shadow(0 0 8px rgba(255,215,0,.8));
-}
-.cp-countdown-num{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(1.6rem,3.5vw,2.8rem);
-  color:#ffd43b;
-  text-shadow:0 0 20px rgba(255,200,0,.8);
-  line-height:1;
-  position:relative;z-index:1;
-}
-.cp-countdown-sub{font-size:clamp(.6rem,.85vw,.72rem);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,215,0,.55);text-align:center;max-width:120px;}
 
 /* ─── BADGE COLORE SQUADRA ──────────────────────── */
 .cp-team-badge{display:flex;align-items:center;gap:.35rem;padding:.2rem .65rem .2rem .4rem;border-radius:99px;border:1.5px solid transparent;flex-shrink:0;margin-left:clamp(.1rem,.3vw,.4rem);}
@@ -846,83 +750,76 @@ export default {
 .cp-spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#ffd43b;animation:sparkFly 1.3s ease-out infinite;--angle:0deg;}
 @keyframes sparkFly{0%{transform:rotate(var(--angle)) translateX(0) scale(1.5);opacity:1}100%{transform:rotate(var(--angle)) translateX(95px) scale(0);opacity:0}}
 .cp-stars{position:absolute;right:1rem;top:50%;transform:translateY(-50%);pointer-events:none;}
-.cp-star{position:absolute;color:#ffd43b;animation:starPop .8s cubic-bezier(.16,1,.3,1) both,starFade 1.5s ease-in-out .5s infinite alternate;transform:translate(var(--x,0),var(--y,0));}
-@keyframes starPop{from{transform:translate(var(--x,0),var(--y,0)) scale(0)}to{transform:translate(var(--x,0),var(--y,0)) scale(1)}}
-@keyframes starFade{from{opacity:1}to{opacity:.4}}
-.cp-crazy-burst{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:visible;z-index:5;}
-.cp-burst-particle{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--color,#ffd43b);animation:burstFly 1s cubic-bezier(.16,1,.3,1) var(--delay,0s) both;}
-@keyframes burstFly{0%{transform:rotate(var(--angle,0deg)) translateX(0) scale(2);opacity:1}60%{opacity:1}100%{transform:rotate(var(--angle,0deg)) translateX(170px) scale(0);opacity:0}}
+.cp-star{position:absolute;color:#ffd43b;animation:starFloat 2s ease-in-out infinite;transform:translate(var(--x,0),var(--y,0));}
+@keyframes starFloat{0%,100%{opacity:.7;transform:translate(var(--x),var(--y)) scale(1)}50%{opacity:1;transform:translate(var(--x),calc(var(--y) - 8px)) scale(1.2)}}
+.cp-crazy-burst{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:visible;}
+.cp-burst-particle{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--color,#ffd43b);animation:burstFly .8s ease-out forwards;--angle:0deg;}
+@keyframes burstFly{0%{transform:rotate(var(--angle)) translateX(0);opacity:1}100%{transform:rotate(var(--angle)) translateX(120px);opacity:0}}
 
-/* ─── LOADING ─────────────────────────────────────── */
-.cp-loading{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#06060c;color:rgba(255,255,255,.4);font-size:1rem;font-weight:700;}
-.cp-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:rgba(255,215,0,.65);border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* ─── WINNER OVERLAY ─────────────────────────────────── */
+.cp-winner-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a0a00 0%,#000 70%);animation:winBgPulse 2s ease-in-out infinite alternate;}
+@keyframes winBgPulse{from{background:radial-gradient(ellipse at center,#1a0a00 0%,#000 70%)}to{background:radial-gradient(ellipse at center,#2a1500 0%,#050000 70%)}}
+.cp-fireworks-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;}
+.cp-lasers{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;}
+.cp-laser{position:absolute;width:3px;height:60vh;background:linear-gradient(to bottom,transparent,rgba(255,200,0,.6),transparent);transform-origin:center bottom;animation:laserSpin 4s linear infinite;--angle:0deg;--hue:0;filter:hue-rotate(calc(var(--hue) * 1deg));transform:rotate(var(--angle));}
+@keyframes laserSpin{0%{opacity:.3}50%{opacity:.8}100%{opacity:.3}}
+.cp-shockwaves{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:3;pointer-events:none;}
+.cp-shockwave{position:absolute;width:200px;height:200px;border-radius:50%;border:3px solid rgba(255,200,0,.5);animation:shockwave 2.2s ease-out infinite;}
+@keyframes shockwave{0%{transform:scale(0);opacity:.9}100%{transform:scale(8);opacity:0}}
+.cp-gold-rain{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;}
+.cp-gold-drop{position:absolute;top:-2rem;animation:goldFall var(--duration,2s) var(--delay,0s) linear infinite;}
+@keyframes goldFall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(110vh) rotate(var(--rot,360deg))}}
+.cp-confetti-wrap{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;}
+.cp-confetto{position:absolute;top:-20px;background:var(--color,#ffd43b);animation:confettiFall var(--duration,2.5s) var(--delay,0s) linear infinite;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(110vh) rotate(var(--rot,720deg))}}
+.cp-win-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(.4rem,1.2vh,.9rem);padding:clamp(1.5rem,3vh,2.5rem) clamp(2rem,4vw,4rem);background:rgba(0,0,0,.55);border:2px solid rgba(255,215,0,.4);border-radius:32px;backdrop-filter:blur(12px);box-shadow:0 0 80px rgba(255,200,0,.2),inset 0 0 40px rgba(255,200,0,.05);}
+.cp-win-halo{position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,rgba(255,215,0,.12) 0%,transparent 70%);animation:haloPulse 1.8s ease-in-out infinite alternate;pointer-events:none;}
+@keyframes haloPulse{from{transform:scale(.9);opacity:.6}to{transform:scale(1.1);opacity:1}}
+.cp-win-crown{font-size:clamp(3rem,8vh,6rem);animation:crownBounce 1.5s ease-in-out infinite;filter:drop-shadow(0 0 24px rgba(255,200,0,.9));}
+@keyframes crownBounce{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-15px) rotate(5deg)}}
+.cp-win-pre{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2vw,1.4rem);letter-spacing:.4em;color:rgba(255,200,0,.7);}
+.cp-win-year{font-family:'Bebas Neue',sans-serif;font-size:clamp(.75rem,1.5vw,1.1rem);letter-spacing:.25em;color:rgba(255,255,255,.3);}
+.cp-win-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,10vw,8rem);letter-spacing:.08em;line-height:1;display:flex;justify-content:center;flex-wrap:wrap;}
+.cp-win-char{display:inline-block;animation:charPop .5s cubic-bezier(.16,1,.3,1) both;}
+@keyframes charPop{0%{transform:scale(0) translateY(30px);opacity:0}70%{transform:scale(1.15) translateY(-5px)}100%{transform:scale(1) translateY(0);opacity:1}}
+.cp-win-pts{display:flex;align-items:baseline;gap:.5rem;}
+.cp-win-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,4.5rem);color:#ffd43b;text-shadow:0 0 30px rgba(255,200,0,.8);}
+.cp-win-pts-label{font-size:clamp(.75rem,1.2vw,1rem);font-weight:900;letter-spacing:.2em;color:rgba(255,215,0,.5);text-transform:uppercase;}
+.cp-win-stars{position:absolute;inset:0;pointer-events:none;}
+.cp-win-star{position:absolute;color:#ffd43b;animation:winStarTwinkle 1.5s ease-in-out infinite alternate;text-shadow:0 0 12px rgba(255,200,0,.9);}
+@keyframes winStarTwinkle{from{opacity:.3;transform:scale(.8)}to{opacity:1;transform:scale(1.3)}}
+.cp-win-trophies{display:flex;gap:3rem;font-size:clamp(1.5rem,4vw,3rem);animation:trophyRock 2s ease-in-out infinite;}
+@keyframes trophyRock{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.cp-win-sub{font-size:clamp(.8rem,1.3vw,1.1rem);font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.6);}
+.cp-winner-close{margin-top:.5rem;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);border-radius:99px;padding:.4rem 1.4rem;font-size:clamp(.7rem,.9vw,.8rem);font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
+.cp-winner-close:hover{background:rgba(255,255,255,.15);color:#fff;}
 
-/* ══════════════════════════════════════════════════════
-   WINNER OVERLAY ULTRA
-══════════════════════════════════════════════════════ */
-.cp-winner-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(255,180,0,.18) 0%,transparent 70%),radial-gradient(ellipse 120% 120% at 50% 100%,rgba(30,10,60,.9) 0%,transparent 60%),#000;animation:bgPulse 3s ease-in-out infinite alternate;}
-@keyframes bgPulse{from{opacity:.9}to{opacity:1}}
-.cp-lasers{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.cp-laser{position:absolute;width:3px;height:55vh;border-radius:99px;background:linear-gradient(to bottom,transparent 0%,hsla(calc(45 + var(--hue,0)),100%,70%,.9) 50%,transparent 100%);transform-origin:center bottom;transform:rotate(var(--angle,0deg)) translateY(-50%);animation:laserSweep 6s ease-in-out var(--delay,0s) infinite alternate;filter:blur(1.5px);mix-blend-mode:screen;}
-@keyframes laserSweep{0%{opacity:0;transform:rotate(calc(var(--angle,0deg) - 15deg)) translateY(-50%) scaleX(.5);}30%{opacity:.9;}70%{opacity:.7;}100%{opacity:0;transform:rotate(calc(var(--angle,0deg) + 15deg)) translateY(-50%) scaleX(1.5);}}
-.cp-shockwaves{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.cp-shockwave{position:absolute;width:20px;height:20px;border-radius:50%;border:4px solid rgba(255,215,0,.9);animation:shockExpand 2.8s cubic-bezier(.2,.8,.4,1) infinite;}
-@keyframes shockExpand{0%{transform:scale(0);opacity:1;border-width:4px;}60%{opacity:.4;}100%{transform:scale(50);opacity:0;border-width:1px;}}
-.cp-gold-rain{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
-.cp-gold-drop{position:absolute;top:-2rem;color:#ffd43b;text-shadow:0 0 8px rgba(255,200,0,.8);animation:goldFall var(--duration,2s) ease-in var(--delay,0s) infinite;opacity:0;}
-@keyframes goldFall{0%{transform:translateY(0) rotate(var(--rot,0deg));opacity:0;}8%{opacity:1;}90%{opacity:.8;}100%{transform:translateY(110vh) rotate(calc(var(--rot,0deg) + 540deg));opacity:0;}}
-.cp-fireworks-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
-.cp-confetti-wrap{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2;}
-.cp-confetto{position:absolute;top:-16px;background:var(--color);animation:confettiFall var(--duration,3s) ease-in var(--delay,0s) infinite;}
-@keyframes confettiFall{0%{transform:translateY(0) rotate(var(--rot,0deg));opacity:1;}85%{opacity:1;}100%{transform:translateY(106vh) rotate(calc(var(--rot,0deg)+720deg));opacity:0;}}
-.cp-win-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(2rem,5vh,4rem) clamp(2rem,5vw,5rem);animation:winnerPop 1s cubic-bezier(.16,1,.3,1) both;}
-@keyframes winnerPop{0%{transform:scale(.3) translateY(80px);opacity:0}55%{transform:scale(1.1) translateY(-14px);opacity:1}75%{transform:scale(.97) translateY(6px);}100%{transform:scale(1) translateY(0);opacity:1}}
-.cp-win-halo{position:absolute;width:clamp(300px,55vw,700px);height:clamp(300px,55vw,700px);border-radius:50%;background:radial-gradient(circle,rgba(255,200,0,.22) 0%,rgba(255,150,0,.06) 50%,transparent 70%);animation:haloPulse 2s ease-in-out infinite alternate;pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%);}
-@keyframes haloPulse{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.25)}}
-.cp-win-crown{font-size:clamp(5rem,14vh,10rem);filter:drop-shadow(0 0 40px rgba(255,215,0,1)) drop-shadow(0 0 80px rgba(255,150,0,.8));animation:crownFloat 2s ease-in-out infinite,crownSpin .4s ease-in-out 1;position:relative;z-index:2;margin-bottom:.2rem;}
-@keyframes crownFloat{0%,100%{transform:translateY(0) rotate(-4deg) scale(1)}50%{transform:translateY(-18px) rotate(4deg) scale(1.06)}}
-@keyframes crownSpin{0%{transform:rotateY(0deg) scale(.2)}60%{transform:rotateY(360deg) scale(1.2)}100%{transform:rotateY(360deg) scale(1)}}
-.cp-win-pre{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2.2vw,1.6rem);letter-spacing:.55em;color:rgba(255,215,0,.7);text-shadow:0 0 20px rgba(255,200,0,.5);margin-bottom:.1rem;animation:labelFadeIn .5s .3s both;}
-.cp-win-year{font-family:'Bebas Neue',sans-serif;font-size:clamp(.75rem,1.5vw,1.1rem);letter-spacing:.35em;color:rgba(255,255,255,.35);margin-bottom:clamp(.6rem,1.5vh,1.2rem);animation:labelFadeIn .5s .5s both;}
-@keyframes labelFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.cp-win-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(5rem,16vw,14rem);letter-spacing:.12em;line-height:.9;text-shadow:0 0 120px currentColor,0 0 60px currentColor,0 0 20px currentColor;animation:namePulse 1.8s ease-in-out infinite alternate;display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:clamp(.5rem,1.5vh,1.2rem);}
-@keyframes namePulse{from{text-shadow:0 0 60px currentColor,0 0 30px currentColor;filter:brightness(1);}to{text-shadow:0 0 160px currentColor,0 0 80px currentColor,0 0 30px #fff;filter:brightness(1.25);}}
-.cp-win-char{display:inline-block;animation:charDrop .4s cubic-bezier(.16,1,.3,1) both;}
-@keyframes charDrop{0%{transform:translateY(-60px) scale(1.4) rotate(-8deg);opacity:0;}60%{transform:translateY(6px) scale(.96);opacity:1;}100%{transform:translateY(0) scale(1);opacity:1;}}
-.cp-win-pts{display:flex;align-items:baseline;gap:.5rem;margin-bottom:clamp(.4rem,1vh,.8rem);animation:labelFadeIn .5s .8s both;}
-.cp-win-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,7vw,6rem);color:#ffd43b;text-shadow:0 0 40px rgba(255,200,0,.8);}
-.cp-win-pts-label{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,215,0,.5);}
-.cp-win-stars{position:absolute;width:100%;height:100%;pointer-events:none;}
-.cp-win-star{position:absolute;color:#ffd43b;font-size:1.5rem;animation:starOrbit 1.4s cubic-bezier(.16,1,.3,1) both,starTwinkle 2s ease-in-out infinite alternate;}
-@keyframes starOrbit{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
-@keyframes starTwinkle{from{filter:brightness(1)}to{filter:brightness(2) drop-shadow(0 0 8px #ffd43b)}}
-.cp-win-trophies{display:flex;gap:clamp(1rem,3vw,3rem);font-size:clamp(2rem,5vw,4rem);animation:trophyPop .6s 1.2s cubic-bezier(.16,1,.3,1) both;filter:drop-shadow(0 0 20px rgba(255,200,0,.8));}
-@keyframes trophyPop{0%{transform:scale(0) rotate(-15deg);opacity:0}70%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
-.cp-win-sub{font-size:clamp(.8rem,1.5vw,1.1rem);font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.55);margin-top:clamp(.5rem,1vh,.8rem);animation:labelFadeIn .5s 1.5s both;}
-.cp-winner-close{margin-top:clamp(.8rem,2vh,1.4rem);background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);border-radius:99px;padding:.5rem 1.8rem;font-size:clamp(.7rem,1vw,.82rem);font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;animation:labelFadeIn .5s 2s both;}
-.cp-winner-close:hover{background:rgba(255,255,255,.2);color:#fff;}
-
-/* ─── WEEK BANNER ─────────────────────────────────── */
-.cp-week-banner{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 80% 70% at 50% 50%,rgba(255,200,50,.18) 0%,#000 70%);overflow:hidden;}
+/* ─── WEEK BANNER ───────────────────────────────────── */
+.cp-week-banner{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#001a0a 0%,#000 70%);overflow:hidden;}
 .cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;}
-.cp-week-star{position:absolute;color:#ffd43b;animation:weekStarFloat var(--dur,2s) ease-in-out var(--del,0s) infinite alternate;filter:drop-shadow(0 0 6px rgba(255,200,0,.8));}
-@keyframes weekStarFloat{0%{transform:translateY(0) scale(1);opacity:.6}100%{transform:translateY(-30px) scale(1.3);opacity:1}}
-.cp-week-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:clamp(.6rem,1.5vh,1.2rem);text-align:center;animation:winnerPop .8s cubic-bezier(.16,1,.3,1) both;}
-.cp-week-icon{font-size:clamp(4rem,10vh,7rem);filter:drop-shadow(0 0 30px rgba(255,200,0,.9));animation:crownFloat 2s ease-in-out infinite;}
-.cp-week-label{font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2.5vw,1.8rem);letter-spacing:.4em;color:rgba(255,215,0,.65);}
-.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,13vw,11rem);letter-spacing:.1em;line-height:.9;text-shadow:0 0 80px currentColor,0 0 40px currentColor;}
-.cp-week-pts{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,4vw,3rem);color:rgba(255,255,255,.45);}
+.cp-week-star{position:absolute;top:-1rem;color:#51cf66;animation:weekStarFall var(--duration,2s) var(--delay,0s) linear infinite;}
+@keyframes weekStarFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+.cp-week-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.5rem,1.5vh,1.2rem);padding:clamp(2rem,5vh,4rem) clamp(2.5rem,6vw,5rem);background:rgba(0,0,0,.6);border:2px solid rgba(80,200,120,.3);border-radius:28px;backdrop-filter:blur(12px);text-align:center;}
+.cp-week-icon{font-size:clamp(3rem,7vh,5rem);filter:drop-shadow(0 0 20px rgba(80,200,80,.8));animation:weekIconBounce 1.5s ease-in-out infinite;}
+@keyframes weekIconBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.cp-week-label{font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2.2vw,1.6rem);letter-spacing:.25em;color:rgba(255,255,255,.4);text-transform:uppercase;}
+.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,9vw,7rem);letter-spacing:.08em;line-height:1;}
+.cp-week-pts{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3vw,2.5rem);color:rgba(255,255,255,.35);letter-spacing:.1em;}
 
-/* ─── TRANSIZIONI ─────────────────────────────────── */
-.phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s ease,transform .4s cubic-bezier(.16,1,.3,1);}
-.phase-fade-enter-from{opacity:0;transform:scale(.96);}
-.phase-fade-leave-to{opacity:0;transform:scale(1.04);}
-.winner-fade-enter-active{transition:opacity .6s ease;}
-.winner-fade-enter-from{opacity:0;}
-.winner-fade-leave-active{transition:opacity .4s ease;}
-.winner-fade-leave-to{opacity:0;}
-.fade-enter-active,.fade-leave-active{transition:opacity .3s ease;}
+/* ─── TRANSIZIONI ───────────────────────────────────── */
+.phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s,transform .4s cubic-bezier(.16,1,.3,1);}
+.phase-fade-enter-from,.phase-fade-leave-to{opacity:0;transform:scale(.97);}
+.fade-enter-active,.fade-leave-active{transition:opacity .35s;}
 .fade-enter-from,.fade-leave-to{opacity:0;}
+.winner-fade-enter-active{animation:winnerIn .6s cubic-bezier(.16,1,.3,1) both;}
+.winner-fade-leave-active{animation:winnerOut .35s ease-in both;}
+@keyframes winnerIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
+@keyframes winnerOut{0%{opacity:1}100%{opacity:0}}
+
+/* ─── LOADING ────────────────────────────────────────── */
+.cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#06060c;z-index:300;}
+.cp-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:rgba(255,215,0,.8);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cp-loading p{font-size:clamp(.75rem,1.1vw,.9rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);}
 </style>
