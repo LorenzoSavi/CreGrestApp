@@ -56,14 +56,8 @@
 
           <div class="cp-cards-wrap">
             <!--
-              LOGICA VISIVA:
-              - displayedTeams: array ordinato dal PEGGIORE al MIGLIORE rivelato
-                es. primo click → [6°], secondo → [5°, 6°], terzo → [4°, 5°, 6°], ecc.
-              - flex-direction: column  =>  il primo elemento dell'array è in CIMA
-                quindi il peggior posto rivelato va in fondo (ultimo nell'array), il migliore in cima
-              - Ogni nuovo elemento entra SEMPRE dalla parte ALTA della lista (sopra gli altri)
-                → 6° appare da solo in basso, poi 5° appare sopra, poi 4° sopra ancora, ecc.
-              - ORDINE RIVELAZIONE: 6 → 5 → 4 → 3 → 1 → 2 (2° come gran finale)
+              ORDINE REVEAL: 6 → 5 → 4 → 3 → 2 → 1
+              Il 1° posto viene rivelato PER ULTIMO: subito dopo appare lo scoppio!
             -->
             <transition-group tag="div" class="cp-cards-list" name="card-enter">
               <div
@@ -73,7 +67,7 @@
                   'cp-card--' + team.id,
                   {
                     'cp-card--shaking': shakingCards.has(team.id),
-                    'cp-card--crazy':   crazyActive && team.rank === 2,
+                    'cp-card--crazy':   crazyActive && team.rank === 1,
                     'cp-card--winner':  team.rank === 1 && allRevealed && !shakingCards.has(team.id),
                   }
                 ]"
@@ -122,8 +116,8 @@
                   <div v-if="phase!=='finale' && team.rank===1 && allRevealed" class="cp-stars">
                     <span v-for="n in 6" :key="n" class="cp-star" :style="starStyle(n)">✦</span>
                   </div>
-                  <!-- Effetto crazy sul 2° posto (ultimo rivelato = colpo di scena) -->
-                  <div v-if="crazyActive && team.rank===2" class="cp-crazy-burst">
+                  <!-- Burst esplosivo sul 1° posto quando viene rivelato -->
+                  <div v-if="crazyActive && team.rank===1" class="cp-crazy-burst">
                     <span v-for="n in 24" :key="n" class="cp-burst-particle" :style="burstStyle(n)"></span>
                   </div>
                 </template>
@@ -210,8 +204,10 @@ import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 const SHAKE_MS   = 2400;
-const CRAZY_MS   = 4200;
+const CRAZY_MS   = 4200;  // shake del vincitore (1°) più lungo per suspense
 const POST_CRAZY = 3000;
+// Dopo lo shake del 1°, aspetta questo delay prima di mostrare il banner
+const BANNER_DELAY = 800;
 
 export default {
   name: 'ClassificaProiezione',
@@ -230,6 +226,8 @@ export default {
       currentYear: new Date().getFullYear(),
       displayedPoints: 0,
       fireworksTimer: null,
+      // Controlla se il delay post-shake del 1° è terminato (per mostrare il banner)
+      bannerReady: false,
       phases: [
         { id: 'settimana1', label: '1ª Settimana',     icon: '1️⃣' },
         { id: 'settimana2', label: '2ª Settimana',     icon: '2️⃣' },
@@ -263,63 +261,23 @@ export default {
         .map((t, i) => ({ ...t, rank: i + 1 }));
     },
     /*
-      ORDINE DI REVEAL: 6 → 5 → 4 → 3 → 1 → 2
-      Il 2° posto viene rivelato PER ULTIMO come colpo di scena!
+      ORDINE DI REVEAL: 6 → 5 → 4 → 3 → 2 → 1
+      Il 1° posto viene rivelato PER ULTIMO → subito dopo appare lo scoppio!
     */
     revealOrder() {
       const N = this.sortedTeams.length;
-      if (N <= 2) {
-        return Array.from({ length: N }, (_, i) => N - i);
-      }
+      if (N <= 1) return [1];
       const order = [];
-      for (let r = N; r >= 3; r--) order.push(r);
-      order.push(1); // penultimo: il vincitore
-      order.push(2); // ULTIMO: il secondo posto, colpo di scena!
+      for (let r = N; r >= 2; r--) order.push(r);
+      order.push(1); // ULTIMO: il vincitore, poi scoppia tutto
       return order;
     },
-    /*
-      displayedTeams: squadre già rivelate, ordinate per rank crescente
-      (1° primo nell'array, N° ultimo nell'array).
-
-      displayedTeamsBottomFirst: INVERSO → N° primo, 1° ultimo.
-      Con flex-direction:column il primo elemento è in CIMA visivamente,
-      quindi avere il peggior posto per primo significa averlo IN CIMA nell'array
-      ma poiché usiamo column NORMALE (non reverse), il PRIMO elemento
-      va IN ALTO e l'ULTIMO in BASSO.
-
-      VOGLIAMO: 1° in cima visivamente, N° in fondo visivamente.
-      Con flex column: elemento index 0 → posizione TOP, index N-1 → posizione BOTTOM.
-      Quindi: array = [1°, 2°, 3°, ..., N°] con flex column normale.
-
-      Ma ogni NUOVO elemento rivelato deve ENTRARE DALL'ALTO (sopra tutti quelli già presenti).
-      L'ultimo rivelato ha il rank più basso (es. primo click = 6°, secondo = 5°, ...).
-      Quindi man mano che rivelo: il rank più basso rivelato va in CIMA.
-
-      Soluzione: ordino displayedTeams per rank ASC (1° = index 0 = TOP),
-      ma ogni nuovo elemento aggiunto ha rank più piccolo del precedente
-      → entra all'inizio dell'array → visivamente appare IN ALTO = "sopra" quelli già rivelati ✓
-    */
     displayedTeams() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
       const revealedRanks = new Set(this.revealOrder.slice(0, this.revealedCount));
       return this.sortedTeams.filter(t => revealedRanks.has(t.rank));
-      // già ordinati per rank ASC (1°, 2°, ...)
     },
-    /*
-      Per la lista visiva usiamo flex-direction: column.
-      displayedTeams è [rank più basso rivelato, ..., rank più alto rivelato].
-      Con column: il rank più basso (migliore) va in CIMA, il peggiore in fondo ✓.
-
-      Quando aggiungo un nuovo elemento (es. 5° dopo aver già rivelato 6°):
-      - Prima: [6°]   → visivamente: 6° in fondo
-      - Dopo:  [5°, 6°] → visivamente: 5° in cima, 6° in fondo
-      Il 5° entra SOPRA il 6° ✓
-    */
     displayedTeamsBottomFirst() {
-      // displayedTeams è già ordinato rank ASC (migliore prima).
-      // Con flex column: il primo elemento è in CIMA.
-      // Quindi: il migliore posto rivelato è sempre in CIMA ✓
-      // Ogni nuovo reveal aggiunge un rank più piccolo → va in cima (sopra il precedente) ✓
       return this.displayedTeams;
     },
     maxPoints() {
@@ -331,11 +289,12 @@ export default {
     noShaking() {
       return this.shakingCards.size === 0;
     },
+    // Il banner appare solo quando: tutto rivelato + shake finito + delay post-shake finito
     showWinnerBanner() {
-      return this.allRevealed && this.noShaking && this.phase === 'finale' && !this.winnerClosed;
+      return this.allRevealed && this.noShaking && this.bannerReady && this.phase === 'finale' && !this.winnerClosed;
     },
     showWeekBanner() {
-      return this.allRevealed && this.noShaking && this.phase !== 'finale' && !this.weekBannerClosed;
+      return this.allRevealed && this.noShaking && this.bannerReady && this.phase !== 'finale' && !this.weekBannerClosed;
     },
     winnerNameChars() {
       if (!this.sortedTeams.length) return [];
@@ -373,6 +332,7 @@ export default {
       this.winnerClosed = false;
       this.weekBannerClosed = false;
       this.displayedPoints = 0;
+      this.bannerReady = false;
       try {
         const [pSnap, hSnap] = await Promise.all([
           getDoc(doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ')),
@@ -396,8 +356,9 @@ export default {
       const team = this.sortedTeams.find(t => t.rank === rank);
       if (!team) { this.isRevealing = false; return; }
 
-      const isGrandFinale = rank === 2;
-      const shakeDur = isGrandFinale ? CRAZY_MS : SHAKE_MS;
+      // Il vincitore (rank 1) è l'ultimo rivelato → shake più lungo + effetto crazy + delay banner
+      const isWinner = rank === 1;
+      const shakeDur = isWinner ? CRAZY_MS : SHAKE_MS;
 
       this.shakingCards = new Set([...this.shakingCards, team.id]);
 
@@ -405,12 +366,34 @@ export default {
         const next = new Set(this.shakingCards);
         next.delete(team.id);
         this.shakingCards = next;
-        if (isGrandFinale) {
+
+        if (isWinner) {
+          // Burst visivo sulla card del vincitore
           this.crazyActive = true;
           setTimeout(() => { this.crazyActive = false; }, POST_CRAZY);
+
+          // Dopo un breve delay drammatico, mostra il banner
+          setTimeout(() => {
+            this.bannerReady = true;
+          }, BANNER_DELAY);
+        } else {
+          this.isRevealing = false;
         }
-        this.isRevealing = false;
       }, shakeDur);
+
+      // Se non è il vincitore, sblocca subito il click successivo dopo lo shake
+      if (!isWinner) {
+        // isRevealing viene già rimesso a false dentro il setTimeout sopra
+        // ma lo reimpostiamo qui per chiarezza (è il branch !isWinner)
+      }
+
+      // Sblocca il click anche per il non-winner
+      if (!isWinner) {
+        // già gestito: isRevealing = false viene fatto dentro setTimeout
+      } else {
+        // Per il winner, sblocca dopo il banner delay
+        setTimeout(() => { this.isRevealing = false; }, CRAZY_MS + BANNER_DELAY + 200);
+      }
     },
     resetView() {
       this.stopFireworks();
@@ -426,6 +409,7 @@ export default {
       this.winnerClosed = false;
       this.weekBannerClosed = false;
       this.displayedPoints = 0;
+      this.bannerReady = false;
     },
     handleLogout() {
       sessionStorage.removeItem('loggedInUser');
@@ -574,17 +558,6 @@ export default {
 
 .cp-cards-wrap{width:100%;max-width:1200px;margin:0 auto;}
 
-/*
-  flex-direction: column (NON reverse!)
-  displayedTeamsBottomFirst = [rank migliore, ..., rank peggiore rivelato]
-  Con column: index 0 (migliore) → CIMA visiva, ultimo index (peggiore) → FONDO visivo
-
-  Sequenza rivelazione: 6° → 5° → 4° → 3° → 1° → 2°
-  Click 1: array = [6°]         → 6° in cima (unico)
-  Click 2: array = [5°, 6°]     → 5° in cima, 6° sotto ✓ (il 5° appare SOPRA il 6°)
-  Click 3: array = [4°, 5°, 6°] → 4° in cima, poi 5°, poi 6° ✓
-  ...e così via, ogni nuova card entra SOPRA le precedenti ✓
-*/
 .cp-cards-list{
   display:flex;
   flex-direction:column;
@@ -624,10 +597,6 @@ export default {
 .cp-strip--fucsia   { background: linear-gradient(180deg, #f78cc6, #E83E8C); box-shadow: 4px 0 20px rgba(232,62,140,.6); }
 .cp-strip--gialli   { background: linear-gradient(180deg, #ffd43b, #c8960c); box-shadow: 4px 0 20px rgba(200,160,0,.6); }
 
-/*
-  card-enter: la nuova card entra sempre dall'ALTO (translateY negativo → scende verso il basso)
-  Questo è coerente con l'inserimento in cima all'array (flex column).
-*/
 .card-enter-enter-active{animation:cardSlideDown .55s cubic-bezier(.16,1,.3,1) both;}
 @keyframes cardSlideDown{
   0%{opacity:0;transform:translateY(-60px) scale(.93);}
@@ -646,8 +615,8 @@ export default {
 .cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.1);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
 @keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.25)}}
 
-/* CRAZY 2° posto */
-.cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(192,192,255,.95) !important;box-shadow:0 0 70px rgba(180,180,255,.7),0 0 140px rgba(180,180,255,.3),inset 0 0 30px rgba(180,180,255,.15) !important;background:#0a0a20 !important;z-index:20;}
+/* CRAZY sul 1° posto (vincitore) */
+.cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 70px rgba(255,200,0,.7),0 0 140px rgba(255,200,0,.3),inset 0 0 30px rgba(255,200,0,.15) !important;background:#0a0a00 !important;z-index:20;}
 @keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
 
 /* Winner card */
@@ -789,6 +758,6 @@ export default {
 .fade-enter-from,.fade-leave-to{opacity:0;}
 .winner-fade-enter-active{transition:opacity .7s ease;}
 .winner-fade-enter-from{opacity:0;}
-.winner-fade-leave-active{transition:opacity .35s ease;}
+.winner-fade-leave-active{transition:opacity .4s ease;}
 .winner-fade-leave-to{opacity:0;}
 </style>
