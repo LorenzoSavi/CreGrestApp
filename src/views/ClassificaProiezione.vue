@@ -220,7 +220,7 @@
           <span v-for="n in 20" :key="n" class="cp-week-spark" :style="weekSparkStyle(n)"></span>
         </div>
         <div class="cp-week-content">
-          <!-- icona settimana -->
+          <!-- icona settimana (medaglia/corona) -->
           <div class="cp-week-phase-icon">{{ currentPhaseIcon }}</div>
           <!-- etichetta settimana -->
           <div class="cp-week-label">Vincitore</div>
@@ -306,9 +306,9 @@ export default {
       bannerCountdownTimer: null,
       bannerAutoCloseTimer: null,
       phases: [
-        { id: 'settimana1', label: '1ª Settimana',     icon: '1️⃣' },
-        { id: 'settimana2', label: '2ª Settimana',     icon: '2️⃣' },
-        { id: 'settimana3', label: '3ª Settimana',     icon: '3️⃣' },
+        { id: 'settimana1', label: '1ª Settimana',     icon: '🥇' },
+        { id: 'settimana2', label: '2ª Settimana',     icon: '🥈' },
+        { id: 'settimana3', label: '3ª Settimana',     icon: '🥉' },
         { id: 'finale',    label: 'Classifica Finale', icon: '🏆' },
       ],
       allTeams: [
@@ -886,99 +886,75 @@ export default {
 .cp-confetti-wrap{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;}
 .cp-confetto{position:absolute;top:-20px;background:var(--color,#ffd43b);animation:confettiFall var(--duration,2.5s) var(--delay,0s) linear infinite;}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(110vh) rotate(var(--rot,720deg))}}
-.cp-win-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(.4rem,1.2vh,.9rem);padding:clamp(1.5rem,3vh,2.5rem) clamp(2rem,4vw,4rem);background:rgba(0,0,0,.55);border:2px solid rgba(255,215,0,.4);border-radius:32px;backdrop-filter:blur(12px);box-shadow:0 0 80px rgba(255,200,0,.2),inset 0 0 40px rgba(255,200,0,.05);}
-.cp-win-halo{position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,rgba(255,215,0,.12) 0%,transparent 70%);animation:haloPulse 1.8s ease-in-out infinite alternate;pointer-events:none;}
-@keyframes haloPulse{from{transform:scale(.9);opacity:.6}to{transform:scale(1.1);opacity:1}}
-.cp-win-crown{font-size:clamp(3rem,8vh,6rem);animation:crownBounce 1.5s ease-in-out infinite;filter:drop-shadow(0 0 24px rgba(255,200,0,.9));}
-@keyframes crownBounce{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-15px) rotate(5deg)}}
-.cp-win-pre{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2vw,1.4rem);letter-spacing:.4em;color:rgba(255,200,0,.7);}
-.cp-win-year{font-family:'Bebas Neue',sans-serif;font-size:clamp(.75rem,1.5vw,1.1rem);letter-spacing:.25em;color:rgba(255,255,255,.3);}
-.cp-win-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,10vw,8rem);letter-spacing:.08em;line-height:1;display:flex;justify-content:center;flex-wrap:wrap;}
-.cp-win-char{display:inline-block;animation:charPop .5s cubic-bezier(.16,1,.3,1) both;}
-@keyframes charPop{0%{transform:scale(0) translateY(30px);opacity:0}70%{transform:scale(1.15) translateY(-5px)}100%{transform:scale(1) translateY(0);opacity:1}}
-.cp-win-pts{display:flex;align-items:baseline;gap:.5rem;}
-.cp-win-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,4.5rem);color:#ffd43b;text-shadow:0 0 30px rgba(255,200,0,.8);}
-.cp-win-pts-label{font-size:clamp(.75rem,1.2vw,1rem);font-weight:900;letter-spacing:.2em;color:rgba(255,215,0,.5);text-transform:uppercase;}
+.cp-win-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.3rem,.8vh,.7rem);text-align:center;padding:clamp(1.5rem,3vh,2.5rem) clamp(2rem,4vw,4rem);background:rgba(0,0,0,.55);border:2px solid rgba(255,215,0,.3);border-radius:clamp(20px,2.5vw,32px);backdrop-filter:blur(12px);max-width:min(600px,90vw);}
+.cp-win-halo{position:absolute;inset:-40px;border-radius:inherit;background:radial-gradient(ellipse at center,rgba(255,180,0,.12) 0%,transparent 70%);pointer-events:none;}
+.cp-win-crown{font-size:clamp(3rem,7vh,5rem);animation:crownFloat 2s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,215,0,.8));}
+@keyframes crownFloat{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-12px) rotate(5deg)}}
+.cp-win-pre{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,1.8vw,1.3rem);letter-spacing:.35em;color:rgba(255,215,0,.7);}
+.cp-win-year{font-size:clamp(.65rem,1.1vw,.85rem);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.35);text-transform:uppercase;}
+.cp-win-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,8vw,7rem);letter-spacing:.08em;line-height:1;display:flex;justify-content:center;flex-wrap:wrap;}
+.cp-win-char{display:inline-block;animation:charDrop .5s cubic-bezier(.16,1,.3,1) both;}
+@keyframes charDrop{from{opacity:0;transform:translateY(-40px) scale(.6)}to{opacity:1;transform:translateY(0) scale(1)}}
+.cp-win-pts{display:flex;align-items:baseline;gap:.4rem;}
+.cp-win-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,4.5rem);color:#ffd43b;text-shadow:0 0 30px rgba(255,210,0,.7);}
+.cp-win-pts-label{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.4);text-transform:uppercase;}
 .cp-win-stars{position:absolute;inset:0;pointer-events:none;}
-.cp-win-star{position:absolute;color:#ffd43b;animation:winStarTwinkle 1.5s ease-in-out infinite alternate;text-shadow:0 0 12px rgba(255,200,0,.9);}
-@keyframes winStarTwinkle{from{opacity:.3;transform:scale(.8)}to{opacity:1;transform:scale(1.3)}}
-.cp-win-trophies{display:flex;gap:3rem;font-size:clamp(1.5rem,4vw,3rem);animation:trophyRock 2s ease-in-out infinite;}
-@keyframes trophyRock{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
-.cp-win-sub{font-size:clamp(.8rem,1.3vw,1.1rem);font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.6);}
-.cp-winner-close{margin-top:.25rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.5);color:#ffd43b;border-radius:99px;padding:.5rem 2rem;font-size:clamp(.75rem,1vw,.9rem);font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
-.cp-winner-close:hover{background:rgba(255,215,0,.3);color:#fff;}
+.cp-win-star{position:absolute;color:#ffd43b;animation:winStarSpin 3s ease-in-out infinite;font-size:1.2rem;}
+@keyframes winStarSpin{0%,100%{opacity:.4;transform:scale(.8) rotate(0deg)}50%{opacity:1;transform:scale(1.3) rotate(180deg)}}
+.cp-win-trophies{display:flex;gap:2rem;}
+.cp-win-trophy-l,.cp-win-trophy-r{font-size:clamp(1.8rem,4vh,2.8rem);animation:trophyBounce 1.4s ease-in-out infinite;}
+.cp-win-trophy-r{animation-delay:.7s;}
+@keyframes trophyBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.cp-win-sub{font-size:clamp(.75rem,1.3vw,1rem);font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.05em;}
+.cp-winner-close{margin-top:.25rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.4);color:rgba(255,215,0,.9);border-radius:99px;padding:.5rem 1.6rem;font-size:clamp(.75rem,1.1vw,.88rem);font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.06em;transition:all .2s;}
+.cp-winner-close:hover{background:rgba(255,215,0,.25);border-color:rgba(255,215,0,.7);}
 
-/* ─── WEEK BANNER — VERSIONE MIGLIORATA ─────────── */
+/* ─── WEEK BANNER ───────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-
-/* sfondo dinamico per colore squadra */
-.cp-week-bg{position:absolute;inset:0;background:#010a03;}
-.cp-week-bg--rossi    {background:radial-gradient(ellipse at center,#1a0205 0%,#040000 70%);}
-.cp-week-bg--verdi    {background:radial-gradient(ellipse at center,#011a06 0%,#000402 70%);}
-.cp-week-bg--arancioni{background:radial-gradient(ellipse at center,#1a0800 0%,#040200 70%);}
-.cp-week-bg--blu      {background:radial-gradient(ellipse at center,#00071a 0%,#000104 70%);}
-.cp-week-bg--fucsia   {background:radial-gradient(ellipse at center,#1a0010 0%,#040002 70%);}
-.cp-week-bg--gialli   {background:radial-gradient(ellipse at center,#1a1400 0%,#040300 70%);}
-
-/* stelle cadenti */
+.cp-week-bg{position:absolute;inset:0;background:#06060c;}
+.cp-week-bg--rossi    {background:radial-gradient(ellipse at center,rgba(220,53,69,.25) 0%,#06060c 65%);}
+.cp-week-bg--verdi    {background:radial-gradient(ellipse at center,rgba(40,167,69,.25) 0%,#06060c 65%);}
+.cp-week-bg--arancioni{background:radial-gradient(ellipse at center,rgba(253,126,20,.25) 0%,#06060c 65%);}
+.cp-week-bg--blu      {background:radial-gradient(ellipse at center,rgba(0,123,255,.25) 0%,#06060c 65%);}
+.cp-week-bg--fucsia   {background:radial-gradient(ellipse at center,rgba(232,62,140,.25) 0%,#06060c 65%);}
+.cp-week-bg--gialli   {background:radial-gradient(ellipse at center,rgba(200,160,0,.25) 0%,#06060c 65%);}
 .cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-.cp-week-star{position:absolute;top:-2rem;color:rgba(255,255,255,.6);animation:weekStarFall var(--duration,2.5s) var(--delay,0s) linear infinite;}
-@keyframes weekStarFall{0%{transform:translateY(0) rotate(0) scale(1);opacity:.8}100%{transform:translateY(110vh) rotate(540deg) scale(.3);opacity:0}}
-
-/* fuochi artificiali week */
+.cp-week-star{position:absolute;top:-1rem;color:#ffd43b;animation:weekStarFall var(--duration,3s) var(--delay,0s) linear infinite;font-size:var(--size,1rem);}
+@keyframes weekStarFall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(110vh) rotate(360deg)}}
 .cp-week-fireworks{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.cp-week-spark{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--color,#fff);animation:weekSparkFly 2s ease-out infinite;--angle:0deg;}
-@keyframes weekSparkFly{0%{transform:rotate(var(--angle)) translateX(0) scale(2);opacity:1}100%{transform:rotate(var(--angle)) translateX(200px) scale(0);opacity:0}}
+.cp-week-spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--color,#ffd43b);animation:weekSparkFly 1.5s ease-out var(--delay,0s) infinite;--angle:0deg;}
+@keyframes weekSparkFly{0%{transform:rotate(var(--angle)) translateX(0);opacity:1}100%{transform:rotate(var(--angle)) translateX(160px);opacity:0}}
+.cp-week-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.3rem,.7vh,.6rem);text-align:center;padding:clamp(1.5rem,3vh,2.5rem) clamp(2rem,4vw,4rem);background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.12);border-radius:clamp(20px,2.5vw,32px);backdrop-filter:blur(12px);max-width:min(560px,90vw);}
+.cp-week-phase-icon{font-size:clamp(2.5rem,6vh,4rem);animation:floatLogo 2.5s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(255,215,0,.6));}
+.cp-week-label{font-size:clamp(.65rem,1vw,.8rem);font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.35);}
+.cp-week-phase-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,2.5vw,1.8rem);letter-spacing:.15em;color:rgba(255,255,255,.7);}
+.cp-week-medal{font-size:clamp(2.5rem,6vh,4rem);animation:trophyBounce 1.4s ease-in-out infinite;}
+.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,7vw,6rem);letter-spacing:.08em;line-height:1;display:flex;justify-content:center;flex-wrap:wrap;}
+.cp-week-char{display:inline-block;animation:charDrop .5s cubic-bezier(.16,1,.3,1) both;}
+.cp-week-score-row{display:flex;align-items:baseline;gap:.4rem;}
+.cp-week-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);text-shadow:0 0 20px currentColor;}
+.cp-week-pts-label{font-size:clamp(.65rem,1vw,.8rem);font-weight:800;letter-spacing:.15em;color:rgba(255,255,255,.4);text-transform:uppercase;}
+.cp-week-podium{display:flex;gap:1.2rem;justify-content:center;}
+.cp-week-podium-item{display:flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:.3rem .8rem;}
+.cp-podium-medal{font-size:1rem;}
+.cp-podium-name{font-size:clamp(.75rem,1.1vw,.9rem);font-weight:800;}
+.cp-podium-pts{font-size:clamp(.6rem,.85vw,.75rem);color:rgba(255,255,255,.4);font-weight:700;}
+.cp-week-close-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7);}
+.cp-week-close-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.4);color:#fff;}
 
-/* contenuto centrale */
-.cp-week-content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:clamp(.4rem,1.2vh,1rem);padding:clamp(1.8rem,4vh,3.5rem) clamp(2.5rem,5vw,5rem);background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.12);border-radius:28px;backdrop-filter:blur(14px);text-align:center;box-shadow:0 0 60px rgba(255,255,255,.05),inset 0 0 30px rgba(255,255,255,.02);}
-
-/* icona della fase (emoji settimana) */
-.cp-week-phase-icon{font-size:clamp(2.5rem,6vh,4.5rem);animation:weekIconBounce 1.4s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(255,255,255,.5));}
-@keyframes weekIconBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.1)}}
-
-/* etichetta "Vincitore" */
-.cp-week-label{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:900;letter-spacing:.35em;text-transform:uppercase;color:rgba(255,255,255,.35);}
-
-/* nome della settimana */
-.cp-week-phase-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,2.5vw,1.8rem);letter-spacing:.2em;color:rgba(255,255,255,.5);}
-
-/* medaglia grande */
-.cp-week-medal{font-size:clamp(2.5rem,7vh,5rem);animation:medalSpin 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(255,215,0,.8));}
-@keyframes medalSpin{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.12)}}
-
-/* nome squadra con lettera per lettera */
-.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,11vw,9rem);letter-spacing:.08em;line-height:1;display:flex;justify-content:center;flex-wrap:wrap;}
-.cp-week-char{display:inline-block;animation:weekCharPop .45s cubic-bezier(.16,1,.3,1) both;}
-@keyframes weekCharPop{0%{transform:scale(0) translateY(40px) rotate(-15deg);opacity:0}70%{transform:scale(1.2) translateY(-5px) rotate(3deg)}100%{transform:scale(1) translateY(0) rotate(0);opacity:1}}
-
-/* riga punteggio */
-.cp-week-score-row{display:flex;align-items:baseline;gap:.5rem;}
-.cp-week-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);letter-spacing:.04em;text-shadow:0 0 20px currentColor;}
-.cp-week-pts-label{font-size:clamp(.7rem,1vw,.85rem);font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);}
-
-/* mini podio 2° e 3° */
-.cp-week-podium{display:flex;gap:clamp(.8rem,2vw,2rem);margin-top:.2rem;}
-.cp-week-podium-item{display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.4rem .9rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;}
-.cp-podium-medal{font-size:clamp(1.1rem,2.5vh,1.6rem);}
-.cp-podium-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,1.8vw,1.3rem);letter-spacing:.06em;}
-.cp-podium-pts{font-size:clamp(.55rem,.8vw,.68rem);font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.3);text-transform:uppercase;}
-
-/* bottone chiusura week */
-.cp-week-close-btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;}
-.cp-week-close-btn:hover{background:rgba(255,255,255,.2);color:#fff;}
-
-/* ─── LOADING ──────────────────────────────────── */
-.cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;color:rgba(255,255,255,.5);font-size:clamp(.8rem,1.2vw,.95rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;z-index:200;}
-.cp-spinner{width:42px;height:42px;border:3px solid rgba(255,255,255,.1);border-top-color:rgba(255,255,255,.6);border-radius:50%;animation:spin .7s linear infinite;}
+/* ─── LOADING ───────────────────────────────────── */
+.cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#06060c;z-index:200;}
+.cp-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,.1);border-top-color:#ffd43b;border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ─── TRANSIZIONI ──────────────────────────────── */
+/* ─── TRANSITIONS ───────────────────────────────── */
 .phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s ease,transform .4s cubic-bezier(.16,1,.3,1);}
 .phase-fade-enter-from{opacity:0;transform:scale(.97);}
 .phase-fade-leave-to{opacity:0;transform:scale(1.02);}
-.winner-fade-enter-active,.winner-fade-leave-active{transition:opacity .5s ease;}
-.winner-fade-enter-from,.winner-fade-leave-to{opacity:0;}
-.fade-enter-active,.fade-leave-active{transition:opacity .3s ease;}
+.fade-enter-active,.fade-leave-active{transition:opacity .3s;}
 .fade-enter-from,.fade-leave-to{opacity:0;}
+.winner-fade-enter-active{animation:winnerIn .5s cubic-bezier(.16,1,.3,1) both;}
+.winner-fade-leave-active{animation:winnerOut .35s ease-in both;}
+@keyframes winnerIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes winnerOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.05)}}
 </style>
