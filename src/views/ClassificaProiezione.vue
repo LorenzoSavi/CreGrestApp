@@ -59,9 +59,13 @@
             <div class="cp-cards-list">
 
               <!--
-                1° e 2° posto: visibili come mystery card SOLO dopo che il 3° è stato rivelato
-                (cioè revealedCount >= revealOrder.length)
-                Rimangono in stato shake giallo finché non clicco di nuovo (revealPhase === 'top-two-shake')
+                NUOVO FLOW:
+                ────────────────────────────────────────────────────────────────
+                Click 1-4 → rivela dal 6° al 3° (shake breve + reveal)
+                Dopo il 3°: mystery card 1°/2° appaiono con shake giallo persistente
+                Click 5 (top-two-shake) → SUBITO banner/fuochi, le card 1°/2° restano coperte
+                Chiusura banner (manuale o auto) → ALLORA si rivelano 1° e 2°
+                ────────────────────────────────────────────────────────────────
               -->
               <template v-if="showTopTwoMystery">
                 <div
@@ -70,14 +74,14 @@
                   :class="{
                     'cp-card--top-two-shake': revealPhase === 'top-two-shake',
                     'cp-card--crazy':         crazyActive && team.rank === 1,
-                    'cp-card--winner':        team.rank === 1 && allRevealed && revealPhase === 'done',
-                    ['cp-card--' + team.id]:  isTopTwoRevealed && revealPhase !== 'top-two-shake',
+                    'cp-card--winner':        team.rank === 1 && allRevealed,
+                    ['cp-card--' + team.id]:  isTopTwoRevealed,
                   }"
                 >
-                  <!-- Copertura: mostrata se non ancora rivelato OPPURE durante lo shake -->
-                  <template v-if="!isTopTwoRevealed || revealPhase === 'top-two-shake'">
-                    <div class="cp-card-cover" :class="{ 'cp-card-cover--gold': revealPhase === 'top-two-shake' }">
-                      <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': revealPhase === 'top-two-shake' }">?</span>
+                  <!-- Copertura: mostrata finché non rivelato -->
+                  <template v-if="!isTopTwoRevealed">
+                    <div class="cp-card-cover" :class="{ 'cp-card-cover--gold': revealPhase === 'top-two-shake' || revealPhase === 'final-reveal' }">
+                      <span class="cp-cover-q" :class="{ 'cp-cover-q--gold': revealPhase === 'top-two-shake' || revealPhase === 'final-reveal' }">?</span>
                     </div>
                   </template>
 
@@ -244,26 +248,21 @@ import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 /*
-  FLOW AGGIORNATO:
+  FLOW CORRETTO:
   ─────────────────────────────────────────────────────────────────────────────
-  Ordine visivo top→bottom: 1°, 2°, 3°, 4°, 5°, 6°
-  Le card del 1° e 2° NON sono visibili all'inizio. Appaiono solo dopo che
-  il 3° è stato rivelato (revealedCount >= revealOrder.length).
-
   Click 1 → appare il 6° (shake breve poi si rivela)
   Click 2 → appare il 5°
   Click 3 → appare il 4°
-  Click 4 → appare il 3° → dopo la reveal del 3°, le mystery card 1°/2° appaiono
-             con shake giallo PERSISTENTE (revealPhase = 'top-two-shake')
-  Click 5 → (mentre shake giallo) → trigger reveal 1° e 2° → poi banner 10s auto
+  Click 4 → appare il 3° → le mystery card 1°/2° appaiono con shake giallo persistente
+  Click 5 → (durante top-two-shake) → PRIMA appare il banner/fuochi (card 1°/2° restano coperte)
+  Chiusura banner (manuale o auto) → SOLO ALLORA si rivelano 1° e 2° con animazione crazy
   ─────────────────────────────────────────────────────────────────────────────
 */
 
 const SHAKE_MS       = 2400;
 const CRAZY_MS       = 2500;
 const POST_CRAZY     = 2500;
-const BANNER_DELAY   = 600;
-const BANNER_AUTO_MS = 10000; // banner si chiude da solo dopo 10 secondi
+const BANNER_AUTO_MS = 10000;
 
 export default {
   name: 'ClassificaProiezione',
@@ -276,17 +275,17 @@ export default {
 
       /*
         revealPhase:
-        'normal'        → reveal dal 6° al 3° (click per click, con shake breve)
-        'top-two-shake' → 3° rivelato, le mystery card 1°/2° sono visibili con shake giallo persistente
-        'final-reveal'  → click durante top-two-shake → reveal in corso
-        'done'          → tutto mostrato
+        'normal'        → reveal dal 6° al 3° (click per click)
+        'top-two-shake' → 3° rivelato, mystery card 1°/2° visibili con shake giallo persistente
+        'final-reveal'  → banner in corso (card 1°/2° ancora coperte)
+        'done'          → banner chiuso, 1° e 2° rivelati
       */
       revealPhase: 'normal',
 
       revealedCount: 0,
       isTopTwoRevealed: false,
 
-      shakingCards: new Set(),   // usato solo per i reveal dal 6° al 3°
+      shakingCards: new Set(),
       crazyActive: false,
       isRevealing: false,
 
@@ -331,22 +330,18 @@ export default {
         .sort((a, b) => b.points - a.points)
         .map((t, i) => ({ ...t, rank: i + 1 }));
     },
-    /* Ordine reveal: dal 6° al 3° (bottom-up) */
     revealOrder() {
       const N = this.sortedTeams.length;
       const order = [];
       for (let r = N; r >= 3; r--) order.push(r);
       return order;
     },
-    /* Le card del 1° e 2° posto, sempre ordinate per rank (1° sopra) */
     topTwoByRank() {
       return this.sortedTeams.filter(t => t.rank <= 2).sort((a, b) => a.rank - b.rank);
     },
-    /* Le mystery card 1°/2° si mostrano SOLO dopo che il 3° è stato rivelato */
     showTopTwoMystery() {
       return this.revealStarted && this.revealedCount >= this.revealOrder.length;
     },
-    /* Card rivelate (3°→6°), ordinate top→bottom: 3°, 4°, 5°, 6° */
     revealedTeamsTopFirst() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
       const revealedRanks = new Set(this.revealOrder.slice(0, this.revealedCount));
@@ -361,10 +356,10 @@ export default {
       return this.revealPhase === 'done';
     },
     showWinnerBanner() {
-      return this.allRevealed && this.bannerReady && this.phase === 'finale' && !this.winnerClosed;
+      return this.bannerReady && this.phase === 'finale' && !this.winnerClosed;
     },
     showWeekBanner() {
-      return this.allRevealed && this.bannerReady && this.phase !== 'finale' && !this.weekBannerClosed;
+      return this.bannerReady && this.phase !== 'finale' && !this.weekBannerClosed;
     },
     winnerNameChars() {
       if (!this.sortedTeams.length) return [];
@@ -430,16 +425,15 @@ export default {
     handleClick() {
       if (this.showPhaseSelector || this.isLoading) return;
 
-      // Normale reveal dal 6° al 3°
       if (this.revealPhase === 'normal') {
         if (this.isRevealing) return;
         this._revealNext();
         return;
       }
 
-      // Shake giallo persistente sulle card 1°/2°: click per rivelare
+      // Click durante shake giallo → SUBITO banner, card 1°/2° ancora coperte
       if (this.revealPhase === 'top-two-shake') {
-        this._triggerFinalReveal();
+        this._triggerBannerFirst();
         return;
       }
     },
@@ -448,7 +442,6 @@ export default {
       this.revealStarted = true;
 
       if (this.revealedCount >= this.revealOrder.length) {
-        // Tutti dal 3° al 6° sono stati rivelati → mostra mystery card 1°/2° con shake giallo persistente
         this.revealPhase = 'top-two-shake';
         return;
       }
@@ -459,7 +452,6 @@ export default {
       const team = this.sortedTeams.find(t => t.rank === rank);
       if (!team) { this.isRevealing = false; return; }
 
-      // Shake breve sulla card che sta per apparire, poi si rivela
       this.shakingCards = new Set([...this.shakingCards, team.id]);
 
       setTimeout(() => {
@@ -468,31 +460,38 @@ export default {
         this.shakingCards = next;
         this.isRevealing = false;
 
-        // Dopo la reveal del 3°, se non ci sono altri da rivelare → passa allo shake giallo
         if (this.revealedCount >= this.revealOrder.length) {
           this.revealPhase = 'top-two-shake';
         }
       }, SHAKE_MS);
     },
 
-    _triggerFinalReveal() {
-      if (this.revealPhase === 'final-reveal' || this.revealPhase === 'done') return;
+    /*
+      NUOVO: click durante top-two-shake
+      → mette revealPhase = 'final-reveal' (le card restano coperte ma smettono lo shake)
+      → SUBITO mostra il banner (fuochi/celebrazione)
+      → il reveal delle card 1°/2° avviene DOPO la chiusura del banner
+    */
+    _triggerBannerFirst() {
+      if (this.revealPhase !== 'top-two-shake') return;
       this.revealPhase = 'final-reveal';
 
-      setTimeout(() => {
-        this.isTopTwoRevealed = true;
-        this.revealPhase = 'done';
-
-        this.crazyActive = true;
-        setTimeout(() => { this.crazyActive = false; }, CRAZY_MS + POST_CRAZY);
-
-        setTimeout(() => {
-          this.bannerReady = true;
-        }, CRAZY_MS + BANNER_DELAY);
-      }, SHAKE_MS * 0.6);
+      // Banner appare subito (0ms)
+      this.bannerReady = true;
     },
 
-    /* Auto-close banner dopo 10 secondi con countdown */
+    /*
+      Chiamato dalla chiusura del banner (manuale o auto)
+      → ALLORA si rivelano 1° e 2° con animazione crazy
+    */
+    _revealTopTwoAfterBanner() {
+      this.isTopTwoRevealed = true;
+      this.revealPhase = 'done';
+
+      this.crazyActive = true;
+      setTimeout(() => { this.crazyActive = false; }, CRAZY_MS + POST_CRAZY);
+    },
+
     startBannerAutoClose() {
       this.bannerCountdownPct = 100;
       const startTime = performance.now();
@@ -519,10 +518,14 @@ export default {
       this.stopFireworks();
       this.stopBannerAutoClose();
       this.winnerClosed = true;
+      // Dopo la chiusura del banner → rivela 1° e 2°
+      this.$nextTick(() => { this._revealTopTwoAfterBanner(); });
     },
     closeWeekShowRanking() {
       this.stopBannerAutoClose();
       this.weekBannerClosed = true;
+      // Dopo la chiusura del banner → rivela 1° e 2°
+      this.$nextTick(() => { this._revealTopTwoAfterBanner(); });
     },
 
     resetView() {
