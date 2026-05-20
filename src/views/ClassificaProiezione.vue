@@ -206,7 +206,7 @@
       </div>
     </transition>
 
-    <!-- WEEK BANNER (1ª 2ª 3ª settimana) — versione migliorata -->
+    <!-- WEEK BANNER (1ª 2ª 3ª settimana) -->
     <transition name="winner-fade">
       <div v-if="showWeekBanner" class="cp-week-banner" @click.stop>
         <!-- sfondo con colore squadra vincitrice -->
@@ -220,12 +220,12 @@
           <span v-for="n in 20" :key="n" class="cp-week-spark" :style="weekSparkStyle(n)"></span>
         </div>
         <div class="cp-week-content">
-          <!-- icona settimana (medaglia/corona) -->
+          <!-- icona settimana (numero 1️⃣ 2️⃣ 3️⃣) -->
           <div class="cp-week-phase-icon">{{ currentPhaseIcon }}</div>
           <!-- etichetta settimana -->
           <div class="cp-week-label">Vincitore</div>
           <div class="cp-week-phase-name">{{ currentPhaseLabel }}</div>
-          <!-- medaglia -->
+          <!-- medaglia 🥇 sotto il titolo, sopra il nome -->
           <div class="cp-week-medal">🥇</div>
           <!-- nome squadra grande -->
           <div class="cp-week-winner" :class="'cp-name--' + sortedTeams[0].id">
@@ -306,9 +306,9 @@ export default {
       bannerCountdownTimer: null,
       bannerAutoCloseTimer: null,
       phases: [
-        { id: 'settimana1', label: '1ª Settimana',     icon: '🥇' },
-        { id: 'settimana2', label: '2ª Settimana',     icon: '🥈' },
-        { id: 'settimana3', label: '3ª Settimana',     icon: '🥉' },
+        { id: 'settimana1', label: '1ª Settimana',     icon: '1️⃣' },
+        { id: 'settimana2', label: '2ª Settimana',     icon: '2️⃣' },
+        { id: 'settimana3', label: '3ª Settimana',     icon: '3️⃣' },
         { id: 'finale',    label: 'Classifica Finale', icon: '🏆' },
       ],
       allTeams: [
@@ -351,7 +351,6 @@ export default {
     showTopTwoMystery() {
       return this.revealStarted && this.revealedCount >= this.revealOrder.length;
     },
-    // Rank delle card ancora da rivelare (mostrano rettangolo bianco ?)
     pendingRanks() {
       if (!this.revealStarted) return [];
       const revealed = new Set(this.revealOrder.slice(0, this.revealedCount));
@@ -472,7 +471,6 @@ export default {
 
       this.isRevealing = true;
       const rank = this.revealOrder[this.revealedCount];
-      // Segna quale rank sta facendo shake (mostra il ? con shake)
       this.shakingRank = rank;
       this.revealedCount++;
       const team = this.sortedTeams.find(t => t.rank === rank);
@@ -711,7 +709,7 @@ export default {
 .cp-logout-btn{display:flex;align-items:center;gap:.5rem;background:none;border:1.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.35);border-radius:99px;padding:.45rem 1.2rem;font-size:clamp(.72rem,1vw,.82rem);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
 .cp-logout-btn:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6);}
 
-/* ─── STAGE / HEADER (compatto, senza logo Cre) ─── */
+/* ─── STAGE / HEADER ─── */
 .cp-stage{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
 .cp-header{display:flex;align-items:center;justify-content:space-between;padding:clamp(.4rem,1vh,.7rem) clamp(1rem,2.5vw,2.5rem);background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
 .cp-header-left{display:flex;align-items:center;gap:.6rem;}
@@ -741,7 +739,7 @@ export default {
 .cp-cards-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);}
 .cp-revealed-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);margin-top:clamp(.35rem,.8vh,.7rem);}
 
-/* ─── MYSTERY CARD (1° e 2° e pending 3°–6°) ── */
+/* ─── MYSTERY CARD ── */
 .cp-card-mystery{background:#111120 !important;border:2px solid rgba(255,255,255,.1) !important;}
 
 /* ─── SINGOLA CARD ──────────────────────────────── */
@@ -762,15 +760,12 @@ export default {
 .cp-strip--fucsia   {background:linear-gradient(180deg,#f78cc6,#E83E8C);box-shadow:4px 0 20px rgba(232,62,140,.6);}
 .cp-strip--gialli   {background:linear-gradient(180deg,#ffd43b,#c8960c);box-shadow:4px 0 20px rgba(200,160,0,.6);}
 
-/* Nuova card appare dall'alto */
 .card-enter-enter-active{animation:cardSlideDown .55s cubic-bezier(.16,1,.3,1) both;}
 @keyframes cardSlideDown{0%{opacity:0;transform:translateY(-60px) scale(.93);}55%{opacity:1;transform:translateY(8px) scale(1.02);}80%{transform:translateY(-3px) scale(.99);}100%{opacity:1;transform:translateY(0) scale(1);}}
 
-/* SHAKE normale card che sta per essere rivelata */
 .cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;}
 @keyframes cardShake{0%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-.6deg);}75%{transform:translateX(8px) rotate(.6deg);}100%{transform:translateX(0);}}
 
-/* ─── TOP-TWO SHAKE GIALLO PERSISTENTE ─── */
 .cp-card--top-two-shake{
   animation:topTwoShake .13s ease-in-out infinite !important;
   background:#0a0900 !important;
@@ -786,7 +781,6 @@ export default {
   100%{transform:translateX(0) rotate(0deg) scale(1);}
 }
 
-/* Copertura bianca / gold */
 .cp-card-cover{position:absolute;inset:0;border-radius:inherit;background:#fff;display:flex;align-items:center;justify-content:center;z-index:10;animation:coverPulse .5s ease-in-out infinite alternate;}
 @keyframes coverPulse{from{background:#fff}to{background:#dde0ff}}
 .cp-card-cover--gold{animation:coverPulseGold .4s ease-in-out infinite alternate !important;}
@@ -795,13 +789,12 @@ export default {
 @keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.25)}}
 .cp-cover-q--gold{color:rgba(180,120,0,.25);}
 
-/* CRAZY sul 1° posto */
 .cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(255,215,0,.95) !important;box-shadow:0 0 70px rgba(255,200,0,.7),0 0 140px rgba(255,200,0,.3),inset 0 0 30px rgba(255,200,0,.15) !important;background:#0a0a00 !important;z-index:20;}
 @keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
 
 .cp-card--winner{border-color:rgba(255,215,0,.7) !important;box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.08);transform:scale(1.018);}
 
-/* ─── BADGE COLORE SQUADRA ──────────────────────── */
+/* ─── BADGE ──────────────────────────────────────── */
 .cp-team-badge{display:flex;align-items:center;gap:.35rem;padding:.2rem .65rem .2rem .4rem;border-radius:99px;border:1.5px solid transparent;flex-shrink:0;margin-left:clamp(.1rem,.3vw,.4rem);}
 .cp-badge-dot{width:clamp(10px,1.2vw,14px);height:clamp(10px,1.2vw,14px);border-radius:50%;flex-shrink:0;}
 .cp-badge-name{font-size:clamp(.6rem,.8vw,.75rem);font-weight:900;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
@@ -909,7 +902,7 @@ export default {
 .cp-winner-close{margin-top:.25rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.4);color:rgba(255,215,0,.9);border-radius:99px;padding:.5rem 1.6rem;font-size:clamp(.75rem,1.1vw,.88rem);font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.06em;transition:all .2s;}
 .cp-winner-close:hover{background:rgba(255,215,0,.25);border-color:rgba(255,215,0,.7);}
 
-/* ─── WEEK BANNER ───────────────────────────────── */
+/* ─── WEEK BANNER ─────────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .cp-week-bg{position:absolute;inset:0;background:#06060c;}
 .cp-week-bg--rossi    {background:radial-gradient(ellipse at center,rgba(220,53,69,.25) 0%,#06060c 65%);}
@@ -942,12 +935,12 @@ export default {
 .cp-week-close-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7);}
 .cp-week-close-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.4);color:#fff;}
 
-/* ─── LOADING ───────────────────────────────────── */
+/* ─── LOADING ─────────────────────────────────────── */
 .cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#06060c;z-index:200;}
 .cp-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,.1);border-top-color:#ffd43b;border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ─── TRANSITIONS ───────────────────────────────── */
+/* ─── TRANSITIONS ─────────────────────────────────── */
 .phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s ease,transform .4s cubic-bezier(.16,1,.3,1);}
 .phase-fade-enter-from{opacity:0;transform:scale(.97);}
 .phase-fade-leave-to{opacity:0;transform:scale(1.02);}
