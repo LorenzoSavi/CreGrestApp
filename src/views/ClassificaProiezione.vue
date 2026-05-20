@@ -50,21 +50,24 @@
             <div v-if="!revealStarted" class="cp-tap-invite">
               <div class="cp-tap-icon">🖱️</div>
               <div class="cp-tap-text">Clicca per rivelare</div>
-              <div class="cp-tap-sub">dal {{ sortedTeams.length }}° al 2° posto… e poi il sorpresa!</div>
+              <div class="cp-tap-sub">dal {{ sortedTeams.length }}° al 1° posto</div>
             </div>
           </transition>
 
           <div class="cp-cards-wrap">
             <!--
               LOGICA VISIVA:
-              - displayedTeams: array ordinato [1°, 2°, 3°, 4°, 5°, 6°]
-              - flex-direction: column-reverse  =>  il 6° (index 5) finisce in BASSO, il 1° (index 0) in CIMA
-              - RIVELAZIONE con ordine personalizzato: 6 → 5 → 4 → 3 → 1 → 2
-                Il SECONDO posto viene rivelato PER ULTIMO come colpo di scena finale!
+              - displayedTeams: array ordinato dal PEGGIORE al MIGLIORE rivelato
+                es. primo click → [6°], secondo → [5°, 6°], terzo → [4°, 5°, 6°], ecc.
+              - flex-direction: column  =>  il primo elemento dell'array è in CIMA
+                quindi il peggior posto rivelato va in fondo (ultimo nell'array), il migliore in cima
+              - Ogni nuovo elemento entra SEMPRE dalla parte ALTA della lista (sopra gli altri)
+                → 6° appare da solo in basso, poi 5° appare sopra, poi 4° sopra ancora, ecc.
+              - ORDINE RIVELAZIONE: 6 → 5 → 4 → 3 → 1 → 2 (2° come gran finale)
             -->
             <transition-group tag="div" class="cp-cards-list" name="card-enter">
               <div
-                v-for="team in displayedTeams" :key="team.id"
+                v-for="team in displayedTeamsBottomFirst" :key="team.id"
                 class="cp-card"
                 :class="[
                   'cp-card--' + team.id,
@@ -218,19 +221,6 @@ export default {
       phase: null,
       isLoading: false,
       revealStarted: false,
-      /*
-        revealedCount = quante squadre sono state rivelate finora.
-
-        ORDINE DI REVEAL PERSONALIZZATO: 6 → 5 → 4 → 3 → 1 → 2
-        Il SECONDO posto viene rivelato PER ULTIMO come colpo di scena finale!
-
-        revealOrder[0] = 6  (primo click)
-        revealOrder[1] = 5
-        revealOrder[2] = 4
-        revealOrder[3] = 3
-        revealOrder[4] = 1  (penultimo: il vincitore!)
-        revealOrder[5] = 2  (ULTIMO: sorpresa, il secondo posto è il gran finale)
-      */
       revealedCount: 0,
       shakingCards: new Set(),
       crazyActive: false,
@@ -274,17 +264,13 @@ export default {
     },
     /*
       ORDINE DI REVEAL: 6 → 5 → 4 → 3 → 1 → 2
-      Per N squadre generiamo l'array: [N, N-1, ..., 3, 1, 2]
-      Esempio con 6: [6, 5, 4, 3, 1, 2]
-      Il 2° posto è sempre l'ultimo colpo di scena!
+      Il 2° posto viene rivelato PER ULTIMO come colpo di scena!
     */
     revealOrder() {
       const N = this.sortedTeams.length;
       if (N <= 2) {
-        // Con 1 o 2 squadre: ordine normale dal basso
         return Array.from({ length: N }, (_, i) => N - i);
       }
-      // Dal 6° al 3°, poi 1°, poi 2° come gran finale
       const order = [];
       for (let r = N; r >= 3; r--) order.push(r);
       order.push(1); // penultimo: il vincitore
@@ -292,14 +278,49 @@ export default {
       return order;
     },
     /*
-      displayedTeams contiene le squadre GIA' rivelate.
-      Usiamo revealOrder per sapere quale rank è stato rivelato ad ogni step.
-      Mostriamo tutte le squadre con rank incluso nei primi revealedCount elementi di revealOrder.
+      displayedTeams: squadre già rivelate, ordinate per rank crescente
+      (1° primo nell'array, N° ultimo nell'array).
+
+      displayedTeamsBottomFirst: INVERSO → N° primo, 1° ultimo.
+      Con flex-direction:column il primo elemento è in CIMA visivamente,
+      quindi avere il peggior posto per primo significa averlo IN CIMA nell'array
+      ma poiché usiamo column NORMALE (non reverse), il PRIMO elemento
+      va IN ALTO e l'ULTIMO in BASSO.
+
+      VOGLIAMO: 1° in cima visivamente, N° in fondo visivamente.
+      Con flex column: elemento index 0 → posizione TOP, index N-1 → posizione BOTTOM.
+      Quindi: array = [1°, 2°, 3°, ..., N°] con flex column normale.
+
+      Ma ogni NUOVO elemento rivelato deve ENTRARE DALL'ALTO (sopra tutti quelli già presenti).
+      L'ultimo rivelato ha il rank più basso (es. primo click = 6°, secondo = 5°, ...).
+      Quindi man mano che rivelo: il rank più basso rivelato va in CIMA.
+
+      Soluzione: ordino displayedTeams per rank ASC (1° = index 0 = TOP),
+      ma ogni nuovo elemento aggiunto ha rank più piccolo del precedente
+      → entra all'inizio dell'array → visivamente appare IN ALTO = "sopra" quelli già rivelati ✓
     */
     displayedTeams() {
       if (!this.revealStarted || this.revealedCount === 0) return [];
       const revealedRanks = new Set(this.revealOrder.slice(0, this.revealedCount));
       return this.sortedTeams.filter(t => revealedRanks.has(t.rank));
+      // già ordinati per rank ASC (1°, 2°, ...)
+    },
+    /*
+      Per la lista visiva usiamo flex-direction: column.
+      displayedTeams è [rank più basso rivelato, ..., rank più alto rivelato].
+      Con column: il rank più basso (migliore) va in CIMA, il peggiore in fondo ✓.
+
+      Quando aggiungo un nuovo elemento (es. 5° dopo aver già rivelato 6°):
+      - Prima: [6°]   → visivamente: 6° in fondo
+      - Dopo:  [5°, 6°] → visivamente: 5° in cima, 6° in fondo
+      Il 5° entra SOPRA il 6° ✓
+    */
+    displayedTeamsBottomFirst() {
+      // displayedTeams è già ordinato rank ASC (migliore prima).
+      // Con flex column: il primo elemento è in CIMA.
+      // Quindi: il migliore posto rivelato è sempre in CIMA ✓
+      // Ogni nuovo reveal aggiunge un rank più piccolo → va in cima (sopra il precedente) ✓
+      return this.displayedTeams;
     },
     maxPoints() {
       return Math.max(...this.teams.map(t => t.points), 1);
@@ -369,19 +390,12 @@ export default {
       this.isRevealing = true;
       this.revealStarted = true;
 
-      // Il rank da rivelare ora è il prossimo nella sequenza personalizzata
       const rank = this.revealOrder[this.revealedCount];
       this.revealedCount++;
 
       const team = this.sortedTeams.find(t => t.rank === rank);
       if (!team) { this.isRevealing = false; return; }
 
-      /*
-        Shake durata:
-        - rank 2 (l'ultimo rivelato, il gran finale) → CRAZY_MS, effetto esplosivo
-        - rank 1 (il vincitore, penultimo) → SHAKE_MS normale
-        - tutti gli altri → SHAKE_MS
-      */
       const isGrandFinale = rank === 2;
       const shakeDur = isGrandFinale ? CRAZY_MS : SHAKE_MS;
 
@@ -561,15 +575,19 @@ export default {
 .cp-cards-wrap{width:100%;max-width:1200px;margin:0 auto;}
 
 /*
-  flex-direction: column-reverse
-  => displayedTeams è ordinato per rank (1°, 2°, ..., N°)
-  => Con column-reverse: rankN appare in basso visivamente, rank1 in cima ✓
-  => Ma siccome il 2° viene rivelato per ULTIMO, apparirà in CIMA (subito sotto il 1°)
-     che è la posizione corretta nella classifica finale!
+  flex-direction: column (NON reverse!)
+  displayedTeamsBottomFirst = [rank migliore, ..., rank peggiore rivelato]
+  Con column: index 0 (migliore) → CIMA visiva, ultimo index (peggiore) → FONDO visivo
+
+  Sequenza rivelazione: 6° → 5° → 4° → 3° → 1° → 2°
+  Click 1: array = [6°]         → 6° in cima (unico)
+  Click 2: array = [5°, 6°]     → 5° in cima, 6° sotto ✓ (il 5° appare SOPRA il 6°)
+  Click 3: array = [4°, 5°, 6°] → 4° in cima, poi 5°, poi 6° ✓
+  ...e così via, ogni nuova card entra SOPRA le precedenti ✓
 */
 .cp-cards-list{
   display:flex;
-  flex-direction:column-reverse;
+  flex-direction:column;
   gap:clamp(.35rem,.8vh,.7rem);
 }
 
@@ -586,7 +604,6 @@ export default {
   transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,background .3s;
 }
 
-/* Bagliore di sfondo con il colore della squadra */
 .cp-card--rossi    { background: linear-gradient(100deg, rgba(220,53,69,.18) 0%, #0c0c1a 40%); border-color: rgba(220,53,69,.35); }
 .cp-card--verdi    { background: linear-gradient(100deg, rgba(40,167,69,.18) 0%, #0c0c1a 40%); border-color: rgba(40,167,69,.35); }
 .cp-card--arancioni{ background: linear-gradient(100deg, rgba(253,126,20,.18) 0%, #0c0c1a 40%); border-color: rgba(253,126,20,.35); }
@@ -594,7 +611,6 @@ export default {
 .cp-card--fucsia   { background: linear-gradient(100deg, rgba(232,62,140,.18) 0%, #0c0c1a 40%); border-color: rgba(232,62,140,.35); }
 .cp-card--gialli   { background: linear-gradient(100deg, rgba(200,160,0,.18) 0%, #0c0c1a 40%); border-color: rgba(200,160,0,.35); }
 
-/* Strip colorata sul bordo sinistro */
 .cp-color-strip{
   position:absolute;left:0;top:0;bottom:0;
   width:clamp(6px,.6vw,10px);
@@ -608,9 +624,17 @@ export default {
 .cp-strip--fucsia   { background: linear-gradient(180deg, #f78cc6, #E83E8C); box-shadow: 4px 0 20px rgba(232,62,140,.6); }
 .cp-strip--gialli   { background: linear-gradient(180deg, #ffd43b, #c8960c); box-shadow: 4px 0 20px rgba(200,160,0,.6); }
 
-/* Card enter animation */
-.card-enter-enter-active{animation:cardBounceIn .55s cubic-bezier(.16,1,.3,1) both;}
-@keyframes cardBounceIn{0%{opacity:0;transform:translateY(55px) scale(.93);}55%{opacity:1;transform:translateY(-7px) scale(1.02);}80%{transform:translateY(3px) scale(.99);}100%{opacity:1;transform:translateY(0) scale(1);}}
+/*
+  card-enter: la nuova card entra sempre dall'ALTO (translateY negativo → scende verso il basso)
+  Questo è coerente con l'inserimento in cima all'array (flex column).
+*/
+.card-enter-enter-active{animation:cardSlideDown .55s cubic-bezier(.16,1,.3,1) both;}
+@keyframes cardSlideDown{
+  0%{opacity:0;transform:translateY(-60px) scale(.93);}
+  55%{opacity:1;transform:translateY(8px) scale(1.02);}
+  80%{transform:translateY(-3px) scale(.99);}
+  100%{opacity:1;transform:translateY(0) scale(1);}
+}
 
 /* SHAKE */
 .cp-card--shaking{animation:cardShake .15s ease-in-out infinite !important;background:#111120 !important;}
@@ -622,70 +646,42 @@ export default {
 .cp-cover-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);color:rgba(0,0,0,.1);letter-spacing:.3em;animation:qBounce .45s ease-in-out infinite alternate;}
 @keyframes qBounce{from{transform:scale(1)}to{transform:scale(1.25)}}
 
-/* CRAZY 2° posto (l'ultimo colpo di scena!) */
+/* CRAZY 2° posto */
 .cp-card--crazy{animation:crazyShake .09s ease-in-out infinite !important;border-color:rgba(192,192,255,.95) !important;box-shadow:0 0 70px rgba(180,180,255,.7),0 0 140px rgba(180,180,255,.3),inset 0 0 30px rgba(180,180,255,.15) !important;background:#0a0a20 !important;z-index:20;}
 @keyframes crazyShake{0%{transform:translateX(0) scale(1);}15%{transform:translateX(-14px) rotate(-2deg) scale(1.03);}30%{transform:translateX(14px) rotate(2deg) scale(.97);}45%{transform:translateX(-10px) rotate(-1.2deg) scale(1.04);}60%{transform:translateX(10px) rotate(1.2deg) scale(.96);}80%{transform:translateX(-5px) rotate(-.5deg);}100%{transform:translateX(0) scale(1);}}
 
-/* Winner card (1° posto) */
+/* Winner card */
 .cp-card--winner{border-color:rgba(255,215,0,.7) !important;box-shadow:0 0 60px rgba(255,215,0,.25),inset 0 0 30px rgba(255,215,0,.08);transform:scale(1.018);}
 
 /* ─── BADGE COLORE SQUADRA ──────────────────────── */
-.cp-team-badge{
-  display:flex;align-items:center;gap:.35rem;
-  padding:.2rem .65rem .2rem .4rem;
-  border-radius:99px;
-  border:1.5px solid transparent;
-  flex-shrink:0;
-  margin-left:clamp(.1rem,.3vw,.4rem);
-}
-.cp-badge-dot{
-  width:clamp(10px,1.2vw,14px);
-  height:clamp(10px,1.2vw,14px);
-  border-radius:50%;
-  flex-shrink:0;
-}
-.cp-badge-name{
-  font-size:clamp(.6rem,.8vw,.75rem);
-  font-weight:900;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  white-space:nowrap;
-}
+.cp-team-badge{display:flex;align-items:center;gap:.35rem;padding:.2rem .65rem .2rem .4rem;border-radius:99px;border:1.5px solid transparent;flex-shrink:0;margin-left:clamp(.1rem,.3vw,.4rem);}
+.cp-badge-dot{width:clamp(10px,1.2vw,14px);height:clamp(10px,1.2vw,14px);border-radius:50%;flex-shrink:0;}
+.cp-badge-name{font-size:clamp(.6rem,.8vw,.75rem);font-weight:900;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
 .cp-badge--rossi    { background:rgba(220,53,69,.2);  border-color:rgba(220,53,69,.5); }
 .cp-badge--rossi    .cp-badge-dot  { background:#ff4d4d; box-shadow:0 0 8px rgba(255,77,77,.8); }
 .cp-badge--rossi    .cp-badge-name { color:#ff8080; }
-
 .cp-badge--verdi    { background:rgba(40,167,69,.2);  border-color:rgba(40,167,69,.5); }
 .cp-badge--verdi    .cp-badge-dot  { background:#51cf66; box-shadow:0 0 8px rgba(81,207,102,.8); }
 .cp-badge--verdi    .cp-badge-name { color:#69db7c; }
-
 .cp-badge--arancioni{ background:rgba(253,126,20,.2); border-color:rgba(253,126,20,.5); }
 .cp-badge--arancioni .cp-badge-dot { background:#ffa94d; box-shadow:0 0 8px rgba(255,169,77,.8); }
 .cp-badge--arancioni .cp-badge-name{ color:#ffc078; }
-
 .cp-badge--blu      { background:rgba(0,123,255,.2);  border-color:rgba(0,123,255,.5); }
 .cp-badge--blu      .cp-badge-dot  { background:#74c0fc; box-shadow:0 0 8px rgba(116,192,252,.8); }
 .cp-badge--blu      .cp-badge-name { color:#a5d8ff; }
-
 .cp-badge--fucsia   { background:rgba(232,62,140,.2); border-color:rgba(232,62,140,.5); }
 .cp-badge--fucsia   .cp-badge-dot  { background:#f78cc6; box-shadow:0 0 8px rgba(247,140,198,.8); }
 .cp-badge--fucsia   .cp-badge-name { color:#faa2c1; }
-
 .cp-badge--gialli   { background:rgba(200,150,0,.2);  border-color:rgba(200,150,0,.5); }
 .cp-badge--gialli   .cp-badge-dot  { background:#ffd43b; box-shadow:0 0 8px rgba(255,212,59,.8); }
 .cp-badge--gialli   .cp-badge-name { color:#ffe066; }
 
 /* ─── RANK ────────────────────────────────────────────── */
-.cp-card-rank{
-  flex-shrink:0;
-  width:clamp(44px,5vw,68px);
-  text-align:center;
-  margin-left:clamp(6px,1vw,14px);
-}
+.cp-card-rank{flex-shrink:0;width:clamp(44px,5vw,68px);text-align:center;margin-left:clamp(6px,1vw,14px);}
 .cp-rank-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.2vw,2.6rem);color:rgba(255,255,255,.2);letter-spacing:.05em;}
 .cp-medal{font-size:clamp(1.7rem,3.5vw,2.8rem);}
 
-/* ─── INFO (nome + barra) ─────────────────────────── */
+/* ─── INFO ─────────────────────────── */
 .cp-card-info{flex:1;min-width:0;}
 .cp-card-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.8vw,3rem);letter-spacing:.09em;line-height:1;margin-bottom:clamp(.18rem,.4vh,.35rem);}
 .cp-card-bar-wrap{height:clamp(4px,.55vh,7px);background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;}
@@ -696,7 +692,7 @@ export default {
 .cp-score-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,4rem);letter-spacing:.04em;line-height:1;}
 .cp-score-unit{display:block;font-size:clamp(.6rem,.85vw,.72rem);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.28);}
 
-/* ─── COLORI TESTO + BARRE ───────────────────────────── */
+/* ─── COLORI ───────────────────────────── */
 .cp-name--rossi    {color:#ff6b6b;}
 .cp-name--verdi    {color:#51cf66;}
 .cp-name--arancioni{color:#ffa94d;}
