@@ -29,7 +29,7 @@
       <div v-if="!showPhaseSelector && !isLoading && teams.length" class="cp-stage">
 
         <!-- ✅ FIX 1: Header SEMPRE visibile durante tutta la proiezione -->
-        <div class="cp-header" :class="{ 'cp-header--mystery': revealPhase === 'show-last-mystery' }">
+        <div class="cp-header" :class="{ 'cp-header--mystery': revealPhase === 'show-all-mystery' }">
           <div class="cp-header-left">
             <span class="cp-trophy">🏆</span>
             <div>
@@ -41,6 +41,7 @@
             <div v-if="!revealStarted" class="cp-hint cp-hint--pulse">Clicca per iniziare</div>
             <div v-else-if="revealPhase === 'done'" class="cp-hint cp-hint--done">🎉 Completata!</div>
             <div v-else-if="revealPhase === 'top-two-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?!</div>
+            <div v-else-if="revealPhase === 'show-all-mystery'" class="cp-hint cp-hint--pulse">Clicca per rivelare</div>
             <div v-else-if="revealedCount < revealOrder.length" class="cp-hint cp-hint--active">{{ revealOrder.length - revealedCount }} rimanenti — clicca</div>
             <div v-else class="cp-hint cp-hint--active">Clicca per rivelare</div>
             <button class="cp-back-btn" @click.stop="resetView">
@@ -120,22 +121,13 @@
                 </div>
               </template>
 
-              <!-- MYSTERY CARD DEL 6° POSTO (fase show-last-mystery) -->
-              <template v-if="revealPhase === 'show-last-mystery'">
-                <div class="cp-card cp-card-mystery cp-card--last-waiting">
-                  <div class="cp-card-cover">
-                    <span class="cp-cover-q">?</span>
-                  </div>
-                </div>
-              </template>
-
-              <!-- PENDING CARDS (dal 6° in poi, dopo che il reveal normale è iniziato) -->
-              <template v-if="revealStarted && revealPhase !== 'show-last-mystery'">
+              <!-- PENDING CARDS (dal 6° in poi, mostrate subito al primo click) -->
+              <template v-if="revealStarted && (revealPhase === 'show-all-mystery' || revealPhase === 'normal')">
                 <div
                   v-for="rank in pendingRanks" :key="'pending-' + rank"
                   class="cp-card cp-card-mystery"
                   :class="{
-                    'cp-card--shaking': shakingRank === rank,
+                    'cp-card--next-shake': shakingRank === rank,
                   }"
                 >
                   <div class="cp-card-cover">
@@ -375,11 +367,11 @@ export default {
     showTopTwoMystery() {
       return this.revealStarted
         && this.revealPhase !== 'idle'
-        && this.revealPhase !== 'show-last-mystery'
         && this.revealedCount >= this.revealOrder.length;
     },
     pendingRanks() {
-      if (!this.revealStarted || this.revealPhase === 'idle' || this.revealPhase === 'show-last-mystery') return [];
+      if (!this.revealStarted) return [];
+      if (this.revealPhase !== 'show-all-mystery' && this.revealPhase !== 'normal') return [];
       const revealed = new Set(this.revealOrder.slice(0, this.revealedCount));
       return this.revealOrder.filter(r => !revealed.has(r));
     },
@@ -481,13 +473,15 @@ export default {
     handleClick() {
       if (this.showPhaseSelector || this.isLoading) return;
 
+      // Primo click: mostra subito TUTTI i rettangoli coperti senza avviare ancora il reveal
       if (this.revealPhase === 'idle') {
         this.revealStarted = true;
-        this.revealPhase = 'show-last-mystery';
+        this.revealPhase = 'show-all-mystery';
         return;
       }
 
-      if (this.revealPhase === 'show-last-mystery') {
+      // Secondo click in poi: avvia/continua il reveal
+      if (this.revealPhase === 'show-all-mystery') {
         if (this.isRevealing) return;
         this.revealPhase = 'normal';
         this._revealNext();
@@ -517,6 +511,7 @@ export default {
       const team = this.sortedTeams.find(t => t.rank === rank);
       if (!team) { this.isRevealing = false; this.shakingRank = null; return; }
 
+      // Shake SOLO sulla card che sta per essere rivelata (la prima pending)
       this.shakingRank = rank;
       this.shakingCards = new Set([...this.shakingCards, team.id]);
 
@@ -823,15 +818,6 @@ export default {
   min-height:clamp(72px,10.5vh,110px) !important;
 }
 
-.cp-card--last-waiting{
-  border-color:rgba(255,255,255,.18) !important;
-  animation:lastWaitingPulse 1.6s ease-in-out infinite;
-}
-@keyframes lastWaitingPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.05);border-color:rgba(255,255,255,.18);}
-  50%{box-shadow:0 0 18px 4px rgba(255,255,255,.08);border-color:rgba(255,255,255,.3);}
-}
-
 /* ─── SINGOLA CARD ────── */
 .cp-card{
   position:relative;
@@ -846,7 +832,9 @@ export default {
   overflow:hidden;
   min-height:clamp(72px,10.5vh,110px);
 }
-.cp-card--shaking{animation:cardShake .35s ease-in-out infinite;}
+
+/* Shake SOLO sulla card successiva da rivelare */
+.cp-card--next-shake{animation:cardShake .35s ease-in-out infinite;}
 @keyframes cardShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
 /* ─── TOP TWO SHAKE ─── */
@@ -975,20 +963,84 @@ export default {
 /* ─── CRAZY BURST ─── */
 .cp-crazy-burst{position:absolute;inset:0;pointer-events:none;overflow:visible;}
 .cp-burst-particle{position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;background:var(--color,#ffd43b);animation:burstFly .7s ease-out both;}
-@keyframes burstFly{0%{transform:rotate(var(--angle)) translateX(0) scale(1);opacity:1;}100%{transform:rotate(var(--angle)) translateX(120px) scale(0);opacity:0;}}
+@keyframes burstFly{0%{transform:rotate(var(--angle,0deg)) translateX(0) scale(1);opacity:1;}100%{transform:rotate(var(--angle,0deg)) translateX(90px) scale(0);opacity:0;}}
 
-/* ─── WINNER OVERLAY (finale) ─── */
-.cp-winner-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;cursor:default;}
-.cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a0e00 0%,#06060c 55%);animation:winBgPulse 3s ease-in-out infinite;}
-@keyframes winBgPulse{0%,100%{opacity:1;}50%{opacity:.8;}}
-.cp-fireworks-canvas{position:absolute;inset:0;pointer-events:none;z-index:1;}
+/* ─── WINNER OVERLAY ─── */
+.cp-winner-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cp-win-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a0a00 0%,#060606 60%,#000 100%);}
+.cp-lasers{position:absolute;inset:0;pointer-events:none;}
+.cp-laser{position:absolute;top:50%;left:50%;width:3px;height:60vh;transform-origin:bottom center;transform:rotate(var(--angle,0deg)) translateX(-50%);background:linear-gradient(to top,rgba(255,215,0,.18),transparent);animation:laserSpin 6s linear infinite;animation-delay:var(--animDelay,0s);}
+@keyframes laserSpin{0%{opacity:.3;}50%{opacity:.7;}100%{opacity:.3;}}
+.cp-shockwaves{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.cp-shockwave{position:absolute;width:200px;height:200px;border-radius:50%;border:2px solid rgba(255,215,0,.3);animation:shockwaveExpand 2.2s ease-out infinite;}
+@keyframes shockwaveExpand{0%{transform:scale(1);opacity:.7;}100%{transform:scale(6);opacity:0;}}
+.cp-gold-rain{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.cp-gold-drop{position:absolute;top:-2rem;animation:goldFall var(--duration,2s) linear var(--delay,0s) infinite;}
+@keyframes goldFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(var(--rot,360deg));opacity:0;}}
+.cp-fireworks-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.cp-confetti-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.cp-confetto{position:absolute;top:-20px;background:var(--color,#ffd43b);animation:confettiFall var(--duration,2s) linear var(--delay,0s) infinite;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(var(--rot,360deg));opacity:0;}}
+.cp-win-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;text-align:center;gap:.6rem;}
+.cp-win-halo{position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(255,215,0,.12) 0%,transparent 70%);animation:haloPulse 2s ease-in-out infinite;pointer-events:none;}
+@keyframes haloPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+.cp-win-crown{font-size:clamp(3rem,6vh,5rem);animation:crownBounce 1.5s ease-in-out infinite;}
+@keyframes crownBounce{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-12px) rotate(5deg);}}
+.cp-win-pre{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,1.8vw,1.4rem);letter-spacing:.4em;color:rgba(255,215,0,.6);}
+.cp-win-year{font-size:clamp(.65rem,1.1vw,.85rem);font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.3);}
+.cp-win-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,8vw,7rem);letter-spacing:.12em;line-height:1;display:flex;gap:.05em;}
+.cp-win-char{display:inline-block;animation:charDrop .6s cubic-bezier(.16,1,.3,1) both;}
+@keyframes charDrop{from{opacity:0;transform:translateY(-40px) scale(.8);}to{opacity:1;transform:none;}}
+.cp-win-pts{display:flex;align-items:baseline;gap:.4rem;}
+.cp-win-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4rem);color:rgba(255,215,0,.9);}
+.cp-win-pts-label{font-size:clamp(.6rem,1vw,.8rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,215,0,.5);}
+.cp-win-stars{position:relative;width:360px;height:60px;}
+.cp-win-star{position:absolute;color:#ffd43b;animation:winStarTwinkle 1.4s ease-in-out infinite;transform:translate(-50%,-50%);}
+@keyframes winStarTwinkle{0%,100%{opacity:.2;transform:translate(-50%,-50%) scale(1);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.5);}}
+.cp-win-trophies{display:flex;gap:2rem;font-size:clamp(1.5rem,3vh,2.5rem);}
+.cp-win-sub{font-size:clamp(.7rem,1.2vw,.9rem);font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.45);}
+.cp-banner-countdown{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-top:.4rem;}
+.cp-banner-countdown-bar{height:100%;background:rgba(255,215,0,.6);transition:width .1s linear;border-radius:2px;}
+.cp-winner-close{margin-top:.6rem;padding:.6rem 1.6rem;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.4);color:rgba(255,215,0,.9);border-radius:99px;font-family:'Nunito',sans-serif;font-size:clamp(.75rem,1.1vw,.9rem);font-weight:800;letter-spacing:.06em;cursor:pointer;transition:all .2s;}
+.cp-winner-close:hover{background:rgba(255,215,0,.28);border-color:rgba(255,215,0,.7);}
 
-.cp-lasers{position:absolute;inset:0;z-index:2;pointer-events:none;}
-.cp-laser{position:absolute;top:50%;left:50%;width:2px;height:60vh;background:linear-gradient(180deg,rgba(255,215,0,.7),transparent);transform-origin:bottom center;transform:rotate(var(--angle)) translateX(-50%);animation:laserSweep 4s ease-in-out infinite;filter:blur(1px);}
-@keyframes laserSweep{0%,100%{opacity:.2;}50%{opacity:.6;}}
+/* ─── WEEK BANNER ─── */
+.cp-week-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cp-week-bg{position:absolute;inset:0;}
+.cp-week-stars-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.cp-week-star{position:absolute;top:-1rem;color:#ffd43b;animation:weekStarFall var(--duration,3s) linear var(--delay,0s) infinite;}
+@keyframes weekStarFall{0%{transform:translateY(0) rotate(0deg);opacity:.8;}100%{transform:translateY(110vh) rotate(360deg);opacity:0;}}
+.cp-week-fireworks{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.cp-week-spark{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--color,#ffd43b);animation:weekSparkBurst 1.8s ease-out var(--delay,0s) infinite;}
+@keyframes weekSparkBurst{0%{transform:rotate(var(--angle,0deg)) translateX(0);opacity:1;}100%{transform:rotate(var(--angle,0deg)) translateX(180px);opacity:0;}}
+.cp-week-card{position:relative;z-index:10;background:rgba(10,10,18,.92);border:2px solid rgba(255,215,0,.3);border-radius:24px;padding:clamp(1.5rem,3vh,2.5rem) clamp(2rem,4vw,3.5rem);max-width:460px;width:90%;backdrop-filter:blur(12px);}
+.cp-week-content{display:flex;flex-direction:column;align-items:center;gap:.7rem;text-align:center;}
+.cp-week-label{font-size:clamp(.6rem,1vw,.75rem);font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.3);}
+.cp-week-phase-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,2.5vw,1.8rem);letter-spacing:.1em;color:rgba(255,215,0,.75);}
+.cp-week-medal{font-size:clamp(2.5rem,5vh,4rem);}
+.cp-week-winner{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,4.5rem);letter-spacing:.1em;line-height:1;display:flex;gap:.04em;}
+.cp-week-char{display:inline-block;animation:charDrop .5s cubic-bezier(.16,1,.3,1) both;}
+.cp-week-score-row{display:flex;align-items:baseline;gap:.35rem;}
+.cp-week-pts-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.5vw,2.5rem);}
+.cp-week-pts-label{font-size:clamp(.6rem,1vw,.8rem);font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35);}
+.cp-week-podium{display:flex;gap:1.2rem;margin-top:.3rem;}
+.cp-week-podium-item{display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.cp-podium-medal{font-size:1.1rem;}
+.cp-podium-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,1.8vw,1.3rem);letter-spacing:.06em;}
+.cp-podium-pts{font-size:clamp(.6rem,.9vw,.75rem);font-weight:700;color:rgba(255,255,255,.35);}
+.cp-week-close-btn{background:rgba(255,255,255,.07) !important;border-color:rgba(255,255,255,.2) !important;color:rgba(255,255,255,.7) !important;}
+.cp-week-close-btn:hover{background:rgba(255,255,255,.14) !important;color:#fff !important;}
 
-.cp-shockwaves{position:absolute;inset:0;z-index:2;pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.cp-shockwave{position:absolute;width:100px;height:100px;border-radius:50%;border:3px solid rgba(255,215,0,.5);animation:shockwaveExpand 2.2s ease-out infinite;}
-@keyframes shockwaveExpand{0%{transform:scale(0);opacity:.8;}100%{transform:scale(14);opacity:0;}}
+/* ─── LOADING ─── */
+.cp-loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:.1em;background:#06060c;z-index:50;}
+.cp-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:rgba(255,255,255,.5);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-.cp-gold-rain{positi
+/* ─── TRANSITIONS ─── */
+.phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .4s ease,transform .4s cubic-bezier(.16,1,.3,1);}
+.phase-fade-enter-from,.phase-fade-leave-to{opacity:0;transform:scale(.97);}
+.fade-enter-active,.fade-leave-active{transition:opacity .3s ease;}
+.fade-enter-from,.fade-leave-to{opacity:0;}
+.winner-fade-enter-active,.winner-fade-leave-active{transition:opacity .5s ease;}
+.winner-fade-enter-from,.winner-fade-leave-to{opacity:0;}
+</style>
