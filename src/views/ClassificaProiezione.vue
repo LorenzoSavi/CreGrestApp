@@ -278,6 +278,9 @@
       </div>
     </transition>
 
+    <!-- WATERMARK -->
+    <div class="cp-watermark" @click.stop>Fatto da Savi 🦞</div>
+
   </div>
 </template>
 
@@ -329,7 +332,6 @@ export default {
         { id: 'bianchi',   name: 'Bianchi',   color: '#E8E8E8' },
         { id: 'blu',       name: 'Blu',       color: '#74c0fc' },
       ],
-      // Unica sorgente dati: documento aggregato, identico a TotalPoint.vue
       pointsData: null,
     };
   },
@@ -342,7 +344,6 @@ export default {
     },
     teams() {
       if (!this.pointsData) return [];
-      // Tutti i punti vengono sempre e solo da pointsData (doc aggregato)
       return this.allTeams.map(t => ({ ...t, points: this.pointsData[t.id] || 0 }));
     },
     sortedTeams() {
@@ -438,7 +439,6 @@ export default {
       this.bannerCountdownPct = 100;
       this.stopBannerAutoClose();
       try {
-        // Legge SEMPRE il documento aggregato, identico a come fa TotalPoint.vue
         const snap = await getDoc(doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ'));
         if (snap.exists()) this.pointsData = snap.data();
       } catch (e) { console.error(e); }
@@ -689,6 +689,22 @@ export default {
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
 .cp-root{font-family:'Nunito',sans-serif;background:#06060c;color:#fff;height:100dvh;width:100%;overflow:hidden;cursor:pointer;user-select:none;position:relative;display:flex;flex-direction:column;}
+
+/* ─── WATERMARK ────────────────────────────────── */
+.cp-watermark{
+  position:fixed;
+  bottom:clamp(.6rem,1.2vh,1rem);
+  right:clamp(.8rem,1.5vw,1.4rem);
+  z-index:9999;
+  font-family:'Nunito',sans-serif;
+  font-size:clamp(.62rem,.85vw,.78rem);
+  font-weight:700;
+  letter-spacing:.04em;
+  color:rgba(255,255,255,.13);
+  pointer-events:none;
+  user-select:none;
+  white-space:nowrap;
+}
 
 /* ─── FASE ───────────────────────────────────────── */
 .cp-phase-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#06060c;z-index:100;cursor:default;}
