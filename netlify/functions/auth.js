@@ -48,7 +48,6 @@ exports.handler = async (event, context) => {
       'Khadraoui': process.env.KHADRAOUI_PASSWORD,
       'Gotti': process.env.GOTTI_PASSWORD,
       'Pinsino': process.env.PINSINO_PASSWORD,
-      'Biondolillo': process.env.BIONDOLILLO_PASSWORD,
       'Zanchi': process.env.ZANCHI_PASSWORD,
       'Veliaj': process.env.VELIAJ_PASSWORD,
       'Bonzi': process.env.BONZI_PASSWORD,
@@ -74,6 +73,13 @@ exports.handler = async (event, context) => {
       'Cereda.F': process.env.CEREDA_F_PASSWORD,
       'Colombelli': process.env.COLOMBELLI_PASSWORD,
       'Previtali': process.env.PREVITALI_PASSWORD,
+      // Nuovi utenti
+      'Baronchelli.G': process.env.BARONCHELLI_G_PASSWORD,
+      'Baronchelli.M': process.env.BARONCHELLI_M_PASSWORD,
+      'Nasufi': process.env.NASUFI_PASSWORD,
+      'Rottoli': process.env.ROTTOLI_PASSWORD,
+      'Piacentini': process.env.PIACENTINI_PASSWORD,
+      'Allevi': process.env.ALLEVI_PASSWORD,
     };
 
     const expectedPassword = credentials[username];
