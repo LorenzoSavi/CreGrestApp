@@ -185,7 +185,7 @@ export default {
           { id: 'calcetto', name: 'Calcetto' },
         ],
       },
-      quickPoints: [25, 50, 100],
+      quickPoints: [25, 50, 100, 150],
     };
   },
   computed: {
