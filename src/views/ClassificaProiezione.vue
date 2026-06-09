@@ -28,7 +28,7 @@
     <transition name="phase-fade">
       <div v-if="!showPhaseSelector && !isLoading && teams.length" class="cp-stage">
 
-        <!-- Header visibile PRIMA che inizi il reveal (tap-invite + mystery iniziale) -->
+        <!-- Header visibile PRIMA che inizi il reveal -->
         <div v-if="!revealStarted || revealPhase === 'show-last-mystery'" class="cp-header" :class="{ 'cp-header--mystery': revealPhase === 'show-last-mystery' }">
           <div class="cp-header-left">
             <span class="cp-trophy">🏆</span>
@@ -46,7 +46,7 @@
           </div>
         </div>
 
-        <!-- Mini overlay hint durante il reveal (dopo il primo reveal) -->
+        <!-- Mini overlay hint durante il reveal -->
         <div v-if="revealStarted && revealPhase !== 'show-last-mystery' && !showWeekBanner && !showWinnerBanner" class="cp-reveal-overlay-hint">
           <div v-if="revealPhase === 'top-two-shake'" class="cp-hint cp-hint--suspense">⚡ Chi sarà?! — Clicca per scoprire</div>
           <div v-else-if="revealedCount < revealOrder.length" class="cp-hint cp-hint--active">{{ revealOrder.length - revealedCount }} rimanenti — clicca</div>
@@ -57,7 +57,7 @@
         </div>
 
         <div class="cp-ranking-area">
-          <!-- TAP INVITE (prima di tutto) -->
+          <!-- TAP INVITE -->
           <transition name="fade">
             <div v-if="!revealStarted" class="cp-tap-invite">
               <div class="cp-tap-icon">🖱️</div>
@@ -152,12 +152,18 @@
               </template>
 
               <!-- REVEALED CARDS dal 3° al 6° posto -->
-              <transition-group tag="div" class="cp-revealed-list" name="card-enter">
+              <transition-group tag="div" class="cp-revealed-list" name="card-reveal">
                 <div
                   v-for="team in revealedTeamsTopFirst" :key="team.id"
                   class="cp-card"
-                  :class="['cp-card--' + team.id]"
+                  :class="['cp-card--' + team.id, { 'cp-card--just-revealed': justRevealedId === team.id }]"
                 >
+                  <!-- Burst flash al momento del reveal -->
+                  <div v-if="justRevealedId === team.id" class="cp-reveal-flash"></div>
+                  <div v-if="justRevealedId === team.id" class="cp-reveal-particles">
+                    <span v-for="n in 12" :key="n" class="cp-reveal-particle" :style="revealParticleStyle(n, team.id)"></span>
+                  </div>
+
                   <div class="cp-color-strip" :class="'cp-strip--' + team.id"></div>
                   <div class="cp-card-rank">
                     <span v-if="team.rank === 3" class="cp-medal">🥉</span>
@@ -238,14 +244,15 @@
     <!-- WEEK BANNER (1ª 2ª 3ª settimana) -->
     <transition name="winner-fade">
       <div v-if="showWeekBanner" class="cp-week-banner" @click.stop>
-        <div class="cp-week-bg"></div>
+        <!-- Sfondo colorato col colore del vincitore -->
+        <div class="cp-week-bg" :style="weekBannerBgStyle"></div>
         <div class="cp-week-stars-wrap">
           <span v-for="n in 30" :key="n" class="cp-week-star" :style="weekStarStyle(n)">★</span>
         </div>
         <div class="cp-week-fireworks">
           <span v-for="n in 20" :key="n" class="cp-week-spark" :style="weekSparkStyle(n)"></span>
         </div>
-        <div class="cp-week-card">
+        <div class="cp-week-card" :style="weekCardStyle">
           <div class="cp-week-content">
             <div class="cp-week-label">Vincitore</div>
             <div class="cp-week-phase-name">{{ currentPhaseLabel }}</div>
@@ -302,6 +309,8 @@ const SHAKE_MS       = 2400;
 const CRAZY_MS       = 2500;
 const POST_CRAZY     = 2500;
 const BANNER_AUTO_MS = 10000;
+// Durata dell'animazione "just revealed" sulle card
+const REVEAL_ANIM_MS = 1800;
 
 export default {
   name: 'ClassificaProiezione',
@@ -310,13 +319,6 @@ export default {
       showPhaseSelector: true,
       phase: null,
       isLoading: false,
-      // revealPhase values:
-      //   'idle'             → tap-invite visibile, nessuna card
-      //   'show-last-mystery'→ mystery card del 6° visibile, header ancora presente
-      //   'normal'           → reveal uno per uno (6°→3°)
-      //   'top-two-shake'    → le 2 mystery card del podio shakano
-      //   'final-reveal'     → banner in arrivo
-      //   'done'             → tutto rivelato
       revealStarted: false,
       revealPhase: 'idle',
       revealedCount: 0,
@@ -335,6 +337,9 @@ export default {
       bannerCountdownPct: 100,
       bannerCountdownTimer: null,
       bannerAutoCloseTimer: null,
+      // ID della squadra appena rivelata (per animazione flash)
+      justRevealedId: null,
+      justRevealedTimer: null,
       phases: [
         { id: 'settimana1', label: '1ª Settimana',     icon: '1️⃣' },
         { id: 'settimana2', label: '2ª Settimana',     icon: '2️⃣' },
@@ -368,7 +373,6 @@ export default {
         .sort((a, b) => b.points - a.points)
         .map((t, i) => ({ ...t, rank: i + 1 }));
     },
-    // Ordine di reveal: dall'ultimo posto al 3° (es. 6,5,4,3)
     revealOrder() {
       const N = this.sortedTeams.length;
       const order = [];
@@ -387,7 +391,6 @@ export default {
     pendingRanks() {
       if (!this.revealStarted || this.revealPhase === 'idle' || this.revealPhase === 'show-last-mystery') return [];
       const revealed = new Set(this.revealOrder.slice(0, this.revealedCount));
-      // Non includere il 6° (revealOrder[0]) se non ancora rivelato — gestito da cp-card--last-waiting
       return this.revealOrder.filter(r => !revealed.has(r));
     },
     revealedTeamsTopFirst() {
@@ -416,6 +419,26 @@ export default {
     weekWinnerChars() {
       if (!this.sortedTeams.length) return [];
       return this.sortedTeams[0].name.split('');
+    },
+    // Colore squadra vincitrice (per week banner)
+    winnerTeamColor() {
+      if (!this.sortedTeams.length) return '#51cf66';
+      return this.sortedTeams[0].color || '#51cf66';
+    },
+    // Stile sfondo week banner: radial gradient col colore squadra vincitrice
+    weekBannerBgStyle() {
+      const c = this.winnerTeamColor;
+      return {
+        background: `radial-gradient(ellipse at center, ${c}22 0%, ${c}08 45%, #000 75%)`,
+      };
+    },
+    // Bordo card week banner col colore vincitore
+    weekCardStyle() {
+      const c = this.winnerTeamColor;
+      return {
+        borderColor: `${c}55`,
+        boxShadow: `0 0 40px ${c}22, 0 0 80px ${c}0a`,
+      };
     },
   },
   watch: {
@@ -459,6 +482,7 @@ export default {
       this.displayedWeekPoints = 0;
       this.bannerReady = false;
       this.bannerCountdownPct = 100;
+      this.justRevealedId = null;
       this.stopBannerAutoClose();
       try {
         const snap = await getDoc(doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ'));
@@ -470,14 +494,12 @@ export default {
     handleClick() {
       if (this.showPhaseSelector || this.isLoading) return;
 
-      // Fase idle: primo click → mostra mystery card del 6° posto
       if (this.revealPhase === 'idle') {
         this.revealStarted = true;
         this.revealPhase = 'show-last-mystery';
         return;
       }
 
-      // Fase show-last-mystery: secondo click → rivela il 6° posto (con shake)
       if (this.revealPhase === 'show-last-mystery') {
         if (this.isRevealing) return;
         this.revealPhase = 'normal';
@@ -485,14 +507,12 @@ export default {
         return;
       }
 
-      // Fase normal: reveal uno per uno
       if (this.revealPhase === 'normal') {
         if (this.isRevealing) return;
         this._revealNext();
         return;
       }
 
-      // Fase top-two-shake: click per banner
       if (this.revealPhase === 'top-two-shake') {
         this._triggerBannerFirst();
         return;
@@ -520,6 +540,13 @@ export default {
         this.shakingCards = next;
         this.shakingRank = null;
         this.isRevealing = false;
+
+        // Attiva la mini animazione "just revealed" sulla card appena svelata
+        this.justRevealedId = team.id;
+        if (this.justRevealedTimer) clearTimeout(this.justRevealedTimer);
+        this.justRevealedTimer = setTimeout(() => {
+          this.justRevealedId = null;
+        }, REVEAL_ANIM_MS);
 
         if (this.revealedCount >= this.revealOrder.length) {
           this.revealPhase = 'top-two-shake';
@@ -577,6 +604,7 @@ export default {
     resetView() {
       this.stopFireworks();
       this.stopBannerAutoClose();
+      if (this.justRevealedTimer) clearTimeout(this.justRevealedTimer);
       this.showPhaseSelector = true;
       this.phase = null;
       this.revealStarted = false;
@@ -594,6 +622,7 @@ export default {
       this.displayedWeekPoints = 0;
       this.bannerReady = false;
       this.bannerCountdownPct = 100;
+      this.justRevealedId = null;
     },
     handleLogout() {
       sessionStorage.removeItem('loggedInUser');
@@ -713,10 +742,21 @@ export default {
         animationDelay: 'var(--delay)',
       };
     },
+    // Particelle colorate col colore della squadra appena rivelata
+    revealParticleStyle(n, teamId) {
+      const team = this.allTeams.find(t => t.id === teamId);
+      const color = team ? team.color : '#ffd43b';
+      return {
+        '--angle': ((n / 12) * 360) + 'deg',
+        '--color': color,
+        animationDelay: (n * 0.04) + 's',
+      };
+    },
   },
   beforeUnmount() {
     this.stopFireworks();
     this.stopBannerAutoClose();
+    if (this.justRevealedTimer) clearTimeout(this.justRevealedTimer);
   },
 };
 </script>
@@ -797,7 +837,12 @@ export default {
 .cp-revealed-list{display:flex;flex-direction:column;gap:clamp(.35rem,.8vh,.7rem);margin-top:clamp(.35rem,.8vh,.7rem);}
 
 /* ─── MYSTERY CARD ── */
-.cp-card-mystery{background:#111120 !important;border:2px solid rgba(255,255,255,.1) !important;}
+/* Altezza mystery card allineata con le revealed (via di mezzo) */
+.cp-card-mystery{
+  background:#111120 !important;
+  border:2px solid rgba(255,255,255,.1) !important;
+  min-height:clamp(52px,7.5vh,76px) !important;
+}
 
 /* Mystery card del 6° in attesa del secondo click */
 .cp-card--last-waiting{
@@ -810,7 +855,20 @@ export default {
 }
 
 /* ─── SINGOLA CARD ────── */
-.cp-card{position:relative;display:flex;align-items:center;gap:clamp(.5rem,1.2vw,1rem);padding:clamp(.5rem,1.2vh,.9rem) clamp(.7rem,1.8vw,1.4rem);border-radius:clamp(12px,1.5vw,18px);border:1.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);transition:transform .25s,box-shadow .25s;overflow:hidden;min-height:clamp(52px,7vh,72px);}
+/* Altezza via di mezzo tra la mystery (prima) e quella più piccola */
+.cp-card{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:clamp(.5rem,1.2vw,1rem);
+  padding:clamp(.55rem,1.4vh,1rem) clamp(.7rem,1.8vw,1.4rem);
+  border-radius:clamp(12px,1.5vw,18px);
+  border:1.5px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);
+  transition:transform .25s,box-shadow .25s;
+  overflow:hidden;
+  min-height:clamp(52px,7.5vh,76px);
+}
 .cp-card--shaking{animation:cardShake .35s ease-in-out infinite;}
 @keyframes cardShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .cp-card--top-two-shake{animation:topTwoShake .5s ease-in-out infinite;border-color:rgba(255,215,0,.4)!important;box-shadow:0 0 28px rgba(255,215,0,.2)!important;}
@@ -831,6 +889,57 @@ export default {
 /* crazy */
 .cp-card--crazy{animation:crazyBounce .25s ease-in-out infinite!important;}
 @keyframes crazyBounce{0%,100%{transform:scale(1) rotate(0deg)}33%{transform:scale(1.04) rotate(-2deg)}66%{transform:scale(1.04) rotate(2deg)}}
+
+/* ─── MINI ANIMAZIONE REVEAL ─────────────────── */
+/* Flash bianco sull'intera card appena rivelata */
+.cp-reveal-flash{
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:rgba(255,255,255,.55);
+  pointer-events:none;
+  z-index:5;
+  animation:revealFlash 1.0s ease-out forwards;
+}
+@keyframes revealFlash{
+  0%  {opacity:1;}
+  35% {opacity:.3;}
+  100%{opacity:0;}
+}
+
+/* Card "just revealed" — scala e glow di colore squadra per ~1.8s */
+.cp-card--just-revealed{
+  animation:justRevealedPop 1.8s cubic-bezier(.16,1,.3,1) forwards !important;
+}
+@keyframes justRevealedPop{
+  0%  {transform:scale(1.08);box-shadow:0 0 40px rgba(255,255,255,.35),0 0 70px rgba(255,255,255,.15);}
+  40% {transform:scale(1.03);box-shadow:0 0 24px rgba(255,255,255,.2);}
+  100%{transform:scale(1);box-shadow:none;}
+}
+
+/* Particelle esplosive al reveal */
+.cp-reveal-particles{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  overflow:visible;
+  z-index:6;
+}
+.cp-reveal-particle{
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--color);
+  animation:revealParticle 1.0s ease-out forwards;
+}
+@keyframes revealParticle{
+  0%  {transform:rotate(var(--angle)) translateY(0) scale(1.4);opacity:1;}
+  60% {opacity:.7;}
+  100%{transform:rotate(var(--angle)) translateY(-90px) scale(0);opacity:0;}
+}
 
 /* color strip */
 .cp-color-strip{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:2px 0 0 2px;}
@@ -900,9 +1009,12 @@ export default {
 .cp-sparkline-dot{position:absolute;width:4px;height:4px;border-radius:50%;background:#ffd43b;bottom:0;animation:sparklineDot 1s ease-in-out infinite;}
 @keyframes sparklineDot{0%,100%{opacity:.2;transform:scaleY(1)}50%{opacity:1;transform:scaleY(2.5)}}
 
-/* card enter transition */
-.card-enter-active{transition:all .5s cubic-bezier(.16,1,.3,1);}
-.card-enter-from{opacity:0;transform:translateX(-32px) scale(.95);}
+/* ─── TRANSIZIONI CARD ─── */
+/* Transizione reveal: entra da sotto con scala + flash */
+.card-reveal-enter-active{transition:all .55s cubic-bezier(.16,1,.3,1);}
+.card-reveal-enter-from{opacity:0;transform:translateY(24px) scale(.92);}
+.card-reveal-leave-active{transition:all .3s ease;}
+.card-reveal-leave-to{opacity:0;transform:scale(.95);}
 
 /* ─── PHASE TRANSITION ─── */
 .phase-fade-enter-active,.phase-fade-leave-active{transition:opacity .35s ease;}
@@ -962,13 +1074,15 @@ export default {
 
 /* ─── WEEK BANNER ────────────────────────────────── */
 .cp-week-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.cp-week-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#001a0a 0%,#000 70%);}
+/* cp-week-bg riceve lo stile inline dinamico con il colore del vincitore */
+.cp-week-bg{position:absolute;inset:0;}
 .cp-week-stars-wrap{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
 .cp-week-star{position:absolute;color:#ffd43b;top:-2rem;animation:weekStarFall var(--duration) var(--delay) linear infinite;}
 @keyframes weekStarFall{0%{transform:translateY(-2rem) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(360deg);opacity:0}}
 .cp-week-fireworks{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
 .cp-week-spark{position:absolute;width:3px;height:clamp(30px,6vh,55px);background:var(--color);border-radius:2px;transform-origin:bottom center;transform:rotate(var(--angle));animation:weekSparkBurst 1.8s var(--delay) ease-out infinite;opacity:.7;}
 @keyframes weekSparkBurst{0%{transform:rotate(var(--angle)) scaleY(0);opacity:1}60%{transform:rotate(var(--angle)) scaleY(1);opacity:.8}100%{transform:rotate(var(--angle)) scaleY(0) translateY(-60px);opacity:0}}
+/* cp-week-card riceve stile inline per bordo colorato */
 .cp-week-card{position:relative;z-index:10;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.12);border-radius:clamp(20px,3vw,32px);padding:clamp(1.5rem,3.5vh,3rem) clamp(2rem,4vw,4rem);max-width:min(90vw,520px);width:100%;backdrop-filter:blur(12px);}
 .cp-week-content{display:flex;flex-direction:column;align-items:center;gap:clamp(.5rem,1.2vh,1rem);text-align:center;}
 .cp-week-label{font-size:clamp(.65rem,1vw,.78rem);font-weight:900;letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.3);}
