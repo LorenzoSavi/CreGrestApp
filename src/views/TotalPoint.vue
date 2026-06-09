@@ -20,7 +20,6 @@
     </div>
   </transition>
 
-  <!-- WRAPPER: occupa tutto lo spazio flex lasciato da #app, scorre internamente -->
   <div class="tp-root">
 
     <!-- HEADER sticky -->
@@ -58,7 +57,6 @@
       </button>
     </nav>
 
-    <!-- CONTENT: questo è l'unico elemento che scorre -->
     <div class="tp-content">
 
       <!-- TAB: CLASSIFICA -->
@@ -262,9 +260,9 @@ export default {
         { id: 'rossi',     name: 'Rossi',     points: 0 },
         { id: 'verdi',     name: 'Verdi',     points: 0 },
         { id: 'arancioni', name: 'Arancioni', points: 0 },
-        { id: 'blu',       name: 'Blu',       points: 0 },
-        { id: 'fucsia',    name: 'Fucsia',    points: 0 },
         { id: 'gialli',    name: 'Gialli',    points: 0 },
+        { id: 'bianchi',   name: 'Bianchi',   points: 0 },
+        { id: 'blu',       name: 'Blu',       points: 0 },
       ],
       games: [
         { id: 'puntiSpeciali', name: 'Punti Speciali' },
@@ -507,12 +505,12 @@ export default {
 .fp-score { font-size: 2rem; font-weight: 900; }
 .fp-score small { font-size: 0.9rem; opacity: 0.6; }
 
-.rossi-fp     { background: rgba(220,53,69,0.15); border: 1px solid rgba(220,53,69,0.3); }
-.verdi-fp     { background: rgba(40,167,69,0.15); border: 1px solid rgba(40,167,69,0.3); }
+.rossi-fp     { background: rgba(220,53,69,0.15);  border: 1px solid rgba(220,53,69,0.3); }
+.verdi-fp     { background: rgba(40,167,69,0.15);  border: 1px solid rgba(40,167,69,0.3); }
 .arancioni-fp { background: rgba(253,126,20,0.15); border: 1px solid rgba(253,126,20,0.3); }
-.blu-fp       { background: rgba(0,123,255,0.15); border: 1px solid rgba(0,123,255,0.3); }
-.fucsia-fp    { background: rgba(232,62,140,0.15); border: 1px solid rgba(232,62,140,0.3); }
-.gialli-fp    { background: rgba(200,150,12,0.15); border: 1px solid rgba(200,150,12,0.3); }
+.gialli-fp    { background: rgba(245,196,0,0.15);  border: 1px solid rgba(245,196,0,0.3); }
+.bianchi-fp   { background: rgba(232,232,232,0.1); border: 1px solid rgba(232,232,232,0.25); }
+.blu-fp       { background: rgba(0,123,255,0.15);  border: 1px solid rgba(0,123,255,0.3); }
 
 .rank-list { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.85rem; }
 .rank-row {
@@ -530,19 +528,21 @@ export default {
 .rank-score { font-size: 1rem; font-weight: 900; color: #e8e8f0; white-space: nowrap; }
 .rank-score-unit { font-size: 0.7rem; opacity: 0.5; font-weight: 700; }
 
+/* Testi squadre */
 .rossi-text     { color: #ff6b6b; }
 .verdi-text     { color: #51cf66; }
 .arancioni-text { color: #ffa94d; }
+.gialli-text    { color: #F5C400; }
+.bianchi-text   { color: #E8E8E8; }
 .blu-text       { color: #74c0fc; }
-.fucsia-text    { color: #f78cc6; }
-.gialli-text    { color: #ffd43b; }
 
+/* Barre squadre */
 .rossi-bar     { background: #DC3545; }
 .verdi-bar     { background: #28A745; }
 .arancioni-bar { background: #FD7E14; }
+.gialli-bar    { background: #F5C400; }
+.bianchi-bar   { background: #C8C8C8; }
 .blu-bar       { background: #007BFF; }
-.fucsia-bar    { background: #E83E8C; }
-.gialli-bar    { background: #c8960c; }
 
 .stats-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
 .stat-card {
@@ -586,19 +586,19 @@ export default {
 }
 .tp-pill-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
-.rossi-pill     { background: rgba(220,53,69,0.12); color: #ff6b6b; border-color: rgba(220,53,69,0.2); }
-.verdi-pill     { background: rgba(40,167,69,0.12); color: #51cf66; border-color: rgba(40,167,69,0.2); }
+.rossi-pill     { background: rgba(220,53,69,0.12);  color: #ff6b6b; border-color: rgba(220,53,69,0.2); }
+.verdi-pill     { background: rgba(40,167,69,0.12);  color: #51cf66; border-color: rgba(40,167,69,0.2); }
 .arancioni-pill { background: rgba(253,126,20,0.12); color: #ffa94d; border-color: rgba(253,126,20,0.2); }
-.blu-pill       { background: rgba(0,123,255,0.12); color: #74c0fc; border-color: rgba(0,123,255,0.2); }
-.fucsia-pill    { background: rgba(232,62,140,0.12); color: #f78cc6; border-color: rgba(232,62,140,0.2); }
-.gialli-pill    { background: rgba(200,150,12,0.12); color: #ffd43b; border-color: rgba(200,150,12,0.2); }
+.gialli-pill    { background: rgba(245,196,0,0.12);  color: #F5C400; border-color: rgba(245,196,0,0.2); }
+.bianchi-pill   { background: rgba(232,232,232,0.1); color: #E8E8E8; border-color: rgba(232,232,232,0.2); }
+.blu-pill       { background: rgba(0,123,255,0.12);  color: #74c0fc; border-color: rgba(0,123,255,0.2); }
 
-.rossi-pill.team-pill--active     { background: rgba(220,53,69,0.3); border-color: #ff6b6b; }
-.verdi-pill.team-pill--active     { background: rgba(40,167,69,0.3); border-color: #51cf66; }
-.arancioni-pill.team-pill--active { background: rgba(253,126,20,0.3); border-color: #ffa94d; }
-.blu-pill.team-pill--active       { background: rgba(0,123,255,0.3); border-color: #74c0fc; }
-.fucsia-pill.team-pill--active    { background: rgba(232,62,140,0.3); border-color: #f78cc6; }
-.gialli-pill.team-pill--active    { background: rgba(200,150,12,0.3); border-color: #ffd43b; }
+.rossi-pill.team-pill--active     { background: rgba(220,53,69,0.3);   border-color: #ff6b6b; }
+.verdi-pill.team-pill--active     { background: rgba(40,167,69,0.3);   border-color: #51cf66; }
+.arancioni-pill.team-pill--active { background: rgba(253,126,20,0.3);  border-color: #ffa94d; }
+.gialli-pill.team-pill--active    { background: rgba(245,196,0,0.3);   border-color: #F5C400; }
+.bianchi-pill.team-pill--active   { background: rgba(232,232,232,0.18); border-color: #E8E8E8; }
+.blu-pill.team-pill--active       { background: rgba(0,123,255,0.3);   border-color: #74c0fc; }
 
 .game-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .game-pill {
@@ -694,9 +694,9 @@ export default {
 .rossi-filter.h-filter-btn--active     { background: #DC3545; border-color: #DC3545; }
 .verdi-filter.h-filter-btn--active     { background: #28A745; border-color: #28A745; }
 .arancioni-filter.h-filter-btn--active { background: #FD7E14; border-color: #FD7E14; }
+.gialli-filter.h-filter-btn--active    { background: #F5C400; border-color: #F5C400; color: #1a1a00; }
+.bianchi-filter.h-filter-btn--active   { background: #C8C8C8; border-color: #C8C8C8; color: #1a1a1a; }
 .blu-filter.h-filter-btn--active       { background: #007BFF; border-color: #007BFF; }
-.fucsia-filter.h-filter-btn--active    { background: #E83E8C; border-color: #E83E8C; }
-.gialli-filter.h-filter-btn--active    { background: #c8960c; border-color: #c8960c; }
 
 .h-count { font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 700; margin-bottom: 0.5rem; }
 .h-list  { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -710,9 +710,9 @@ export default {
 .rossi-dot     { background: #DC3545; }
 .verdi-dot     { background: #28A745; }
 .arancioni-dot { background: #FD7E14; }
+.gialli-dot    { background: #F5C400; }
+.bianchi-dot   { background: #C8C8C8; }
 .blu-dot       { background: #007BFF; }
-.fucsia-dot    { background: #E83E8C; }
-.gialli-dot    { background: #c8960c; }
 
 .h-main { flex: 1; min-width: 0; }
 .h-top  { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
@@ -806,77 +806,53 @@ export default {
 .inter-fade-enter-from, .inter-fade-leave-to { opacity: 0; }
 
 /* ═════════════════════════════════════════════
-   LIGHT MODE — TotalPoint
+   LIGHT MODE
 ═════════════════════════════════════════════ */
 @media (prefers-color-scheme: light) {
   .tp-root    { background: #f0f3ff; color: #1a1a3e; }
-
-  /* Header: gradient medio-scuro, testo bianco (leggibile) */
   .tp-header  { background: linear-gradient(135deg, #3b4db8 0%, #2355a0 100%); box-shadow: 0 2px 16px rgba(60,80,180,0.18); }
   .tp-title   { color: #fff; }
   .tp-sub     { color: rgba(255,255,255,0.7); }
   .tp-username { color: rgba(255,255,255,0.85); }
   .tp-avatar  { background: rgba(255,255,255,0.22); color: #fff; }
-
-  /* Tab bar */
   .tp-tabs    { background: #fff; border-bottom: 1px solid rgba(102,126,234,0.15); }
   .tp-tab     { color: #6b7280; }
   .tp-tab--active { color: #4a5fd4; border-bottom-color: #4a5fd4; }
-
-  /* Skeleton */
   .skeleton-row { background: rgba(102,126,234,0.06); }
   .sk           { background: linear-gradient(90deg,#dde3ff 25%,#eef0ff 50%,#dde3ff 75%); background-size: 200% 100%; }
-
-  /* Lock box */
   .lock-box h3 { color: #1a1a3e; }
   .lock-box p  { color: #6b7280; }
-
-  /* First place card (mantieni i colori squadra, solo sfondo più chiaro) */
   .rossi-fp     { background: rgba(220,53,69,0.08);  border-color: rgba(220,53,69,0.25); }
   .verdi-fp     { background: rgba(40,167,69,0.08);  border-color: rgba(40,167,69,0.25); }
   .arancioni-fp { background: rgba(253,126,20,0.08); border-color: rgba(253,126,20,0.25); }
+  .gialli-fp    { background: rgba(245,196,0,0.08);  border-color: rgba(245,196,0,0.25); }
+  .bianchi-fp   { background: rgba(100,100,100,0.06); border-color: rgba(100,100,100,0.2); }
   .blu-fp       { background: rgba(0,123,255,0.08);  border-color: rgba(0,123,255,0.25); }
-  .fucsia-fp    { background: rgba(232,62,140,0.08); border-color: rgba(232,62,140,0.25); }
-  .gialli-fp    { background: rgba(200,150,12,0.08); border-color: rgba(200,150,12,0.25); }
-
-  /* Rank rows */
   .rank-row         { background: #fff; }
   .rank-row--podium { background: #f5f7ff; }
   .rank-bar-track   { background: rgba(102,126,234,0.12); }
   .rank-score       { color: #1a1a3e; }
   .rank-num         { color: #9ca3af; }
-
-  /* Stats */
+  .gialli-text  { color: #b8940a; }
+  .bianchi-text { color: #555; }
   .stat-card  { background: #fff; }
   .stat-val   { color: #4a5fd4; }
   .stat-label { color: #9ca3af; }
-
-  /* Form card */
   .form-card  { background: #fff; border: 1px solid rgba(102,126,234,0.1); }
   .fc-label   { color: #5a5f9a; }
-
-  /* Team pills */
   .team-pill          { background: #f0f3ff; }
   .rossi-pill         { border-color: rgba(220,53,69,0.3); }
   .verdi-pill         { border-color: rgba(40,167,69,0.3); }
   .arancioni-pill     { border-color: rgba(253,126,20,0.3); }
+  .gialli-pill        { border-color: rgba(245,196,0,0.3); color: #b8940a; }
+  .bianchi-pill       { border-color: rgba(100,100,100,0.3); color: #555; }
   .blu-pill           { border-color: rgba(0,123,255,0.3); }
-  .fucsia-pill        { border-color: rgba(232,62,140,0.3); }
-  .gialli-pill        { border-color: rgba(200,150,12,0.3); }
-
-  /* Game pills */
   .game-pill          { background: #f0f3ff; border-color: rgba(102,126,234,0.2); color: #3a3f7a; }
   .game-pill--penalty { background: rgba(220,53,69,0.06); color: #c0392b; }
-
-  /* Quick pts */
   .pts-q    { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
   .pts-btn  { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
   .pts-input { background: #fff; color: #1a1a3e; border-color: rgba(102,126,234,0.3); }
-
-  /* Preview */
   .pts-preview { background: rgba(102,126,234,0.07); color: #3a3f7a; }
-
-  /* History */
   .h-filter-btn { background: #e8ecff; border-color: rgba(102,126,234,0.2); color: #4a5fd4; }
   .h-count      { color: #9ca3af; }
   .h-entry      { background: #fff; }
@@ -886,62 +862,10 @@ export default {
   .h-user  { color: #9ca3af; }
   .h-date  { color: #b0b5c3; }
   .h-loadmore { background: #e8ecff; border-color: rgba(102,126,234,0.2); color: #4a5fd4; }
-
-  /* Modal */
   .modal-box   { background: #fff; }
   .modal-head  { background: rgba(220,53,69,0.06); color: #c0392b; border-bottom-color: rgba(0,0,0,0.06); }
-  .md-row      { border-bottom-color: rgba(0,0,0,0.05); }
   .md-row span { color: #6b7280; }
   .md-row strong { color: #1a1a3e; }
-  .modal-warn  { background: rgba(255,204,92,0.12); color: #7a5c00; }
-  .modal-foot  { border-top-color: rgba(0,0,0,0.06); }
   .modal-cancel { background: #f0f3ff; color: #4a5fd4; }
-}
-
-/* ══════════════════════════════════════
-   LIGHT MODE — TotalPoint
-══════════════════════════════════════ */
-@media (prefers-color-scheme: light) {
-  .tp-header {
-    background: linear-gradient(135deg, #3b4db8 0%, #2355a0 100%);
-    box-shadow: 0 2px 16px rgba(60,80,180,0.18);
-  }
-  .tp-title    { color: #fff; }
-  .tp-sub      { color: rgba(255,255,255,0.7); }
-  .tp-username { color: rgba(255,255,255,0.85); }
-  .tp-avatar   { background: rgba(255,255,255,0.2); color: #fff; }
-  .tp-tabs { background: #fff; border-bottom: 1px solid rgba(102,126,234,0.15); }
-  .tp-tab  { color: #6b7280; }
-  .tp-tab--active { color: #4a5fd4; border-bottom-color: #4a5fd4; }
-  .tp-content { background: #f0f3ff; }
-  .tp-root    { background: #f0f3ff; }
-  .rank-row { background: #fff; }
-  .rank-row--podium { background: #f5f7ff; }
-  .rank-bar-track { background: rgba(102,126,234,0.12); }
-  .rank-score { color: #4a5fd4; }
-  .rank-num { color: #9ca3af; }
-  .fp-card { background: #eef1ff; border-color: rgba(102,126,234,0.3); }
-  .fp-label { color: #6b7280; }
-  .fp-score { color: #4a5fd4; }
-  .stat-card { background: #fff; }
-  .stat-val  { color: #4a5fd4; }
-  .stat-label { color: #9ca3af; }
-  .form-card { background: #fff; }
-  .fc-label  { color: #5a5f9a; }
-  .fc-step   { background: #dde3ff; color: #4a5fd4; }
-  .team-pill { background: #f0f3ff; border-color: rgba(102,126,234,0.25); color: #3a3f7a; }
-  .game-pill { background: #f0f3ff; border-color: rgba(102,126,234,0.2); color: #3a3f7a; }
-  .pts-q   { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
-  .pts-btn  { background: #e8ecff; color: #4a5fd4; }
-  .pts-input { background: #fff; color: #1a1a3e; border-color: rgba(102,126,234,0.3); }
-  .hist-row  { background: #fff; border-color: rgba(102,126,234,0.1); }
-  .hist-meta { color: #9ca3af; }
-  .lock-box { background: #fff; }
-  .lock-box h3 { color: #1a1a3e; }
-  .lock-box p  { color: #6b7280; }
-  .sk { background: linear-gradient(90deg,#e8ecff 25%,#f0f3ff 50%,#e8ecff 75%); background-size: 200% 100%; }
-  .notif-bar { background: #fff; color: #1a1a3e; box-shadow: 0 2px 12px rgba(60,80,180,0.12); }
-  .notif-success { border-left-color: #28a745; }
-  .notif-error   { border-left-color: #dc3545; }
 }
 </style>
