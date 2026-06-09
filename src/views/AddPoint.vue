@@ -139,9 +139,9 @@ export default {
         { id: 'rossi',     name: 'Rossi',     color: '#DC3545', emoji: '🔴' },
         { id: 'verdi',     name: 'Verdi',     color: '#28A745', emoji: '🟢' },
         { id: 'arancioni', name: 'Arancioni', color: '#FD7E14', emoji: '🟠' },
+        { id: 'gialli',    name: 'Gialli',    color: '#F5C400', emoji: '🟡' },
+        { id: 'bianchi',   name: 'Bianchi',   color: '#E8E8E8', emoji: '⚪' },
         { id: 'blu',       name: 'Blu',       color: '#007BFF', emoji: '🔵' },
-        { id: 'fucsia',    name: 'Fucsia',    color: '#E83E8C', emoji: '🟣' },
-        { id: 'gialli',    name: 'Gialli',    color: '#c8960c', emoji: '🟡' },
       ],
       cycles: [
         { id: 'primo',   name: 'Ciclo', num: 'I'   },
@@ -211,7 +211,7 @@ export default {
   methods: {
     selectCycle(id) { this.selectedCycle = id; this.selectedGame = ''; },
     confettiStyle(n) {
-      const colors = ['#DC3545','#28A745','#FD7E14','#007BFF','#E83E8C','#c8960c','#667eea','#fff'];
+      const colors = ['#DC3545','#28A745','#FD7E14','#F5C400','#E8E8E8','#007BFF','#667eea','#fff'];
       return { '--angle': ((n - 1) * 45) + 'deg', '--color': colors[(n-1) % colors.length] };
     },
     async addPoints() {
@@ -336,15 +336,16 @@ export default {
 .rossi-tile     { background: rgba(220,53,69,0.15);  color: #ff6b6b; border-color: rgba(220,53,69,0.25); }
 .verdi-tile     { background: rgba(40,167,69,0.15);  color: #51cf66; border-color: rgba(40,167,69,0.25); }
 .arancioni-tile { background: rgba(253,126,20,0.15); color: #ffa94d; border-color: rgba(253,126,20,0.25); }
+.gialli-tile    { background: rgba(245,196,0,0.15);  color: #F5C400; border-color: rgba(245,196,0,0.25); }
+.bianchi-tile   { background: rgba(232,232,232,0.12); color: #E8E8E8; border-color: rgba(232,232,232,0.3); }
 .blu-tile       { background: rgba(0,123,255,0.15);  color: #74c0fc; border-color: rgba(0,123,255,0.25); }
-.fucsia-tile    { background: rgba(232,62,140,0.15); color: #f78cc6; border-color: rgba(232,62,140,0.25); }
-.gialli-tile    { background: rgba(200,150,12,0.15); color: #ffd43b; border-color: rgba(200,150,12,0.25); }
-.rossi-tile.team-tile--active     { background: rgba(220,53,69,0.3);  border-color: #ff6b6b; box-shadow: 0 4px 18px rgba(220,53,69,0.35);  transform: translateY(-2px); }
-.verdi-tile.team-tile--active     { background: rgba(40,167,69,0.3);  border-color: #51cf66; box-shadow: 0 4px 18px rgba(40,167,69,0.35);  transform: translateY(-2px); }
-.arancioni-tile.team-tile--active { background: rgba(253,126,20,0.3); border-color: #ffa94d; box-shadow: 0 4px 18px rgba(253,126,20,0.35); transform: translateY(-2px); }
-.blu-tile.team-tile--active       { background: rgba(0,123,255,0.3);  border-color: #74c0fc; box-shadow: 0 4px 18px rgba(0,123,255,0.35);  transform: translateY(-2px); }
-.fucsia-tile.team-tile--active    { background: rgba(232,62,140,0.3); border-color: #f78cc6; box-shadow: 0 4px 18px rgba(232,62,140,0.35); transform: translateY(-2px); }
-.gialli-tile.team-tile--active    { background: rgba(200,150,12,0.3); border-color: #ffd43b; box-shadow: 0 4px 18px rgba(200,150,12,0.35); transform: translateY(-2px); }
+
+.rossi-tile.team-tile--active     { background: rgba(220,53,69,0.3);   border-color: #ff6b6b; box-shadow: 0 4px 18px rgba(220,53,69,0.35);   transform: translateY(-2px); }
+.verdi-tile.team-tile--active     { background: rgba(40,167,69,0.3);   border-color: #51cf66; box-shadow: 0 4px 18px rgba(40,167,69,0.35);   transform: translateY(-2px); }
+.arancioni-tile.team-tile--active { background: rgba(253,126,20,0.3);  border-color: #ffa94d; box-shadow: 0 4px 18px rgba(253,126,20,0.35);  transform: translateY(-2px); }
+.gialli-tile.team-tile--active    { background: rgba(245,196,0,0.3);   border-color: #F5C400; box-shadow: 0 4px 18px rgba(245,196,0,0.35);   transform: translateY(-2px); }
+.bianchi-tile.team-tile--active   { background: rgba(232,232,232,0.2); border-color: #E8E8E8; box-shadow: 0 4px 18px rgba(232,232,232,0.25); transform: translateY(-2px); }
+.blu-tile.team-tile--active       { background: rgba(0,123,255,0.3);   border-color: #74c0fc; box-shadow: 0 4px 18px rgba(0,123,255,0.35);   transform: translateY(-2px); }
 
 .cycle-row { display: flex; gap: 0.6rem; }
 .cycle-btn {
@@ -412,9 +413,9 @@ export default {
 .rossi-tag     { background: rgba(220,53,69,0.25);  color: #ff6b6b; }
 .verdi-tag     { background: rgba(40,167,69,0.25);  color: #51cf66; }
 .arancioni-tag { background: rgba(253,126,20,0.25); color: #ffa94d; }
+.gialli-tag    { background: rgba(245,196,0,0.25);  color: #F5C400; }
+.bianchi-tag   { background: rgba(232,232,232,0.15); color: #E8E8E8; }
 .blu-tag       { background: rgba(0,123,255,0.25);  color: #74c0fc; }
-.fucsia-tag    { background: rgba(232,62,140,0.25); color: #f78cc6; }
-.gialli-tag    { background: rgba(200,150,12,0.25); color: #ffd43b; }
 .prev-pts { font-size: 1.1rem; font-weight: 900; color: #848ae8; margin-left: auto; }
 .tag-enter-active, .tag-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .tag-enter-from, .tag-leave-to { opacity: 0; transform: scale(0.8); }
@@ -477,52 +478,31 @@ export default {
    LIGHT MODE
 ══════════════════════════════════════════ */
 @media (prefers-color-scheme: light) {
-  /* header */
   .ap-header {
     background: linear-gradient(135deg, #3b4db8 0%, #2355a0 100%);
     box-shadow: 0 2px 16px rgba(60,80,180,0.18);
   }
-  /* titolo e sub nell'header rimangono bianchi perché lo sfondo è ancora scuro-medio */
   .ap-title { color: #fff; }
   .ap-sub   { color: rgba(255,255,255,0.7); }
-
-  /* area scrollabile */
   .ap-main { background: #f0f3ff; }
-
-  /* step number */
   .ap-step-num { background: #dde3ff; color: #4a5fd4; }
   .ap-step-num.done { background: #667eea; color: #fff; }
-
-  /* step title */
   .ap-step-title { color: #5a5f9a; }
   .ap-hint { color: #9399c2; }
 
-  /* tile squadre */
-  .rossi-tile     { background: rgba(220,53,69,0.1);  border-color: rgba(220,53,69,0.3); }
-  .verdi-tile     { background: rgba(40,167,69,0.1);  border-color: rgba(40,167,69,0.3); }
-  .arancioni-tile { background: rgba(253,126,20,0.1); border-color: rgba(253,126,20,0.3); }
-  .blu-tile       { background: rgba(0,123,255,0.1);  border-color: rgba(0,123,255,0.3); }
-  .fucsia-tile    { background: rgba(232,62,140,0.1); border-color: rgba(232,62,140,0.3); }
-  .gialli-tile    { background: rgba(200,150,12,0.1); border-color: rgba(200,150,12,0.3); }
+  .rossi-tile     { background: rgba(220,53,69,0.1);   border-color: rgba(220,53,69,0.3); }
+  .verdi-tile     { background: rgba(40,167,69,0.1);   border-color: rgba(40,167,69,0.3); }
+  .arancioni-tile { background: rgba(253,126,20,0.1);  border-color: rgba(253,126,20,0.3); }
+  .gialli-tile    { background: rgba(245,196,0,0.1);   border-color: rgba(245,196,0,0.3); color: #b8940a; }
+  .bianchi-tile   { background: rgba(100,100,100,0.08); border-color: rgba(100,100,100,0.25); color: #555; }
+  .blu-tile       { background: rgba(0,123,255,0.1);   border-color: rgba(0,123,255,0.3); }
 
-  /* ciclo */
   .cycle-btn { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
-
-  /* giochi */
-  .game-btn {
-    background: #fff; border-color: rgba(102,126,234,0.2);
-    color: #3a3f7a;
-  }
-
-  /* punti rapidi */
+  .game-btn { background: #fff; border-color: rgba(102,126,234,0.2); color: #3a3f7a; }
   .pts-quick-btn { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
-
-  /* preview tags */
   .prev-tag--cycle { background: rgba(102,126,234,0.12); color: #4a5fd4; }
   .prev-tag--game  { background: rgba(102,126,234,0.15); color: #2d3580; }
   .prev-pts { color: #4a5fd4; }
-
-  /* errore */
   .ap-error { background: rgba(220,53,69,0.08); color: #c0392b; }
 }
 </style>
