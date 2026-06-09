@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <img v-if="!isClassificaRoute" id="img" src="@/assets/image.png" alt="CRE Grest 2026 - Bella Fra!" title="CRE Grest 2026 - Oratorio San Giovanni Bosco Zanica" />
+    <img v-if="showAppBar" id="img" src="@/assets/image.png" alt="CRE Grest 2026 - Bella Fra!" title="CRE Grest 2026 - Oratorio San Giovanni Bosco Zanica" />
     <router-view></router-view>
   </div>
 </template>
@@ -8,9 +8,13 @@
 <script>
 export default {
   computed: {
-    isClassificaRoute() {
-      return this.$route.name === 'ClassificaProiezione' ||
-             this.$route.path.startsWith('/classifica');
+    showAppBar() {
+      const name = this.$route?.name;
+      const path = this.$route?.path || '';
+      if (!name && !path) return true;
+      if (name === 'ClassificaProiezione') return false;
+      if (path.startsWith('/classifica')) return false;
+      return true;
     }
   }
 }
