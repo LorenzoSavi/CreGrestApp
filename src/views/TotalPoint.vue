@@ -85,10 +85,9 @@
             <div class="fp-score">{{ sortedTeams[0].points }}<small> pt</small></div>
           </div>
           <div class="rank-list">
-            <div v-for="(team, i) in sortedTeams" :key="team.id" class="rank-row" :class="{ 'rank-row--podium': i < 3 }">
+            <div v-for="(team, i) in sortedTeams" :key="team.id" v-show="i > 0" class="rank-row" :class="{ 'rank-row--podium': i < 3 }">
               <div class="rank-pos">
-                <span v-if="i===0">🥇</span>
-                <span v-else-if="i===1">🥈</span>
+                <span v-if="i===1">🥈</span>
                 <span v-else-if="i===2">🥉</span>
                 <span v-else class="rank-num">#{{ i+1 }}</span>
               </div>
@@ -828,44 +827,30 @@ export default {
   .gialli-fp    { background: rgba(245,196,0,0.08);  border-color: rgba(245,196,0,0.25); }
   .bianchi-fp   { background: rgba(100,100,100,0.06); border-color: rgba(100,100,100,0.2); }
   .blu-fp       { background: rgba(0,123,255,0.08);  border-color: rgba(0,123,255,0.25); }
-  .rank-row         { background: #fff; }
-  .rank-row--podium { background: #f5f7ff; }
-  .rank-bar-track   { background: rgba(102,126,234,0.12); }
-  .rank-score       { color: #1a1a3e; }
-  .rank-num         { color: #9ca3af; }
-  .gialli-text  { color: #b8940a; }
-  .bianchi-text { color: #555; }
-  .stat-card  { background: #fff; }
-  .stat-val   { color: #4a5fd4; }
-  .stat-label { color: #9ca3af; }
-  .form-card  { background: #fff; border: 1px solid rgba(102,126,234,0.1); }
-  .fc-label   { color: #5a5f9a; }
-  .team-pill          { background: #f0f3ff; }
-  .rossi-pill         { border-color: rgba(220,53,69,0.3); }
-  .verdi-pill         { border-color: rgba(40,167,69,0.3); }
-  .arancioni-pill     { border-color: rgba(253,126,20,0.3); }
-  .gialli-pill        { border-color: rgba(245,196,0,0.3); color: #b8940a; }
-  .bianchi-pill       { border-color: rgba(100,100,100,0.3); color: #555; }
-  .blu-pill           { border-color: rgba(0,123,255,0.3); }
-  .game-pill          { background: #f0f3ff; border-color: rgba(102,126,234,0.2); color: #3a3f7a; }
-  .game-pill--penalty { background: rgba(220,53,69,0.06); color: #c0392b; }
-  .pts-q    { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
-  .pts-btn  { background: #e8ecff; color: #4a5fd4; border-color: rgba(102,126,234,0.3); }
-  .pts-input { background: #fff; color: #1a1a3e; border-color: rgba(102,126,234,0.3); }
-  .pts-preview { background: rgba(102,126,234,0.07); color: #3a3f7a; }
-  .h-filter-btn { background: #e8ecff; border-color: rgba(102,126,234,0.2); color: #4a5fd4; }
-  .h-count      { color: #9ca3af; }
-  .h-entry      { background: #fff; }
-  .h-entry--recent { background: rgba(102,126,234,0.07); }
-  .h-game  { color: #6b7280; }
-  .h-sep   { color: #d1d5db; }
-  .h-user  { color: #9ca3af; }
-  .h-date  { color: #b0b5c3; }
-  .h-loadmore { background: #e8ecff; border-color: rgba(102,126,234,0.2); color: #4a5fd4; }
-  .modal-box   { background: #fff; }
-  .modal-head  { background: rgba(220,53,69,0.06); color: #c0392b; border-bottom-color: rgba(0,0,0,0.06); }
-  .md-row span { color: #6b7280; }
+  .rank-row     { background: rgba(102,126,234,0.05); }
+  .rank-row--podium { background: rgba(102,126,234,0.1); }
+  .rank-num     { color: rgba(0,0,40,0.3); }
+  .rank-score   { color: #1a1a3e; }
+  .rank-bar-track { background: rgba(0,0,40,0.08); }
+  .stat-card    { background: rgba(102,126,234,0.08); }
+  .stat-label   { color: rgba(0,0,40,0.4); }
+  .form-card    { background: rgba(102,126,234,0.06); }
+  .fc-label     { color: rgba(0,0,40,0.5); }
+  .pts-input    { background: #fff; color: #1a1a3e; border-color: rgba(102,126,234,0.25); }
+  .pts-preview  { background: rgba(102,126,234,0.08); color: rgba(0,0,40,0.7); }
+  .h-filter-btn { background: rgba(102,126,234,0.07); color: rgba(0,0,40,0.5); border-color: rgba(102,126,234,0.15); }
+  .h-count      { color: rgba(0,0,40,0.3); }
+  .h-entry      { background: rgba(102,126,234,0.05); }
+  .h-entry--recent { background: rgba(102,126,234,0.12); }
+  .h-game       { color: rgba(0,0,40,0.45); }
+  .h-sep        { color: rgba(0,0,40,0.2); }
+  .h-user, .h-date { color: rgba(0,0,40,0.35); }
+  .modal-box    { background: #fff; }
+  .modal-head   { background: rgba(220,53,69,0.07); }
+  .md-row       { border-bottom-color: rgba(0,0,0,0.07); }
+  .md-row span  { color: rgba(0,0,40,0.45); }
   .md-row strong { color: #1a1a3e; }
-  .modal-cancel { background: #f0f3ff; color: #4a5fd4; }
+  .modal-cancel { background: rgba(0,0,0,0.07); color: rgba(0,0,40,0.6); }
+  .h-loadmore   { background: rgba(102,126,234,0.06); border-color: rgba(102,126,234,0.15); color: rgba(0,0,40,0.45); }
 }
 </style>
