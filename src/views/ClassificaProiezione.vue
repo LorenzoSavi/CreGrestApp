@@ -329,8 +329,8 @@ export default {
         { id: 'bianchi',   name: 'Bianchi',   color: '#E8E8E8' },
         { id: 'blu',       name: 'Blu',       color: '#74c0fc' },
       ],
+      // Unica sorgente dati: documento aggregato, identico a TotalPoint.vue
       pointsData: null,
-      historyData: [],
     };
   },
   computed: {
@@ -342,7 +342,8 @@ export default {
     },
     teams() {
       if (!this.pointsData) return [];
-      return this.allTeams.map(t => ({ ...t, points: this.getPointsForPhase(t.id) }));
+      // Tutti i punti vengono sempre e solo da pointsData (doc aggregato)
+      return this.allTeams.map(t => ({ ...t, points: this.pointsData[t.id] || 0 }));
     },
     sortedTeams() {
       return [...this.teams]
@@ -414,16 +415,6 @@ export default {
     },
   },
   methods: {
-    getPointsForPhase(teamId) {
-      if (!this.pointsData) return 0;
-      if (this.phase === 'finale') return this.pointsData[teamId] || 0;
-      const cycleMap = { settimana1: 'primo', settimana2: 'secondo', settimana3: 'terzo' };
-      const cycleValue = cycleMap[this.phase];
-      if (!cycleValue) return 0;
-      const entries = this.historyData.filter(e => e.cycle === cycleValue && e.team === teamId);
-      if (!entries.length) return 0;
-      return entries.reduce((s, e) => s + (e.points || 0), 0);
-    },
     barWidth(pts) {
       return Math.max(4, Math.round((pts / this.maxPoints) * 100));
     },
@@ -447,12 +438,9 @@ export default {
       this.bannerCountdownPct = 100;
       this.stopBannerAutoClose();
       try {
-        const [pSnap, hSnap] = await Promise.all([
-          getDoc(doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ')),
-          getDoc(doc(db, 'points', 'history')),
-        ]);
-        if (pSnap.exists()) this.pointsData = pSnap.data();
-        if (hSnap.exists()) this.historyData = hSnap.data().history || [];
+        // Legge SEMPRE il documento aggregato, identico a come fa TotalPoint.vue
+        const snap = await getDoc(doc(db, 'points', 'yEXQ6MF69F5wQ5S2HpAQ'));
+        if (snap.exists()) this.pointsData = snap.data();
       } catch (e) { console.error(e); }
       finally { this.isLoading = false; }
     },
@@ -563,7 +551,6 @@ export default {
       this.isRevealing = false;
       this.isTopTwoRevealed = false;
       this.pointsData = null;
-      this.historyData = [];
       this.winnerClosed = false;
       this.weekBannerClosed = false;
       this.displayedPoints = 0;
