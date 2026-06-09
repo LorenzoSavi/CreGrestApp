@@ -9,7 +9,8 @@
 export default {
   computed: {
     isClassificaRoute() {
-      return this.$route.name === 'ClassificaProiezione';
+      return this.$route.name === 'ClassificaProiezione' ||
+             this.$route.path.startsWith('/classifica');
     }
   }
 }
