@@ -19,8 +19,8 @@ exports.handler = async (event, context) => {
   try {
     const { username, password } = JSON.parse(event.body);
 
-    // Admin users
-    const adminUsers = ['Savi', 'Leidi', 'Brambo', 'DonGio'];
+    // Admin users (accesso a TotalPoint)
+    const adminUsers = ['Savi', 'Leidi', 'Brambo', 'DonGio', 'Francesco'];
     // Proiezione classifica
     const classificaUsers = ['Classifica'];
 
@@ -31,6 +31,7 @@ exports.handler = async (event, context) => {
       'Leidi': process.env.LEIDI_PASSWORD,
       'Brambo': process.env.BRAMBO_PASSWORD,
       'DonGio': process.env.DONGIO_PASSWORD,
+      'Francesco': process.env.FRANCESCO_PASSWORD,
       // Proiezione classifica
       'Classifica': process.env.CLASSIFICA_PASSWORD,
       // Regular users
@@ -80,6 +81,7 @@ exports.handler = async (event, context) => {
       'Rottoli': process.env.ROTTOLI_PASSWORD,
       'Piacentini': process.env.PIACENTINI_PASSWORD,
       'Allevi': process.env.ALLEVI_PASSWORD,
+      'Malfitano': process.env.MALFITANO_PASSWORD,
     };
 
     const expectedPassword = credentials[username];
