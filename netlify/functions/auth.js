@@ -82,6 +82,8 @@ exports.handler = async (event, context) => {
       'Piacentini': process.env.PIACENTINI_PASSWORD,
       'Allevi': process.env.ALLEVI_PASSWORD,
       'Malfitano': process.env.MALFITANO_PASSWORD,
+      // Marco Liani
+      'LianiM': process.env.LIANIM_PASSWORD,
     };
 
     const expectedPassword = credentials[username];
